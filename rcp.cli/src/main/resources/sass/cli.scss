@@ -1,0 +1,28 @@
+.plugin-cli {
+	-fx-hgap: 10px;
+	-fx-vgap: 5px;
+
+	.label {
+
+		&.response-label {
+			-fx-font-size: 18px;
+			-fx-font-weight: bold;
+			-fx-alignment: center;
+			-fx-max-width: 1000px;
+		}
+		
+		&.interpretation-label {
+			-fx-alignment: center;
+			-fx-opacity: 0.75;
+			-fx-max-width: 1000px;
+		}
+	}
+	
+	.text-field {
+		&.cli-input {
+			-fx-font-size: 15px;
+		}
+		
+	}
+	
+}

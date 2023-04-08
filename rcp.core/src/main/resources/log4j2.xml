@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration status="WARN">
+
+	<Appenders>
+		<Console name="ConsoleAppender" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1} - %m%n" />
+		</Console>
+		<File name="FileAppender" fileName="${sys:logpath:-C:\temp}/rcp.log">
+			<PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1} - %m%n" />
+			<ThresholdFilter level="debug" onMatch="ACCEPT"
+				onMismatch="DENY" />
+		</File>
+	</Appenders>
+
+	<Loggers>
+
+		<Root level="warn">
+			<AppenderRef ref="ConsoleAppender" />
+			<AppenderRef ref="FileAppender" />
+		</Root>
+		
+		<Logger name="dev.tim9h" level="debug" additivity="false">
+			<AppenderRef ref="ConsoleAppender" />
+			<AppenderRef ref="FileAppender" />
+		</Logger>
+		
+		<Logger name="com.mkyong" level="debug" additivity="false">
+			<AppenderRef ref="ConsoleAppender" />
+		</Logger>
+
+	</Loggers>
+
+</Configuration>

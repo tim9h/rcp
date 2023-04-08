@@ -1,0 +1,113 @@
+.root {
+	-fx-background-color: $background-color;
+	-fx-border-color: $border-color;
+}
+
+.ccCard {
+	-fx-background-color: $card-background-color;
+	-fx-border-color: $card-border-color;
+	
+	&.accent-cccard {
+		-fx-background-color: $card-border-color 
+	}
+	
+	.accent-label {
+		-fx-text-fill: $accent-color !important;
+	}
+	
+	.label {
+		-fx-text-fill: $text-color;
+		
+		&.secondary {
+			-fx-text-fill: $text-color-secondary
+		}
+		
+		&.accent {
+			-fx-text-fill: $accent-color;
+		}
+	}
+	
+	.hyperlink {
+		-fx-text-fill: $text-color;
+		
+		&:hover {
+		    -fx-border-color: $accent-color; 
+		}
+		
+		&:pressed {
+			-fx-text-fill: $text-color-secondary;
+			-fx-border-color: $accent-darker;
+		}
+		
+		&.accent-label {
+			&:pressed {
+				-fx-text-fill: $accent-darker !important;
+				-fx-border-color: $accent-darker;
+			}
+		}
+	}
+}
+
+.plugin-cli {
+	.label {
+		&.response-label {
+ 			-fx-text-fill: $text-color;
+ 			
+ 			&.structure {
+				-fx-text-fill: $text-color-secondary;
+			}
+		}
+		
+		&.interpretation-label {
+			-fx-text-fill: $text-color-secondary;
+		}		
+	}
+	
+	.text {
+		&.response-label {
+ 			-fx-fill: $text-color;
+ 			
+			&.secondary {
+				-fx-fill: $text-color-secondary
+			}
+			
+			&.accent {
+				-fx-fill: $accent-color;
+			}
+		}
+		
+		&.interpretation-label {
+			-fx-fill: $text-color-secondary;
+			
+			&.primary {
+				-fx-fill: $text-color; 
+			}
+			
+			&.accent {
+				-fx-fill: $accent-color;
+			}
+		}
+	}
+	
+	.text-field {
+		&.cli-input {
+			-fx-background-color: $text-background-input;
+			-fx-text-fill: $text-color-input;
+		}
+		&.highlight {
+			-fx-text-fill: $accent-color;
+		}
+	}
+}
+
+.button {
+	-fx-text-fill: $accent-color;
+	
+	&:hover {
+		-fx-border-color: $accent-color;
+	}
+	
+	&:pressed {
+		-fx-border-color: $accent-darker;
+	}
+}
