@@ -8,7 +8,7 @@
 		<groupId>dev.tim9h</groupId>
 		<artifactId>rcp.parent</artifactId>
 		<version>${revision}</version>
-		<relativePath>../rcp.parent/pom.xml</relativePath>
+		<relativePath>../rcp/rcp.parent/pom.xml</relativePath>
 	</parent>
 
 	<dependencies>
@@ -16,19 +16,16 @@
 		<dependency>
 			<groupId>dev.tim9h</groupId>
 			<artifactId>rcp.api</artifactId>
-			<version>${revision}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>dev.tim9h</groupId>
 			<artifactId>rcp.controls</artifactId>
-			<version>${revision}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
 		</dependency>
 
 	</dependencies>
@@ -48,7 +45,7 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.2.2</version>
 				<configuration>
-					<outputDirectory>../rcp.core/target/plugins</outputDirectory>
+					<outputDirectory>../rcp/rcp.core/target/plugins</outputDirectory>
 				</configuration>
 			</plugin>
 
@@ -62,11 +59,6 @@
 						<goals>
 							<goal>shade</goal>
 						</goals>
-						<configuration>
-							<artifactSet>
-								<includes></includes>
-							</artifactSet>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>

@@ -16,25 +16,21 @@
 		<dependency>
 			<groupId>dev.tim9h</groupId>
 			<artifactId>rcp.api</artifactId>
-			<version>${revision}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
-			<version>${javafx.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.google.inject</groupId>
 			<artifactId>guice</artifactId>
-			<version>${guice.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-			<version>${apache.commons.version}</version>
 		</dependency>
 
 	</dependencies>
