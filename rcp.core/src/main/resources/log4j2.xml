@@ -4,7 +4,7 @@
 
 	<Appenders>
 		<Console name="ConsoleAppender" target="SYSTEM_OUT">
-			<PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1} - %m%n" />
+			<PatternLayout pattern="%highlight{%d{ABSOLUTE} %-5p %c{1}:} %m%n" disableAnsi="false"/>
 		</Console>
 		<File name="FileAppender" fileName="${sys:logpath:-C:\temp}/rcp.log">
 			<PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1} - %m%n" />
