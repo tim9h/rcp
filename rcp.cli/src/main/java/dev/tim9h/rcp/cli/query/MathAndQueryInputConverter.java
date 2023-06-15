@@ -80,7 +80,8 @@ public class MathAndQueryInputConverter extends InputConverter {
 				return new InputResponse(Arrays.asList(new Text("Suggestions")),
 						Arrays.asList(new Text(suggestionsLabel)));
 			}
-			return null;
+			return new InputResponse(Arrays.asList(new Text(StringUtils.EMPTY)),
+					Arrays.asList(new Text(StringUtils.EMPTY)));
 		}
 	}
 
