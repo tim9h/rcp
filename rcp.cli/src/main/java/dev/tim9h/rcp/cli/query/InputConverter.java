@@ -1,16 +1,16 @@
 package dev.tim9h.rcp.cli.query;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import dev.tim9h.rcp.cli.CliViewFactory;
+import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.utils.DelayedRunner;
 import dev.tim9h.rcp.event.CcEvent;
@@ -29,6 +29,8 @@ public abstract class InputConverter extends DelayedRunner {
 
 	@Inject
 	private Settings settings;
+
+	private String formattedResponse;
 
 	@Inject
 	protected InputConverter(Injector injector) {
@@ -50,10 +52,13 @@ public abstract class InputConverter extends DelayedRunner {
 				.runAsync(() -> runDelayed(() -> {
 					if (StringUtils.isNotBlank(newValue)) {
 						var process = process(newValue);
+						formattedResponse = process.response().stream().map(Text::getText)
+								.collect(Collectors.joining(StringUtils.EMPTY));
+
 						Platform.runLater(() -> {
 							if (process != null) {
-								interpretation.showText(process.getLeft());
-								response.showText(process.getRight());
+								interpretation.showText(process.interpretation());
+								response.showText(process.responseFormatted());
 							}
 						});
 					} else if (!oldValue.startsWith(">")) {
@@ -65,6 +70,10 @@ public abstract class InputConverter extends DelayedRunner {
 				})));
 	}
 
-	protected abstract Pair<List<Text>, List<Text>> process(String input);
+	protected abstract InputResponse process(String input);
+
+	public String getResponse() {
+		return StringUtils.stripToEmpty(formattedResponse);
+	}
 
 }

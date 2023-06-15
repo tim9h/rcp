@@ -80,12 +80,11 @@ public class CliView implements CCard {
 	}
 
 	private void copyResponseToClipboard() {
-		var text = lblResponse.getText();
+		var text = ic.getResponse();
 		if (StringUtils.isNotBlank(text)) {
-			lblInterpretation.setText(lblInterpretation.getText() + " (copied)");
-			logger.debug(() -> "Updating clipboard with content: " + lblResponse.getText());
-			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(lblResponse.getText()),
-					null);
+			lblInterpretation.setText(text + " (copied)");
+			logger.debug(() -> "Updating clipboard with content: " + text);
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 		}
 	}
 

@@ -16,7 +16,6 @@ public class InstantAnswer {
 	@SerializedName("AbstractURL")
 	private String abstractURL;
 
-//	@SerializedName("Answer")
 	private Answer answer;
 
 	@SerializedName("AnswerType")
