@@ -10,4 +10,9 @@ public record InputResponse(List<Text> interpretation, List<Text> response, Text
 		this(interpretation, response, response.get(0));
 	}
 
+	public InputResponse(List<String> interpretation, List<String> response, String responseFormatted) {
+		this(interpretation.stream().map(Text::new).toList(), response.stream().map(Text::new).toList(),
+				new Text(responseFormatted));
+	}
+
 }

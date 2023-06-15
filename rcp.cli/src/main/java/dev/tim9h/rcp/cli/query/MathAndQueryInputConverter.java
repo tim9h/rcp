@@ -71,14 +71,15 @@ public class MathAndQueryInputConverter extends InputConverter {
 		var maxLength = settings.getCharWidth();
 		if (answer != null && StringUtils.isNotBlank(answer.getAbstractText())) {
 			var interpretation = WordUtils.capitalize(answer.getEntity());
-			return new InputResponse(Arrays.asList(new Text(interpretation)),
-					Arrays.asList(new Text(StringUtils.abbreviate(answer.getAbstractText(), maxLength))));
+			return new InputResponse(Arrays.asList(interpretation), Arrays.asList(answer.getAbstractText()),
+					StringUtils.abbreviate(answer.getAbstractText(), maxLength));
 		} else {
 			var suggestions = queryService.getSuggestions(input);
+			var suggestionsList = StringUtils.join(suggestions, ", ");
 			if (!suggestions.isEmpty()) {
-				var suggestionsLabel = StringUtils.abbreviate(StringUtils.join(suggestions, ", "), maxLength);
-				return new InputResponse(Arrays.asList(new Text("Suggestions")),
-						Arrays.asList(new Text(suggestionsLabel)));
+				var suggestionsLabel = StringUtils.abbreviate(suggestionsList, maxLength);
+				return new InputResponse(Arrays.asList("Suggestions"), Arrays.asList(suggestionsList),
+						suggestionsLabel);
 			}
 			return new InputResponse(Arrays.asList(new Text(StringUtils.EMPTY)),
 					Arrays.asList(new Text(StringUtils.EMPTY)));
