@@ -49,25 +49,29 @@ public abstract class InputConverter extends DelayedRunner {
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
 		inputProperty.addListener((ChangeListener<String>) (observable, oldValue, newValue) -> CompletableFuture
-				.runAsync(() -> runDelayed(() -> {
-					if (StringUtils.isNotBlank(newValue)) {
-						var process = process(newValue);
-						formattedResponse = process.response().stream().map(Text::getText)
-								.collect(Collectors.joining(StringUtils.EMPTY));
+				.runAsync(() -> runDelayed(() -> onInputChanged(interpretation, response, oldValue, newValue))));
+	}
 
-						Platform.runLater(() -> {
-							if (process != null) {
-								interpretation.showText(process.interpretation());
-								response.showText(process.responseFormatted());
-							}
-						});
-					} else if (!oldValue.startsWith(">")) {
-						Platform.runLater(() -> {
-							interpretation.hideText();
-							response.hideText();
-						});
+	private void onInputChanged(AnimatedLabel interpretation, AnimatedLabel response, String oldValue,
+			String newValue) {
+		if (StringUtils.isNotBlank(newValue)) {
+			var process = process(newValue);
+			if (process != null) {
+				formattedResponse = process.response().stream().map(Text::getText)
+						.collect(Collectors.joining(StringUtils.EMPTY));
+				Platform.runLater(() -> {
+					if (process != null) {
+						interpretation.showText(process.interpretation());
+						response.showText(process.responseFormatted());
 					}
-				})));
+				});
+			}
+		} else if (!oldValue.startsWith(">")) {
+			Platform.runLater(() -> {
+				interpretation.hideText();
+				response.hideText();
+			});
+		}
 	}
 
 	protected abstract InputResponse process(String input);
