@@ -8,19 +8,6 @@ import dev.tim9h.rcp.spi.CCard;
 
 public class CCardSorter implements Comparator<Object> {
 
-	private static CCardSorter instance;
-
-	private CCardSorter() {
-		// hide implicit public constructor
-	}
-
-	public static CCardSorter getInstance() {
-		if (instance == null) {
-			instance = new CCardSorter();
-		}
-		return instance;
-	}
-
 	@Override
 	public int compare(Object object1, Object object2) {
 		var card1 = (CCard) object1;

@@ -416,7 +416,7 @@ public class UiApplication extends Application {
 			settings.addSettings(fac.get().getSettingsContributions());
 			logger.info(() -> "Injecting " + fac.get().getClass().getSimpleName());
 			return injector.getInstance(fac.get().getClass()).createCCard();
-		}).sorted(CCardSorter.getInstance()).toList();
+		}).sorted(new CCardSorter()).toList();
 		var commands = new TreeNode<>(StringUtils.EMPTY);
 		ccards.forEach(card -> {
 			card.getStylesheet().ifPresent(scene.getStylesheets()::add);
