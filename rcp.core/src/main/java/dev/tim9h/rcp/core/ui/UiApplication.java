@@ -82,6 +82,8 @@ public class UiApplication extends Application {
 
 	private static final String PLUGINS = "plugins";
 
+	private static final String CONST_REPOSITION = "reposition";
+
 	@InjectLogger
 	private Logger logger;
 
@@ -469,6 +471,9 @@ public class UiApplication extends Application {
 		commandSettings.add("overwrites", RELOAD);
 		commands.add(commandSettings);
 
+		var commandReposition = new TreeNode<>(CONST_REPOSITION);
+		commands.add(commandReposition);
+
 		return commands;
 	}
 
@@ -588,6 +593,7 @@ public class UiApplication extends Application {
 		eventManager.listen("restart", args -> restartApplication());
 		eventManager.listen(PLUGINS, this::handlePluginsCommand);
 		eventManager.listen("plugindir", args -> openPluginsDirectory());
+		eventManager.listen(CONST_REPOSITION, this::reposition);
 	}
 
 	private void handleSettingCommand(Object[] args) {
@@ -646,6 +652,12 @@ public class UiApplication extends Application {
 			logger.info(() -> "Active plugins: " + pluginlist);
 			eventManager.echo("Active plugins", StringUtils.abbreviate(pluginlist, settings.getCharWidth()));
 		}
+	}
+
+	private void reposition(Object[] args) {
+		stage.setX(calculateXposition());
+		stage.setY(0);
+		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
 	}
 
 }
