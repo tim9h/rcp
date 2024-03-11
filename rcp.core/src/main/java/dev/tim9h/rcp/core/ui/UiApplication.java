@@ -343,6 +343,7 @@ public class UiApplication extends Application {
 	private void createTray() {
 		tray.createMenuItem("exitApp", "Exit", this::shutdown, true);
 		tray.createMenuItem(PLUGINS, "Open plugins directory", this::openPluginsDirectory, true);
+		tray.createMenuItem(CONST_REPOSITION, "Reposition", this::reposition);
 		tray.createMenuItem(RELOAD, "Restart Application", this::restartApplication);
 		tray.createMenuItem("f5settings", "Reload Settings", settings::loadProperties);
 		tray.createMenuItem(CONST_SETTINGS, "Open Settings", this::openSettingsFile);
@@ -593,7 +594,7 @@ public class UiApplication extends Application {
 		eventManager.listen("restart", args -> restartApplication());
 		eventManager.listen(PLUGINS, this::handlePluginsCommand);
 		eventManager.listen("plugindir", args -> openPluginsDirectory());
-		eventManager.listen(CONST_REPOSITION, this::reposition);
+		eventManager.listen(CONST_REPOSITION, args -> reposition());
 	}
 
 	private void handleSettingCommand(Object[] args) {
@@ -654,7 +655,7 @@ public class UiApplication extends Application {
 		}
 	}
 
-	private void reposition(Object[] args) {
+	private void reposition() {
 		stage.setX(calculateXposition());
 		stage.setY(0);
 		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
