@@ -481,10 +481,7 @@ public class UiApplication extends Application {
 	private void initGlobalHotkeys() {
 		// register hotkey to show/hide even if other window has focus
 		Provider.getCurrentProvider(false).register(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)),
-				hotkey -> {
-					logger.debug(() -> "Toggle Hotkey detected");
-					Platform.runLater(() -> toggleVisibility(true, true));
-				});
+				hotkey -> Platform.runLater(() -> toggleVisibility(true, true)));
 	}
 
 	private void restartApplication() {

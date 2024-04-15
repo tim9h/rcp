@@ -7,13 +7,11 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
 
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
-import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.animation.FadeTransition;
 import javafx.scene.layout.FlowPane;
@@ -36,9 +34,6 @@ public class AnimatedLabel extends FlowPane {
 	private FadeTransition fadeIn;
 
 	private FadeTransition fadeOut;
-
-	@InjectLogger
-	private Logger logger;
 
 	private Timer timer;
 
@@ -161,7 +156,6 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showFadingText(int decaytime, String text) {
-		logger.debug(() -> "Showing fading text '" + text + "' for " + decaytime + " ms");
 		timer.cancel();
 		timer.purge();
 		showText(text);
@@ -169,14 +163,12 @@ public class AnimatedLabel extends FlowPane {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				logger.debug(() -> "Hiding text after " + decaytime + " ms");
 				hideText();
 			}
 		}, decaytime);
 	}
 
 	public void showFadingText(int decaytime, Text... texts) {
-		logger.debug(() -> "Showing fading texts for " + decaytime + " ms");
 		timer.cancel();
 		timer.purge();
 		showText(texts);
@@ -184,7 +176,6 @@ public class AnimatedLabel extends FlowPane {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				logger.debug(() -> "Hiding text after " + decaytime + " ms");
 				hideText();
 			}
 		}, decaytime);

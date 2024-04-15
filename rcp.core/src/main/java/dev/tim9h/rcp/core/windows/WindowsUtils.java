@@ -95,11 +95,9 @@ public class WindowsUtils {
 					state = newState;
 					switch (state) {
 					case ONLINE:
-						logger.debug(() -> "Idle state: online");
 						Platform.runLater(listener::onOnline);
 						break;
 					case AWAY:
-						logger.debug(() -> "Idle state: away");
 						Platform.runLater(listener::onAway);
 						break;
 					case UNKNOWN:
@@ -107,7 +105,6 @@ public class WindowsUtils {
 						Platform.runLater(listener::onUknown);
 						break;
 					case IDLE:
-						logger.debug(() -> "Idle state: idle");
 						Platform.runLater(listener::onIdle);
 						break;
 					default:
