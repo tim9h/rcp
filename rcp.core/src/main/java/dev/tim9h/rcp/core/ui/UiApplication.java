@@ -563,7 +563,7 @@ public class UiApplication extends Application {
 		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
 		CompletableFuture.runAsync(() -> {
 			try {
-				Thread.sleep(500);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				logger.error(() -> "Error while shutdown", e);
 				Thread.currentThread().interrupt();
@@ -571,7 +571,7 @@ public class UiApplication extends Application {
 			ccards.forEach(CCard::onShutdown);
 			tray.removeTrayIcon();
 			Platform.exit();
-			System.exit(0);
+			Platform.runLater(() -> System.exit(0));
 		});
 	}
 
