@@ -35,4 +35,8 @@ public interface EventManager {
 
 	public void showToastAsync(String title, String message);
 
+	public void textToSpeech(String text);
+
+	public void textToSpeechAsync(String text);
+
 }

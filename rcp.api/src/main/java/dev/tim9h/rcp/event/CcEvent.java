@@ -31,6 +31,8 @@ public record CcEvent(String name, Object... payload) {
 
 	public static final String EVENT_TOAST = "TRAY_SHOW_TOAST";
 
+	public static final String EVENT_TTS = "TTS";
+
 	public CcEvent(String name) {
 		this(name, (Object[]) null);
 	}

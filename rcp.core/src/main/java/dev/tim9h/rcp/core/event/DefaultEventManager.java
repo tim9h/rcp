@@ -101,4 +101,14 @@ public class DefaultEventManager implements EventManager {
 		Platform.runLater(() -> showToast(title, message));
 	}
 
+	@Override
+	public void textToSpeech(String text) {
+		post(new CcEvent(CcEvent.EVENT_TTS, text));
+	}
+
+	@Override
+	public void textToSpeechAsync(String text) {
+		Platform.runLater(() -> textToSpeech(text));
+	}
+
 }
