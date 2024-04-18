@@ -23,7 +23,8 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.Mode;
 import javafx.application.Platform;
-import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 
 @Singleton
 public class ModeServiceImpl implements ModeService {
@@ -78,7 +79,7 @@ public class ModeServiceImpl implements ModeService {
 	private Mode createAlertMode() {
 		return new Mode() {
 
-			private AudioClip alert;
+			private MediaPlayer alert;
 
 			@Override
 			public String getName() {
@@ -91,7 +92,10 @@ public class ModeServiceImpl implements ModeService {
 				eventManager.echo("ALARM!", "Alert mode activated");
 
 				if (alert == null) {
-					alert = new AudioClip(getClass().getResource("/media/imperial_alert.mp3").toExternalForm());
+					var source = getClass().getResource("/media/imperial_alert.mp3").toExternalForm();
+					alert = new MediaPlayer(new Media(source));
+					alert.setCycleCount(120);
+					alert.setVolume(0.2);
 				}
 				Platform.runLater(alert::play);
 			}
@@ -165,19 +169,19 @@ public class ModeServiceImpl implements ModeService {
 					public void onAway() {
 						disableMode("idle");
 						enableMode("afk", true);
-						eventManager.echo("You are now afk");
+						eventManager.echo("See you later");
 					}
 				});
 			}
 
 			@Override
 			public void onEnable() {
-				// callback method
+				eventManager.echo("See you later");
 			}
 
 			@Override
 			public void onDisable() {
-				// callback method
+				eventManager.echo("Welcome back");
 			}
 		};
 	}
