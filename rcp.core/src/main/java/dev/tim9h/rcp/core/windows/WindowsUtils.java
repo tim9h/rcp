@@ -24,6 +24,10 @@ public class WindowsUtils {
 
 	private IdleState state = IdleState.UNKNOWN;
 
+	private static final int AFK_MINUTES = 10;
+
+	private static final int IDLE_SECONDS = 30;
+
 	public static boolean isWindows() {
 		return System.getProperty("os.name").startsWith("Windows");
 	}
@@ -86,10 +90,10 @@ public class WindowsUtils {
 			public void run() {
 				var idleSec = getIdleTimeMillisWin32() / 1000;
 				IdleState newState;
-				if (idleSec < 30)
+				if (idleSec < IDLE_SECONDS)
 					newState = IdleState.ONLINE;
 				else
-					newState = idleSec > 5 * 60 ? IdleState.AWAY : IdleState.IDLE;
+					newState = idleSec > AFK_MINUTES * 60 ? IdleState.AWAY : IdleState.IDLE;
 
 				if (newState != state) {
 					state = newState;
