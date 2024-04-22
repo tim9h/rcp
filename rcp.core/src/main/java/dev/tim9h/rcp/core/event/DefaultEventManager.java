@@ -111,4 +111,15 @@ public class DefaultEventManager implements EventManager {
 		Platform.runLater(() -> textToSpeech(text));
 	}
 
+	@Override
+	public void say(String text) {
+		post(new CcEvent(CcEvent.EVENT_SAY, text));
+
+	}
+
+	@Override
+	public void sayAsync(String text) {
+		Platform.runLater(() -> say(text));
+	}
+
 }

@@ -33,6 +33,8 @@ public record CcEvent(String name, Object... payload) {
 
 	public static final String EVENT_TTS = "TTS";
 
+	public static final String EVENT_SAY = "TTS.SAY";
+
 	public CcEvent(String name) {
 		this(name, (Object[]) null);
 	}

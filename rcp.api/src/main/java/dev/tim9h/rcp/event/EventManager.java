@@ -39,4 +39,8 @@ public interface EventManager {
 
 	public void textToSpeechAsync(String text);
 
+	public void say(String text);
+
+	public void sayAsync(String text);
+
 }
