@@ -10,7 +10,7 @@ import dev.tim9h.rcp.spi.CCardFactory;
 
 public class ${pluginNameHyphened}ViewFactory implements CCardFactory  {
 
-	static final String SETTINGR_FOO = "${pluginName}.sample.setting";
+	static final String SETTING_FOO = "${pluginName}.sample.setting";
 
 	@Inject 
 	private ${pluginNameHyphened}View view;
@@ -27,7 +27,7 @@ public class ${pluginNameHyphened}ViewFactory implements CCardFactory  {
 
 	@Override
 	public Map<String, String> getSettingsContributions() {
-		// return Map.of(SETTINGR_FOO, "bar");
+		// return Map.of(SETTING_FOO, "bar");
 		return Collections.emptyMap();
 	}
 
