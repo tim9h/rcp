@@ -36,7 +36,7 @@ public class IconButton extends StackPane {
 
 	public void setOnAction(EventHandler<ActionEvent> value) {
 		button.setOnAction(value);
-		button.setOnMouseReleased(e -> eventManager.post(new CcEvent(CcEvent.EVENT_CLI_REQUEST_FOCUS)));
+		button.setOnMouseReleased(_ -> eventManager.post(new CcEvent(CcEvent.EVENT_CLI_REQUEST_FOCUS)));
 	}
 
 }

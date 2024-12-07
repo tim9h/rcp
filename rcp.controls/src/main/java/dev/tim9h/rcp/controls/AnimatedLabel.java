@@ -44,7 +44,7 @@ public class AnimatedLabel extends FlowPane {
 	@Inject
 	public AnimatedLabel(Settings settings, EventManager eventManager) {
 		this.settings = settings;
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, data -> duration = null);
+		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> duration = null);
 
 		fadeIn = new FadeTransition(getAnimationDuration(), this);
 		fadeIn.setFromValue(0.0);
@@ -185,7 +185,7 @@ public class AnimatedLabel extends FlowPane {
 		if (!getText().isBlank()) {
 			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
 				fadeOut.play();
-				fadeOut.setOnFinished(e -> setText(StringUtils.EMPTY));
+				fadeOut.setOnFinished(_ -> setText(StringUtils.EMPTY));
 			} else {
 				setText(StringUtils.EMPTY);
 			}

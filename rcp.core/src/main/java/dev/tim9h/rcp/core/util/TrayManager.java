@@ -102,7 +102,7 @@ public class TrayManager {
 		var menuItem = new MenuItem();
 		menuItem.setName(name);
 		menuItem.setLabel(label);
-		menuItem.addActionListener(event -> action.run());
+		menuItem.addActionListener(_ -> action.run());
 		popupMenu.insert(menuItem, 0);
 	}
 

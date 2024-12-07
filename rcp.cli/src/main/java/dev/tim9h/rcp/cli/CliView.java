@@ -68,7 +68,7 @@ public class CliView implements CCard {
 	public void initBus(EventManager em) {
 		CCard.super.initBus(em);
 		em.listen(CcEvent.EVENT_CLI_RESPONSE, this::showDetailedResponse);
-		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, action -> tfiInput.requestFocus());
+		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
 		em.listen(CcEvent.EVENT_CLI_ADD_PROPOSALS, data -> {
 			if (data instanceof String[] sData) {
 				Arrays.stream(sData).map(TreeNode::new).forEach(tfiInput::addCommand);
@@ -76,7 +76,7 @@ public class CliView implements CCard {
 				Arrays.stream(data).map(TreeNode.class::cast).forEach(tfiInput::addCommand);
 			}
 		});
-		em.listen(CcEvent.EVENT_CLI_RESPONSE_COPY, data -> copyResponseToClipboard());
+		em.listen(CcEvent.EVENT_CLI_RESPONSE_COPY, _ -> copyResponseToClipboard());
 	}
 
 	private void copyResponseToClipboard() {

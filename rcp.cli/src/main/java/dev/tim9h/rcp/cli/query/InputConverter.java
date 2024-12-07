@@ -40,7 +40,7 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	private void initBus() {
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, data -> initSettings());
+		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> initSettings());
 	}
 
 	private void initSettings() {
@@ -48,7 +48,7 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
-		inputProperty.addListener((ChangeListener<String>) (observable, oldValue, newValue) -> CompletableFuture
+		inputProperty.addListener((ChangeListener<String>) (_, oldValue, newValue) -> CompletableFuture
 				.runAsync(() -> runDelayed(() -> onInputChanged(interpretation, response, oldValue, newValue))));
 	}
 

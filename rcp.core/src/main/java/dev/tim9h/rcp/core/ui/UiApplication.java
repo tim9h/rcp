@@ -190,7 +190,7 @@ public class UiApplication extends Application {
 			Blur.loadBlurLibrary();
 			Blur.applyBlur(stage, Blur.BLUR_BEHIND);
 		}
-		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> shutdown());
+		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> shutdown());
 
 		modeService.initDefaultModes();
 	}
@@ -209,14 +209,14 @@ public class UiApplication extends Application {
 		stage.initStyle(StageStyle.TRANSPARENT);
 
 		// show panel when clicking on top
-		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, _ -> {
 			if (stage.getHeight() < 20) { // height is greater than 1 with DPI scaling
 				toggleVisibility(true, false);
 			}
 		});
 
 		// hide panel on focus loss
-		stage.focusedProperty().addListener((obs, oldval, newval) -> {
+		stage.focusedProperty().addListener((_, oldval, newval) -> {
 			if (Boolean.TRUE.equals(oldval) && Boolean.FALSE.equals(newval)) {
 				toggleVisibility(false, false);
 			}
@@ -481,7 +481,7 @@ public class UiApplication extends Application {
 	private void initGlobalHotkeys() {
 		// register hotkey to show/hide even if other window has focus
 		Provider.getCurrentProvider(false).register(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)),
-				hotkey -> Platform.runLater(() -> toggleVisibility(true, true)));
+				_ -> Platform.runLater(() -> toggleVisibility(true, true)));
 	}
 
 	private void restartApplication() {
@@ -584,14 +584,14 @@ public class UiApplication extends Application {
 	}
 
 	private void subscribeToDefaultEvents() {
-		eventManager.listen("exit", args -> shutdown());
-		eventManager.listen("exitimmediately", args -> prepareShutdown());
+		eventManager.listen("exit", _ -> shutdown());
+		eventManager.listen("exitimmediately", _ -> prepareShutdown());
 		eventManager.listen(SETTING, this::handleSettingCommand);
 		eventManager.listen(CONST_SETTINGS, this::handleSettingsCommand);
-		eventManager.listen("restart", args -> restartApplication());
+		eventManager.listen("restart", _ -> restartApplication());
 		eventManager.listen(PLUGINS, this::handlePluginsCommand);
-		eventManager.listen("plugindir", args -> openPluginsDirectory());
-		eventManager.listen(CONST_REPOSITION, args -> reposition());
+		eventManager.listen("plugindir", _ -> openPluginsDirectory());
+		eventManager.listen(CONST_REPOSITION, _ -> reposition());
 	}
 
 	private void handleSettingCommand(Object[] args) {

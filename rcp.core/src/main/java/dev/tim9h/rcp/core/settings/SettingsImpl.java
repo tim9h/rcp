@@ -97,7 +97,9 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void addSettings(Map<String, String> settings) {
-		logger.debug(() -> "Adding settings: " + settings);
+		if (!settings.isEmpty()) {
+			logger.debug(() -> "Adding settings: " + settings);
+		}
 		settings.entrySet().stream().forEach(set -> {
 			if (overwrites.containsKey(set.getKey())) {
 				overwrites.putIfAbsent(set.getKey(), set.getValue());

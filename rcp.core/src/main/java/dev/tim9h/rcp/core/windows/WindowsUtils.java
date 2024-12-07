@@ -44,7 +44,7 @@ public class WindowsUtils {
 	}
 
 	public void listAllWindows() {
-		user32.EnumWindows((hWnd, data) -> {
+		user32.EnumWindows((hWnd, _) -> {
 			var windowText = new char[512];
 			user32.GetWindowText(hWnd, windowText, 512);
 			var wText = Native.toString(windowText);

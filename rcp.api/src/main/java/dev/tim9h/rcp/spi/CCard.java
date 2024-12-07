@@ -33,9 +33,9 @@ public interface CCard {
 	}
 
 	public default void initBus(EventManager eventManager) {
-		eventManager.listen(CcEvent.EVENT_SHOWN, data -> onShown());
-		eventManager.listen(CcEvent.EVENT_HIDDEN, data -> onHidden());
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, data -> onSettingsChanged());
+		eventManager.listen(CcEvent.EVENT_SHOWN, _ -> onShown());
+		eventManager.listen(CcEvent.EVENT_HIDDEN, _ -> onHidden());
+		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> onSettingsChanged());
 	}
 
 	public default void onShown() {

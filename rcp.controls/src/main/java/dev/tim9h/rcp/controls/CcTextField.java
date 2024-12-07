@@ -59,7 +59,7 @@ public class CcTextField extends TextField {
 	}
 
 	private void initCommandMode() {
-		textProperty().addListener((obs, oldval, newval) -> {
+		textProperty().addListener((_, oldval, newval) -> {
 			if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX)) {
 				getStyleClass().add("highlight");
 				textProperty().setValue(COMMAND_PREFIX_SPACED);
@@ -71,7 +71,7 @@ public class CcTextField extends TextField {
 
 	private void saveSelection() {
 		selectionProperty()
-				.addListener((obs, oldval, newval) -> selection = newval.getStart() != newval.getEnd() ? newval : null);
+				.addListener((_, _, newval) -> selection = newval.getStart() != newval.getEnd() ? newval : null);
 	}
 
 	private void handleKeyTyped(KeyEvent event) {
