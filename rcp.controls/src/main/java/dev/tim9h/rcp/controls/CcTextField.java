@@ -9,7 +9,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 
+import dev.tim9h.collections.LimitedIterableStack;
 import dev.tim9h.rcp.controls.utils.UserInput;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
@@ -45,8 +47,12 @@ public class CcTextField extends TextField {
 
 	@Inject
 	private Settings settings;
+	
+	private LimitedIterableStack<String> history;
 
-	public CcTextField() {
+	@Inject
+	public CcTextField(Injector injector) {
+		injector.injectMembers(this);
 		setContextMenu(null);
 		getStyleClass().add("cli-input");
 		setOnKeyPressed(this::handleKeyPressed);
@@ -56,6 +62,7 @@ public class CcTextField extends TextField {
 		saveSelection();
 		initCommandMode();
 		disableTabNavigation();
+		initHistory();
 	}
 
 	private void initCommandMode() {
@@ -101,6 +108,8 @@ public class CcTextField extends TextField {
 		if (event.getCode() == KeyCode.ENTER && event.isShiftDown()) {
 			eventManager.post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE_COPY));
 		} else if (event.getCode() == KeyCode.ENTER && submitAction != null) {
+			logger.debug(() -> "submitting");
+			history.push(textProperty().getValue());
 			submitAction.accept(textProperty().getValue());
 		} else if (event.getCode() == KeyCode.DELETE && event.isShiftDown()) {
 			clear();
@@ -110,6 +119,24 @@ public class CcTextField extends TextField {
 			selectedText = textProperty().getValue().substring(selection.getStart(), selection.getEnd());
 		} else if (event.getCode() == KeyCode.P && event.isShiftDown() && event.isControlDown()) {
 			handleCtrlShiftP();
+		} else if (event.getCode() == KeyCode.UP) {
+			if (!getStyleClass().contains("history")) {
+				getStyleClass().add("history");
+			}
+			var prev = history.previous();
+			textProperty().set(StringUtils.defaultString(prev));
+			positionCaret(getText().length());
+		} else if (event.getCode() == KeyCode.DOWN) {
+			if (!getStyleClass().contains("history")) {
+				getStyleClass().add("history");
+			}
+			var next = history.next();
+			textProperty().set(StringUtils.defaultString(next));
+			positionCaret(getText().length());
+		}
+		if (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN) {
+            history.resetCursor();
+            getStyleClass().remove("history");
 		}
 	}
 
@@ -215,6 +242,15 @@ public class CcTextField extends TextField {
 
 	public void addCommand(TreeNode<String> command) {
 		getCommands().add(command);
+	}
+	
+	private void initHistory() {
+		var size = settings.getInt("cli.history.size");
+		if (size == null) {
+			settings.addSetting("cli.history.size", "5");
+			size = 5;
+		}
+		history = new LimitedIterableStack<>(size);
 	}
 
 }
