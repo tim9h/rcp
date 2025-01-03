@@ -119,9 +119,10 @@ public class CliView implements CCard {
 		colCenter.setPercentWidth(60);
 		inputGrid.getColumnConstraints().addAll(colSide, colCenter, colSide);
 		lblInterpretation.getStyleClass().add("interpretation-label");
-		lblInterpretation.setClipWidth(475);
+		var width = settings.getDouble("core.ui.stage.width").doubleValue() - 25;
+		lblInterpretation.setClipWidth(width);
 		lblResponse.getStyleClass().add("response-label");
-		lblResponse.setClipWidth(475);
+		lblResponse.setClipWidth(width);
 		tfiInput.setOnSubmit(value -> {
 			CliView.this.submitInput(value);
 			tfiInput.clear();
