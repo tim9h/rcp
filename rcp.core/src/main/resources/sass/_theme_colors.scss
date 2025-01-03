@@ -98,7 +98,7 @@
 			-fx-text-fill: $accent-color;
 		}
 		&.history {
-			-fx-text-fill: $text-color-secondary;
+			-fx-text-fill: $text-color-secondary !important;
 		}
 	}
 }

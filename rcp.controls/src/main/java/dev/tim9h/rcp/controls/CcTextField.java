@@ -27,6 +27,8 @@ import javafx.scene.input.KeyEvent;
 
 public class CcTextField extends TextField {
 
+	private static final String CLASS_HIGHLIGHT = "highlight";
+
 	private static final String HISTORY = "history";
 
 	private static final String COMMAND_PREFIX = ">";
@@ -70,11 +72,13 @@ public class CcTextField extends TextField {
 
 	private void initCommandMode() {
 		textProperty().addListener((_, oldval, newval) -> {
-			if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX)) {
-				getStyleClass().add("highlight");
+			if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX_SPACED)) {
+				getStyleClass().add(CLASS_HIGHLIGHT);
+			} else if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX)) {
+				getStyleClass().add(CLASS_HIGHLIGHT);
 				textProperty().setValue(COMMAND_PREFIX_SPACED);
 			} else if (oldval.startsWith(COMMAND_PREFIX) && !newval.startsWith(COMMAND_PREFIX)) {
-				getStyleClass().remove("highlight");
+				getStyleClass().remove(CLASS_HIGHLIGHT);
 			}
 		});
 	}
