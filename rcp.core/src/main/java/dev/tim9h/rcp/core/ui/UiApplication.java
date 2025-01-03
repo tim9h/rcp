@@ -462,7 +462,7 @@ public class UiApplication extends Application {
 
 	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
 		commands.add(themeService.getThemeCommands());
-		commands.add("restart", "exit", "modes", SETTING, "plugindir");
+		commands.add("restart", "exit", "modes", SETTING, "plugindir", "clear");
 
 		var commandPlugins = new TreeNode<>(PLUGINS);
 		commandPlugins.add(WHITELIST, BLACKLIST);
@@ -592,6 +592,7 @@ public class UiApplication extends Application {
 		eventManager.listen(PLUGINS, this::handlePluginsCommand);
 		eventManager.listen("plugindir", _ -> openPluginsDirectory());
 		eventManager.listen(CONST_REPOSITION, _ -> reposition());
+		eventManager.listen("clear", _ -> eventManager.clear());
 	}
 
 	private void handleSettingCommand(Object[] args) {

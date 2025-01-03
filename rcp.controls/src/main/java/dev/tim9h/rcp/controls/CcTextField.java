@@ -27,6 +27,8 @@ import javafx.scene.input.KeyEvent;
 
 public class CcTextField extends TextField {
 
+	private static final String HISTORY = "history";
+
 	private static final String COMMAND_PREFIX = ">";
 
 	public static final String COMMAND_PREFIX_SPACED = COMMAND_PREFIX + StringUtils.SPACE;
@@ -48,7 +50,7 @@ public class CcTextField extends TextField {
 	@Inject
 	private Settings settings;
 	
-	private LimitedIterableStack<String> history;
+	private LimitedIterableStack<String> inputHistory;
 
 	@Inject
 	public CcTextField(Injector injector) {
@@ -63,6 +65,7 @@ public class CcTextField extends TextField {
 		initCommandMode();
 		disableTabNavigation();
 		initHistory();
+		eventManager.listen("clear", _ -> inputHistory.clear());
 	}
 
 	private void initCommandMode() {
@@ -109,7 +112,7 @@ public class CcTextField extends TextField {
 			eventManager.post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE_COPY));
 		} else if (event.getCode() == KeyCode.ENTER && submitAction != null) {
 			logger.debug(() -> "submitting");
-			history.push(textProperty().getValue());
+			inputHistory.push(textProperty().getValue());
 			submitAction.accept(textProperty().getValue());
 		} else if (event.getCode() == KeyCode.DELETE && event.isShiftDown()) {
 			clear();
@@ -120,24 +123,32 @@ public class CcTextField extends TextField {
 		} else if (event.getCode() == KeyCode.P && event.isShiftDown() && event.isControlDown()) {
 			handleCtrlShiftP();
 		} else if (event.getCode() == KeyCode.UP) {
-			if (!getStyleClass().contains("history")) {
-				getStyleClass().add("history");
-			}
-			var prev = history.previous();
-			textProperty().set(StringUtils.defaultString(prev));
-			positionCaret(getText().length());
+			historyPrevious();
 		} else if (event.getCode() == KeyCode.DOWN) {
-			if (!getStyleClass().contains("history")) {
-				getStyleClass().add("history");
-			}
-			var next = history.next();
-			textProperty().set(StringUtils.defaultString(next));
-			positionCaret(getText().length());
+			historyNext();
 		}
 		if (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN) {
-            history.resetCursor();
-            getStyleClass().remove("history");
+			inputHistory.resetCursor();
+            getStyleClass().remove(HISTORY);
 		}
+	}
+
+	private void historyPrevious() {
+		if (!getStyleClass().contains(HISTORY)) {
+			getStyleClass().add(HISTORY);
+		}
+		var prev = inputHistory.previous();
+		textProperty().set(StringUtils.defaultString(prev));
+		positionCaret(getText().length());
+	}
+	
+	private void historyNext() {
+		if (!getStyleClass().contains(HISTORY)) {
+			getStyleClass().add(HISTORY);
+		}
+		var next = inputHistory.next();
+		textProperty().set(StringUtils.defaultString(next));
+		positionCaret(getText().length());
 	}
 
 	private void handleCtrlShiftP() {
@@ -250,7 +261,7 @@ public class CcTextField extends TextField {
 			settings.addSetting("cli.history.size", "5");
 			size = 5;
 		}
-		history = new LimitedIterableStack<>(size);
+		inputHistory = new LimitedIterableStack<>(size);
 	}
 
 }
