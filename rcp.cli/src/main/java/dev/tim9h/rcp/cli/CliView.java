@@ -119,10 +119,8 @@ public class CliView implements CCard {
 		colCenter.setPercentWidth(60);
 		inputGrid.getColumnConstraints().addAll(colSide, colCenter, colSide);
 		lblInterpretation.getStyleClass().add("interpretation-label");
-		var width = settings.getDouble("core.ui.stage.width").doubleValue() - 25;
-		lblInterpretation.setClipWidth(width);
+		calculateWidth();
 		lblResponse.getStyleClass().add("response-label");
-		lblResponse.setClipWidth(width);
 		tfiInput.setOnSubmit(value -> {
 			CliView.this.submitInput(value);
 			tfiInput.clear();
@@ -131,6 +129,12 @@ public class CliView implements CCard {
 		var outerPane = new VBox(lblInterpretation, lblResponse, inputGrid);
 		outerPane.getStyleClass().add("plugin-cli");
 		return Optional.of(outerPane);
+	}
+	
+	private void calculateWidth() {
+		var width = settings.getDouble("core.ui.stage.width").doubleValue() - 25;
+		lblInterpretation.setClipWidth(width);
+		lblResponse.setClipWidth(width);
 	}
 
 	@Override
@@ -181,6 +185,11 @@ public class CliView implements CCard {
 			}
 		}
 
+	}
+	
+	@Override
+	public void onSettingsChanged() {
+		calculateWidth();
 	}
 
 }
