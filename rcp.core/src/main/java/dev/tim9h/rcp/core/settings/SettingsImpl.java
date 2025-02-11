@@ -76,7 +76,7 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void persistProperties() {
-		logger.info(() -> "Updating persisted properties");
+		logger.debug(() -> "Updating persisted properties");
 		try (OutputStream outputStream = Files.newOutputStream(propertiesPath)) {
 			properties.store(outputStream, null);
 			eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
