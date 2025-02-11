@@ -597,9 +597,13 @@ public class UiApplication extends Application {
 	}
 
 	private void handleSettingCommand(Object[] args) {
-		// TODO: support name=value
 		if (args == null) {
 			eventManager.echo("Missing setting key");
+		} else if (args.length == 1 && StringUtils.split((String) args[0], "=").length == 2) {
+			var split = StringUtils.split((String) args[0], "=");
+			settings.persist(split[0], split[1]);
+			logger.info(() -> "Setting " + split[0] + " persisted");
+			eventManager.echo("Setting persisted");
 		} else if (args.length == 1) {
 			var key = StringUtils.join(args);
 			var val = settings.getString(key);
