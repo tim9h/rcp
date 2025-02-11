@@ -593,9 +593,11 @@ public class UiApplication extends Application {
 		eventManager.listen("plugindir", _ -> openPluginsDirectory());
 		eventManager.listen(CONST_REPOSITION, _ -> reposition());
 		eventManager.listen("clear", _ -> eventManager.clear());
+		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
 	}
 
 	private void handleSettingCommand(Object[] args) {
+		// TODO: support name=value
 		if (args == null) {
 			eventManager.echo("Missing setting key");
 		} else if (args.length == 1) {
