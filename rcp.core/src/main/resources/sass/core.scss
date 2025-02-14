@@ -76,17 +76,3 @@ $default-font-size: 14;
 	    -fx-scale-z: 0.95;
 	}
 }
-
-.plugin-cli {
-	-fx-spacing: 5px;
-	
-	.text {
-		-fx-font-size: $default-font-size;
-	}
-	
-	.text-field {
-		&.highlight {
-			-fx-font-family: "Cascadia Code Regular";
-		}
-	}
-}

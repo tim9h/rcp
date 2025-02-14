@@ -1,6 +1,11 @@
+$default-font-size: 14;
+
 .plugin-cli {
-	-fx-hgap: 10px;
-	-fx-vgap: 5px;
+	-fx-spacing: 10px;
+	
+	.text {
+		-fx-font-size: $default-font-size;
+	}
 
 	.label {
 
@@ -22,7 +27,9 @@
 		&.cli-input {
 			-fx-font-size: 15px;
 		}
-		
+		&.highlight {
+			-fx-font-family: "Cascadia Code Regular";
+		}
 	}
 	
 }
