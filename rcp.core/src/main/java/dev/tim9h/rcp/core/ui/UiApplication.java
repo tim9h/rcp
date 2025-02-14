@@ -18,6 +18,7 @@ import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -400,7 +401,30 @@ public class UiApplication extends Application {
 	}
 
 	private void initNodes(VBox vbox) {
-		ccards = loader.stream().filter(fac -> {
+		ccards = loader.stream().filter(filterCards()).map(fac -> {
+			settings.addSettings(fac.get().getSettingsContributions());
+			logger.info(() -> "Injecting " + fac.get().getClass().getSimpleName());
+			return injector.getInstance(fac.get().getClass()).createCCard();
+		}).sorted(new CCardSorter()).toList();
+		var commands = new TreeNode<>(StringUtils.EMPTY);
+		ccards.forEach(card -> initCard(vbox, commands, card));
+		addAdditionalCommands(commands);
+		eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, commands.getChildren().toArray()));
+
+		initSettings();
+		settings.persistProperties();
+
+		// create spacer between middle and bottom cards
+		if (settings.getBoolean(SettingsConsts.BOTTOM_SPACER).booleanValue()) {
+			var upperCards = ccards.stream().filter(card -> card.getGravity().position() != Position.BOTTOM).count();
+			var spacer = new Region();
+			VBox.setVgrow(spacer, Priority.ALWAYS);
+			vbox.getChildren().add((int) upperCards, spacer);
+		}
+	}
+
+	private Predicate<? super java.util.ServiceLoader.Provider<CCardFactory>> filterCards() {
+		return fac -> {
 			if (pluginWhitelist != null) {
 				var value = pluginWhitelist.contains(fac.get().getId().toLowerCase());
 				if (value) {
@@ -415,49 +439,34 @@ public class UiApplication extends Application {
 				return value;
 			}
 			return true;
-		}).map(fac -> {
-			settings.addSettings(fac.get().getSettingsContributions());
-			logger.info(() -> "Injecting " + fac.get().getClass().getSimpleName());
-			return injector.getInstance(fac.get().getClass()).createCCard();
-		}).sorted(new CCardSorter()).toList();
-		var commands = new TreeNode<>(StringUtils.EMPTY);
-		ccards.forEach(card -> {
-			card.getStylesheet().ifPresent(scene.getStylesheets()::add);
-			card.init();
-			try {
-				card.getNode().ifPresent(vbox.getChildren()::add);
-				logger.info(() -> "Plugin loaded: " + card.getName());
-			} catch (IOException e) {
-				logger.error(() -> "Unable to initialize nodes", e);
-			}
-			card.initBus(eventManager);
-			card.getModes().ifPresent(modes -> modes.forEach(mode -> {
-				modeService.initMode(mode);
-				commands.add(mode.getCommandTree());
-			}));
-			card.getMenuItems().ifPresent(list -> {
-				Collections.reverse(list);
-				list.forEach(menuItem -> tray.createMenuItem(menuItem.name(), menuItem.label(), menuItem.action()));
-			});
-			card.getModelessCommands().ifPresent(command -> {
-				if (!command.get().isBlank()) {
-					commands.add(command);
-				} else {
-					command.getChildren().forEach(commands::add);
-				}
-			});
+		};
+	}
+
+	private void initCard(VBox vbox, TreeNode<String> commands, CCard card) {
+		card.getStylesheet().ifPresent(scene.getStylesheets()::add);
+		card.init();
+		try {
+			card.getNode().ifPresent(vbox.getChildren()::add);
+			logger.info(() -> "Plugin loaded: " + card.getName());
+		} catch (IOException e) {
+			logger.error(() -> "Unable to initialize nodes", e);
+		}
+		card.initBus(eventManager);
+		card.getModes().ifPresent(modes -> modes.forEach(mode -> {
+			modeService.initMode(mode);
+			commands.add(mode.getCommandTree());
+		}));
+		card.getMenuItems().ifPresent(list -> {
+			Collections.reverse(list);
+			list.forEach(menuItem -> tray.createMenuItem(menuItem.name(), menuItem.label(), menuItem.action()));
 		});
-		addAdditionalCommands(commands);
-		eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, commands.getChildren().toArray()));
-
-		initSettings();
-		settings.persistProperties();
-
-		// create spacer between middle and bottom cards
-		var upperCards = ccards.stream().filter(card -> card.getGravity().position() != Position.BOTTOM).count();
-		var spacer = new Region();
-		VBox.setVgrow(spacer, Priority.ALWAYS);
-		vbox.getChildren().add((int) upperCards, spacer);
+		card.getModelessCommands().ifPresent(command -> {
+			if (!command.get().isBlank()) {
+				commands.add(command);
+			} else {
+				command.getChildren().forEach(commands::add);
+			}
+		});
 	}
 
 	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
@@ -546,6 +555,7 @@ public class UiApplication extends Application {
 		var settingsMap = new HashMap<String, String>();
 		settingsMap.put(SettingsConsts.APPLICATION_TITLE, "rcp");
 		settingsMap.put(SettingsConsts.WIDTH, "500");
+		settingsMap.put(SettingsConsts.BOTTOM_SPACER, "false");
 		settingsMap.put(SettingsConsts.ANIMATIONS_ENABLED, "true");
 		settingsMap.put(SettingsConsts.BLUR_ENABLED, "true");
 		settingsMap.put(SettingsConsts.RESTORE_PREVIOUS_FOCUS, "true");
