@@ -31,6 +31,16 @@ public class DefaultEventManager implements EventManager {
 	public void post(CcEvent event) {
 		bus.post(event);
 	}
+	
+	@Override
+	public void post(String eventName) {
+		post(new CcEvent(eventName));
+	}
+	
+	@Override
+	public void post(String eventName, String payload) {
+		post(new CcEvent(eventName, payload));
+	}
 
 	@Override
 	public void listen(String name, Consumer<Object[]> action) {
