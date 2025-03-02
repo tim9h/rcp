@@ -16,6 +16,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -34,7 +35,7 @@ public class AnimatedLabel extends FlowPane {
 
 	public static final String SETTING_TEXT_ANIMATION_STYLE = "ui.components.label.animations";
 
-	private static final String ANIMATION_TYPING = "typing";
+	private static final String ANIMATION_TYPING = "type";
 
 	private static final String ANIMATION_FADE = "fade";
 
@@ -64,7 +65,10 @@ public class AnimatedLabel extends FlowPane {
 	@Inject
 	public AnimatedLabel(Settings settings, EventManager eventManager) {
 		this.settings = settings;
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> duration = null);
+		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> {
+			duration = null;
+			animationStyles = null;
+		});
 
 		fadeIn = new FadeTransition(getAnimationDuration(), this);
 		fadeIn.setFromValue(0.0);
@@ -126,33 +130,45 @@ public class AnimatedLabel extends FlowPane {
 		if (!getText().equals(text)) {
 			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
 				if (getAnimationStyles().contains(ANIMATION_FADE)) {
+					logger.debug(() -> "Animation Fade for text: " + text);
 					fadeIn.play();
 				}
 				if (getAnimationStyles().contains(ANIMATION_TYPING)) {
+					logger.debug(() -> "Animation Type for text: " + text);
 					typeText(text);
 				}
 				if (getAnimationStyles().isEmpty()) {
+					logger.debug(() -> "No supported animation for text: " + text);
 					setText(text);
 				}
 			}
+			logger.debug(() -> "Animations disabled for text: " + text);
 			setText(text);
 		}
 	}
 
 	private void typeText(String text) {
-		setOpacity(1);
-		timeline.getKeyFrames().clear();
-		var stringbuilder = new StringBuilder();
-		charIndex.set(0);
-		timeline.getKeyFrames().add(new KeyFrame(Duration.millis(10), _ -> {
-			if (charIndex.get() < text.length()) {
-				stringbuilder.append(text.charAt(charIndex.get()));
-				setText(stringbuilder.toString());
-				charIndex.incrementAndGet();
-			}
-		}));
-		timeline.setCycleCount(text.length());
-		timeline.play();
+		if (!getAnimationStyles().contains(ANIMATION_FADE)) {
+			setOpacity(1);
+		}
+		timeline.stop();
+		if (Animation.Status.STOPPED.equals(timeline.getStatus())) {
+			timeline.getKeyFrames().clear();
+			var stringbuilder = new StringBuilder();
+			charIndex.set(0);
+			timeline.getKeyFrames().add(new KeyFrame(Duration.millis(10), _ -> {
+				if (charIndex.get() < text.length()) {
+					stringbuilder.append(text.charAt(charIndex.get()));
+					setText(stringbuilder.toString());
+					charIndex.incrementAndGet();
+				}
+			}));
+			timeline.setCycleCount(text.length());
+			timeline.play();
+		} else {
+			logger.warn(() -> "Unable to animate text: " + text + " because timeline is not stopped");
+		}
+
 	}
 
 	public void showText(List<Text> texts) {
