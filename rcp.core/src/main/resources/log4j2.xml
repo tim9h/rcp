@@ -22,7 +22,6 @@
 		
 		<Logger name="dev.tim9h" level="debug" additivity="false">
 			<AppenderRef ref="ConsoleAppender" />
-			<AppenderRef ref="FileAppender" />
 		</Logger>
 		
 		<Logger name="com.mkyong" level="debug" additivity="false">
