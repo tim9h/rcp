@@ -31,25 +31,25 @@ public class AnimatedLabel extends FlowPane {
 	private static final String SETTINGS_ANIMATIONS_ENABLED = "core.ui.animations";
 
 	public static final String SETTING_TEXT_ANIMATION_DURATION = "ui.components.label.animationduration";
-	
-	public static final String SETTING_TEXT_ANIMATION_STYLE = "ui.components.label.animation";
-	
+
+	public static final String SETTING_TEXT_ANIMATION_STYLE = "ui.components.label.animations";
+
 	private static final String ANIMATION_TYPING = "typing";
-	
+
 	private static final String ANIMATION_FADE = "fade";
 
 	private Settings settings;
 
 	private Duration duration;
-	
-	private String animationStyle;
+
+	private List<String> animationStyles;
 
 	private FadeTransition fadeIn;
 
 	private FadeTransition fadeOut;
-	
+
 	private Timeline timeline;
-	
+
 	private AtomicInteger charIndex = new AtomicInteger(0);
 
 	private Timer timer;
@@ -57,7 +57,7 @@ public class AnimatedLabel extends FlowPane {
 	private TextFlow textFlow;
 
 	private Rectangle clip;
-	
+
 	@InjectLogger
 	private Logger logger;
 
@@ -66,13 +66,11 @@ public class AnimatedLabel extends FlowPane {
 		this.settings = settings;
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> duration = null);
 
-		if (ANIMATION_FADE.equals(getAnimationStyle())) {
-			fadeIn = new FadeTransition(getAnimationDuration(), this);
-			fadeIn.setFromValue(0.0);
-			fadeIn.setToValue(1.0);
-		} else if (ANIMATION_TYPING.equals(getAnimationStyle())) {
-			timeline = new Timeline();
-		}
+		fadeIn = new FadeTransition(getAnimationDuration(), this);
+		fadeIn.setFromValue(0.0);
+		fadeIn.setToValue(1.0);
+		timeline = new Timeline();
+
 		fadeOut = new FadeTransition(getAnimationDuration(), this);
 		fadeOut.setFromValue(1.0);
 		fadeOut.setToValue(0.0);
@@ -105,32 +103,35 @@ public class AnimatedLabel extends FlowPane {
 			try {
 				duration = Duration.millis(settings.getDouble(SETTING_TEXT_ANIMATION_DURATION).doubleValue());
 			} catch (NullPointerException e) {
-				settings.addSetting(SETTING_TEXT_ANIMATION_DURATION, "250");
+				settings.addSetting(SETTING_TEXT_ANIMATION_DURATION, "500");
 				return getAnimationDuration();
 			}
 		}
 		return duration;
 	}
-	
-	private String getAnimationStyle() {
-		if (animationStyle == null) {
-			animationStyle = settings.getString(SETTING_TEXT_ANIMATION_STYLE);
-			if (animationStyle == null) {
-				settings.addSetting(SETTING_TEXT_ANIMATION_STYLE, ANIMATION_FADE);
-				animationStyle = ANIMATION_FADE;
+
+	private List<String> getAnimationStyles() {
+		if (animationStyles == null) {
+			animationStyles = settings.getStringList(SETTING_TEXT_ANIMATION_STYLE);
+			if (animationStyles.isEmpty()) {
+				var allStyles = List.of(ANIMATION_FADE, ANIMATION_TYPING);
+				settings.addSetting(SETTING_TEXT_ANIMATION_STYLE, allStyles);
+				animationStyles = allStyles;
 			}
 		}
-		return animationStyle;
+		return animationStyles;
 	}
 
 	public void showText(String text) {
 		if (!getText().equals(text)) {
 			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
-				if (ANIMATION_FADE.equals(getAnimationStyle())) {
+				if (getAnimationStyles().contains(ANIMATION_FADE)) {
 					fadeIn.play();
-				} else if (ANIMATION_TYPING.equals(getAnimationStyle())) {
+				}
+				if (getAnimationStyles().contains(ANIMATION_TYPING)) {
 					typeText(text);
-				} else {
+				}
+				if (getAnimationStyles().isEmpty()) {
 					setText(text);
 				}
 			}
@@ -148,7 +149,7 @@ public class AnimatedLabel extends FlowPane {
 				stringbuilder.append(text.charAt(charIndex.get()));
 				setText(stringbuilder.toString());
 				charIndex.incrementAndGet();
-			}	
+			}
 		}));
 		timeline.setCycleCount(text.length());
 		timeline.play();
@@ -160,16 +161,7 @@ public class AnimatedLabel extends FlowPane {
 
 	public void showText(Text... texts) {
 		var text = Arrays.stream(texts).map(node -> node.textProperty().get()).collect(Collectors.joining());
-		if (!getText().equals(text)) {
-			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
-				if (ANIMATION_FADE.equals(getAnimationStyle())) {
-					fadeIn.play();
-				} else if (ANIMATION_TYPING.equals(getAnimationStyle())) {
-					typeText(text);
-				}
-			}
-			setText(texts);
-		}
+		showText(text);
 	}
 
 	public void setText(String text) {
@@ -216,7 +208,7 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showFadingText(int decaytime, String text) {
-		logger.debug(() -> "Showing fading text: " + text + " for " + decaytime + "ms with timer " + timer); 
+		logger.debug(() -> "Showing fading text: " + text + " for " + decaytime + "ms with timer " + timer);
 		logger.debug(() -> "Trying to cancel timer " + timer);
 		timer.cancel();
 		var purge = timer.purge();
@@ -232,7 +224,7 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showFadingText(int decaytime, Text... texts) {
-		logger.debug(() -> "Showing fading texts: " + texts + " for " + decaytime + "ms with timer " + timer); 
+		logger.debug(() -> "Showing fading texts: " + texts + " for " + decaytime + "ms with timer " + timer);
 		logger.debug(() -> "Trying to cancel timer " + timer);
 		timer.cancel();
 		var purge = timer.purge();
