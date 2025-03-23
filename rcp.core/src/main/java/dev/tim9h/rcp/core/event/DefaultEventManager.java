@@ -57,28 +57,13 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
-	public void echoAsync(String response) {
-		Platform.runLater(() -> echo(response));
-	}
-
-	@Override
 	public void echo(String details, String response) {
 		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, details, response));
 	}
 
 	@Override
-	public void echoAsync(String details, String response) {
-		Platform.runLater(() -> echo(details, response));
-	}
-
-	@Override
 	public void echo(List<Text> details, List<Text> response) {
 		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, details, response));
-	}
-
-	@Override
-	public void echoAsync(List<Text> details, List<Text> response) {
-		Platform.runLater(() -> post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, details, response)));
 	}
 
 	@Override

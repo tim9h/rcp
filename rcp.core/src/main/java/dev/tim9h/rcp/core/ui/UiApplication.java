@@ -505,7 +505,7 @@ public class UiApplication extends Application {
 				shutdown();
 			} else {
 				logger.warn(() -> "Unable to restart application: Not in jar mode");
-				eventManager.echoAsync("Unable to restart: Not in jar mode");
+				eventManager.echo("Unable to restart: Not in jar mode");
 			}
 		} catch (IOException | URISyntaxException e) {
 			logger.error(() -> "Unable to restart application", e);
@@ -569,7 +569,7 @@ public class UiApplication extends Application {
 
 	private void shutdown() {
 		logger.debug(() -> "Shutting down");
-		eventManager.echoAsync("kthxbye.");
+		eventManager.echo("kthxbye.");
 		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
 		CompletableFuture.runAsync(() -> {
 			try {

@@ -29,6 +29,7 @@ import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Gravity;
 import dev.tim9h.rcp.spi.Position;
 import dev.tim9h.rcp.spi.TreeNode;
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -67,7 +68,7 @@ public class CliView implements CCard {
 	@Override
 	public void initBus(EventManager em) {
 		CCard.super.initBus(em);
-		em.listen(CcEvent.EVENT_CLI_RESPONSE, this::showDetailedResponse);
+		em.listen(CcEvent.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
 		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
 		em.listen(CcEvent.EVENT_CLI_ADD_PROPOSALS, data -> {
 			if (data instanceof String[] sData) {

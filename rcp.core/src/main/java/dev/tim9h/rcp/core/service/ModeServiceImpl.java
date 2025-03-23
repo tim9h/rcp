@@ -59,9 +59,9 @@ public class ModeServiceImpl implements ModeService {
 	private void listenToEvents() {
 		eventManager.listen("modes", _ -> CompletableFuture.runAsync(() -> {
 			if (activeModes.isEmpty() && ephemeralModes.isEmpty()) {
-				eventManager.echoAsync("No modes active");
+				eventManager.echo("No modes active");
 			} else {
-				eventManager.echoAsync("Active modes",
+				eventManager.echo("Active modes",
 						StringUtils.join(Iterables.concat(activeModes, ephemeralModes), ", "));
 			}
 		}));
