@@ -202,8 +202,7 @@ public class UiApplication extends Application {
 		stage.setX(calculateXposition());
 		stage.setY(0);
 		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
-		stage.setHeight(1);
-		stage.setOpacity(0.01f);
+		makeStageInvisible();
 		stage.setTitle(settings.getString(SettingsConsts.APPLICATION_TITLE));
 		stage.setAlwaysOnTop(true);
 		stage.setResizable(false);
@@ -335,19 +334,24 @@ public class UiApplication extends Application {
 				}
 			}, 0, 1);
 		} else {
-			stage.setHeight(1);
-			stage.setOpacity(0.01f);
+			makeStageInvisible();
 		}
 		eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 	}
+	
+	private void makeStageInvisible() {
+		stage.setHeight(1);
+		stage.setOpacity(0.01f);
+	}
 
 	private void createTray() {
-		tray.createMenuItem("exitApp", "Exit", this::shutdown, true);
+		themeService.createThemeMenu();
 		tray.createMenuItem(PLUGINS, "Open plugins directory", this::openPluginsDirectory, true);
 		tray.createMenuItem(CONST_REPOSITION, "Reposition", this::reposition);
 		tray.createMenuItem(RELOAD, "Restart Application", this::restartApplication);
 		tray.createMenuItem("f5settings", "Reload Settings", settings::loadProperties);
-		tray.createMenuItem(CONST_SETTINGS, "Open Settings", this::openSettingsFile);
+		tray.createMenuItem(CONST_SETTINGS, "Open Settings", this::openSettingsFile, true);
+		tray.createMenuItem("exitApp", "Exit", this::shutdown);
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> toggleVisibility(true, false)));
 	}
 
@@ -604,6 +608,10 @@ public class UiApplication extends Application {
 		eventManager.listen(CONST_REPOSITION, _ -> reposition());
 		eventManager.listen("clear", _ -> eventManager.clear());
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
+		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
+			show();
+			stage.requestFocus();
+		});
 	}
 
 	private void handleSettingCommand(Object[] args) {

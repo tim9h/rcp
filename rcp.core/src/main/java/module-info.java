@@ -16,7 +16,7 @@ module rcp.core {
 	requires transitive com.google.guice;
 	requires com.sun.jna;
 	requires com.sun.jna.platform;
-	requires java.desktop;
+	requires transitive java.desktop;
 	requires javafx.base;
 	requires javafx.swing;
 	requires javafxblur;

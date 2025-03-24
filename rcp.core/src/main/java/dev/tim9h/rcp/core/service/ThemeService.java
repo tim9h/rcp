@@ -1,9 +1,12 @@
 package dev.tim9h.rcp.core.service;
 
+import java.awt.CheckboxMenuItem;
+import java.awt.Menu;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
 
@@ -14,10 +17,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.settings.SettingsConsts;
+import dev.tim9h.rcp.core.util.TrayManager;
+import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.TreeNode;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 
@@ -35,12 +41,18 @@ public class ThemeService {
 
 	private ModeService modeService;
 
+	private TrayManager trayManager;
+
+	private Menu themeMenu;
+
 	@Inject
-	public ThemeService(Scene scene, Settings settings, EventManager eventManager, ModeService modeService) {
+	public ThemeService(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
+			TrayManager trayManager) {
 		this.scene = scene;
 		this.settings = settings;
 		this.eventManager = eventManager;
 		this.modeService = modeService;
+		this.trayManager = trayManager;
 
 		scene.setFill(Color.rgb(20, 20, 20, 0.01f));
 		scene.getStylesheets().add(getClass().getResource("/css/core.css").toExternalForm());
@@ -49,11 +61,11 @@ public class ThemeService {
 	}
 
 	public void subscribeToThemeEvents() {
-		// move to styleservice
 		eventManager.listen("theme", args -> {
 			if (!modeService.isModeActive("alert")) {
-				eventManager.echo("Activating theme", StringUtils.join(args));
-				setTheme(StringUtils.join(args), true);
+				var theme = StringUtils.join(args).toLowerCase();
+				eventManager.echo("Activating theme", StringUtils.capitalize(theme));
+				setTheme(theme, true);
 			} else {
 				eventManager.echo("Alert theme active");
 			}
@@ -61,7 +73,7 @@ public class ThemeService {
 	}
 
 	public void setTheme(String theme, boolean persist) {
-		var url = getClass().getResource(String.format("/css/theme_%s.css", theme));
+		var url = getClass().getResource(String.format("/css/theme_%s.css", theme.toLowerCase()));
 		if (url == null) {
 			var current = settings.getString(SettingsConsts.THEME);
 			eventManager.echo("Current theme", StringUtils.capitalize(current));
@@ -73,13 +85,21 @@ public class ThemeService {
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
 			}
+			selectThemeCheckbox(theme);
+		}
+	}
+
+	private void selectThemeCheckbox(String theme) {
+		for (var i = 0; i < themeMenu.getItemCount(); i++) {
+			var item = themeMenu.getItem(i);
+			if (item instanceof CheckboxMenuItem check) {
+				check.setState(StringUtils.equalsIgnoreCase(theme, check.getName()));
+			}
 		}
 	}
 
 	public TreeNode<String> getThemeCommands() {
-		var themes = getFileNames("css").stream().filter(file -> file.startsWith("theme_") && !file.endsWith(".map"))
-				.map(file -> file.replace("theme_", StringUtils.EMPTY).replace(".css", StringUtils.EMPTY))
-				.toArray(String[]::new);
+		var themes = getThemeNames();
 		var node = new TreeNode<>("theme");
 		if (themes.length != 0) {
 			node.add(themes);
@@ -127,9 +147,30 @@ public class ThemeService {
 				}
 			}
 		} catch (IOException e) {
-			logger.error(() -> "Unable to getFilenames for directory " + directory + " in Jar mode", e);
+			logger.error(() -> "Unable to get file names for directory " + directory + " in Jar mode", e);
 		}
 		return filenames;
+	}
+
+	public void createThemeMenu() {
+		themeMenu = new Menu("Theme");
+
+		Arrays.stream(getThemeNames()).forEach(theme -> {
+			var menuItem = new CheckboxMenuItem(theme);
+			menuItem.setName(theme.toLowerCase());
+			menuItem.addItemListener(_ -> Platform.runLater(() -> {
+				setTheme(theme, true);
+				eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
+			}));
+			themeMenu.add(menuItem);
+		});
+		trayManager.createSubMenu(themeMenu, true);
+	}
+
+	private String[] getThemeNames() {
+		return getFileNames("css").stream().filter(file -> file.startsWith("theme_") && !file.endsWith(".map"))
+				.map(file -> file.replace("theme_", StringUtils.EMPTY).replace(".css", StringUtils.EMPTY))
+				.map(StringUtils::capitalize).toArray(String[]::new);
 	}
 
 }

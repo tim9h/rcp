@@ -34,6 +34,8 @@ public record CcEvent(String name, Object... payload) {
 	public static final String EVENT_TTS = "TTS";
 
 	public static final String EVENT_SAY = "TTS.SAY";
+	
+	public static final String EVENT_THEME_CHANGED = "THEME_CHANGED";
 
 	public CcEvent(String name) {
 		this(name, (Object[]) null);

@@ -51,7 +51,7 @@ public class CcTextField extends TextField {
 
 	@Inject
 	private Settings settings;
-	
+
 	private LimitedIterableStack<String> inputHistory;
 
 	@Inject
@@ -133,7 +133,7 @@ public class CcTextField extends TextField {
 		}
 		if (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN) {
 			inputHistory.resetCursor();
-            getStyleClass().remove(HISTORY);
+			getStyleClass().remove(HISTORY);
 		}
 	}
 
@@ -145,7 +145,7 @@ public class CcTextField extends TextField {
 		textProperty().set(StringUtils.defaultString(prev));
 		positionCaret(getText().length());
 	}
-	
+
 	private void historyNext() {
 		if (!getStyleClass().contains(HISTORY)) {
 			getStyleClass().add(HISTORY);
@@ -219,7 +219,8 @@ public class CcTextField extends TextField {
 			}
 		}
 		return node != null
-				? node.stream().map(TreeNode<String>::get).filter(n -> n.startsWith(input.getQuery())).toList()
+				? node.stream().map(TreeNode<String>::get)
+						.filter(n -> n.toLowerCase().startsWith(input.getQuery().toLowerCase())).toList()
 				: Collections.emptyList();
 	}
 
@@ -258,7 +259,7 @@ public class CcTextField extends TextField {
 	public void addCommand(TreeNode<String> command) {
 		getCommands().add(command);
 	}
-	
+
 	private void initHistory() {
 		var size = settings.getInt("cli.history.size");
 		if (size == null) {
