@@ -1,6 +1,7 @@
 package dev.tim9h.rcp.core.util;
 
 import java.awt.AWTException;
+import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.SystemTray;
@@ -94,7 +95,7 @@ public class TrayManager {
 	public void createMenuItem(String name, String label, Runnable action, boolean withSeparator) {
 		createMenuItem(name, label, action);
 		if (withSeparator) {
-			popupMenu.insertSeparator(0);
+			popupMenu.addSeparator();
 		}
 	}
 
@@ -103,7 +104,14 @@ public class TrayManager {
 		menuItem.setName(name);
 		menuItem.setLabel(label);
 		menuItem.addActionListener(_ -> action.run());
-		popupMenu.insert(menuItem, 0);
+		popupMenu.add(menuItem);
+	}
+	
+	public void createSubMenu(Menu subMenu, boolean withSeparator) {
+		popupMenu.add(subMenu);
+		if (withSeparator) {
+			popupMenu.addSeparator();
+		}
 	}
 
 	public void createDoubleClickAction(Runnable action) {
