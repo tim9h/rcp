@@ -24,6 +24,10 @@
 			<AppenderRef ref="ConsoleAppender" />
 		</Logger>
 		
+		<Logger name="dev.tim9h.rcp.controls" level="info" additivity="false">
+			<AppenderRef ref="ConsoleAppender" />
+		</Logger>
+		
 		<Logger name="com.mkyong" level="debug" additivity="false">
 			<AppenderRef ref="ConsoleAppender" />
 		</Logger>
