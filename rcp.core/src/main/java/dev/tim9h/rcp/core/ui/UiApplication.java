@@ -29,7 +29,10 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.FileAppender;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -338,7 +341,7 @@ public class UiApplication extends Application {
 		}
 		eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 	}
-	
+
 	private void makeStageInvisible() {
 		stage.setHeight(1);
 		stage.setOpacity(0.01f);
@@ -475,7 +478,7 @@ public class UiApplication extends Application {
 
 	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
 		commands.add(themeService.getThemeCommands());
-		commands.add("restart", "exit", "modes", SETTING, "plugindir", "clear");
+		commands.add("restart", "exit", "modes", SETTING, "plugindir", "clear", "logs");
 
 		var commandPlugins = new TreeNode<>(PLUGINS);
 		commandPlugins.add(WHITELIST, BLACKLIST);
@@ -612,6 +615,7 @@ public class UiApplication extends Application {
 			show();
 			stage.requestFocus();
 		});
+		eventManager.listen("logs", _ -> openLogFile());
 	}
 
 	private void handleSettingCommand(Object[] args) {
@@ -652,6 +656,21 @@ public class UiApplication extends Application {
 			hide();
 			openSettingsFile();
 		}
+	}
+
+	private void openLogFile() {
+		var ctx = (LoggerContext) LogManager.getContext(false);
+		var config = ctx.getConfiguration();
+		var appenders = config.getAppenders();
+		appenders.values().stream().filter(FileAppender.class::isInstance).map(FileAppender.class::cast)
+				.map(FileAppender::getFileName).findFirst().ifPresent(fileName -> {
+					try {
+						Desktop.getDesktop().open(new File(fileName));
+					} catch (IOException e) {
+						logger.error(() -> "Unable to open log file", e);
+					}
+				});
+
 	}
 
 	private void handlePluginsCommand(Object[] args) {
