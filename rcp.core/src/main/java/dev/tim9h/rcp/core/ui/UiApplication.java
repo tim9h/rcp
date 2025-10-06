@@ -29,6 +29,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -387,7 +388,7 @@ public class UiApplication extends Application {
 	private String getJarDirectory() {
 		try {
 			var sourcepath = getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
-			if (StringUtils.endsWithIgnoreCase(sourcepath, ".jar")) {
+			if (Strings.CS.endsWith(sourcepath, ".jar")) {
 				return new File(sourcepath).getParentFile().getPath();
 			} else {
 				return null;
@@ -506,7 +507,7 @@ public class UiApplication extends Application {
 			var javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw";
 			var sourcepath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).toFile()
 					.toString();
-			if (StringUtils.endsWithIgnoreCase(sourcepath, ".jar")) {
+			if (Strings.CS.endsWith(sourcepath, ".jar")) {
 				new ProcessBuilder(javaBin, "-jar", sourcepath).start();
 				eventManager.post(new CcEvent(CcEvent.EVENT_RESTARTING));
 				shutdown();

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.eventbus.EventBus;
@@ -45,7 +46,7 @@ public class DefaultEventManager implements EventManager {
 	@Override
 	public void listen(String name, Consumer<Object[]> action) {
 		bus.register((EventListener) event -> {
-			if (StringUtils.equalsIgnoreCase(event.name(), name)) {
+			if (Strings.CI.equals(event.name(), name)) {
 				action.accept(event.payload());
 			}
 		});

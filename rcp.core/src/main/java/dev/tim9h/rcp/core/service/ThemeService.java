@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.jar.JarFile;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
@@ -93,7 +94,7 @@ public class ThemeService {
 		for (var i = 0; i < themeMenu.getItemCount(); i++) {
 			var item = themeMenu.getItem(i);
 			if (item instanceof CheckboxMenuItem check) {
-				check.setState(StringUtils.equalsIgnoreCase(theme, check.getName()));
+				check.setState(Strings.CI.equals(theme, check.getName()));
 			}
 		}
 	}

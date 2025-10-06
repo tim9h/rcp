@@ -13,7 +13,6 @@ class Log4JMembersInjector<T> implements MembersInjector<T> {
 
 	private final Logger logger;
 
-	@SuppressWarnings("java:S3011")
 	Log4JMembersInjector(Field field) {
 		this.field = field;
 		this.logger = LogManager.getLogger(field.getDeclaringClass());
@@ -21,7 +20,6 @@ class Log4JMembersInjector<T> implements MembersInjector<T> {
 	}
 
 	@Override
-	@SuppressWarnings("java:S3011")
 	public void injectMembers(T t) {
 		try {
 			field.set(t, logger);
