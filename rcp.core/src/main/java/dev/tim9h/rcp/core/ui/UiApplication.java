@@ -472,9 +472,16 @@ public class UiApplication extends Application {
 			if (!command.get().isBlank()) {
 				commands.add(command);
 			} else {
-				command.getChildren().forEach(commands::add);
+				command.getChildren().forEach(c -> {
+					if (commands.getChildren().stream().filter(existing -> existing.get().equals(c.get())).findAny().isEmpty()) {
+						commands.add(c);
+					} else {
+						commands.getChildren().stream().filter(existing -> existing.get().equals(c.get())).findFirst().ifPresent(existing -> existing.getChildren().addAll(c.getChildren()));
+					}
+				});
 			}
 		});
+		logger.debug(() -> commands);
 	}
 
 	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
