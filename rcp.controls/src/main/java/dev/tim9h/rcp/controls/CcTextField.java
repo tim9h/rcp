@@ -17,6 +17,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.StringNode;
 import dev.tim9h.rcp.spi.TreeNode;
 import javafx.event.Event;
 import javafx.scene.control.IndexRange;
@@ -251,7 +252,7 @@ public class CcTextField extends TextField {
 
 	public TreeNode<String> getCommands() {
 		if (commands == null) {
-			commands = new TreeNode<>(StringUtils.EMPTY);
+			commands = new StringNode();
 		}
 		return commands;
 	}
