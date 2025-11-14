@@ -55,6 +55,7 @@ import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.CCardFactory;
 import dev.tim9h.rcp.spi.Position;
+import dev.tim9h.rcp.spi.StringNode;
 import dev.tim9h.rcp.spi.TreeNode;
 import javafx.animation.Animation.Status;
 import javafx.animation.FadeTransition;
@@ -414,7 +415,7 @@ public class UiApplication extends Application {
 			logger.info(() -> "Injecting " + fac.get().getClass().getSimpleName());
 			return injector.getInstance(fac.get().getClass()).createCCard();
 		}).sorted(new CCardSorter()).toList();
-		var commands = new TreeNode<>(StringUtils.EMPTY);
+		var commands = new StringNode();
 		ccards.forEach(card -> initCard(vbox, commands, card));
 		addAdditionalCommands(commands);
 		eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, commands.getChildren().toArray()));
