@@ -377,7 +377,7 @@ public class UiApplication extends Application {
 					logger.error(() -> "Unable to load plugin jars", e);
 				}
 			} else {
-				logger.debug(() -> "PLugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
+				logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
 			}
 
 		} else {
@@ -403,7 +403,7 @@ public class UiApplication extends Application {
 	private URL toURL(Path path) {
 		try {
 			return path.toUri().toURL();
-		} catch (MalformedURLException e) {
+		} catch (MalformedURLException _) {
 			logger.error(() -> "Unable to create ULR for path " + path);
 			return null;
 		}
@@ -480,9 +480,9 @@ public class UiApplication extends Application {
 						commands.getChildren().stream().filter(existing -> existing.get().equals(c.get())).findFirst().ifPresent(existing -> existing.getChildren().addAll(c.getChildren()));
 					}
 				});
+				logger.debug(() -> "Added command: " + command);
 			}
 		});
-		logger.debug(() -> commands);
 	}
 
 	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
