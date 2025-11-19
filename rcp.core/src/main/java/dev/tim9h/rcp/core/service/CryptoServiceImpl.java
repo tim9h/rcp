@@ -29,6 +29,9 @@ public class CryptoServiceImpl implements CryptoService {
 
 	@Override
 	public String hashSha256(String data) {
+		if (data == null) {
+			return null;
+		}
 		try {
 			var digest = MessageDigest.getInstance("SHA-256");
 			var encodedHash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
@@ -42,6 +45,9 @@ public class CryptoServiceImpl implements CryptoService {
 
 	@Override
 	public boolean hashMatches(String providedPassword, String storedHash) {
+		if (providedPassword == null || storedHash == null) {
+			return false;
+		}
 		return hashSha256(providedPassword).equals(storedHash); 
 	}
 
