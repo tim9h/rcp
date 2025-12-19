@@ -9,6 +9,7 @@ module rcp.core {
 	exports dev.tim9h.rcp.core.event;
 	exports dev.tim9h.rcp.core;
 	exports dev.tim9h.rcp.core.ui;
+	exports dev.tim9h.rcp.core.plugin;
 
 	requires transitive javafx.graphics;
 	requires transitive rcp.api;
@@ -32,6 +33,7 @@ module rcp.core {
 	opens dev.tim9h.rcp.core.service;
 	opens dev.tim9h.rcp.core.util;
 	opens dev.tim9h.rcp.core.settings;
+	opens dev.tim9h.rcp.core.plugin;
 
 	uses CCardFactory;
 }

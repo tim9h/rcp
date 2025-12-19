@@ -43,5 +43,7 @@ public interface Settings {
 	public Map<String, Object> getOverwrites();
 
 	public int getCharWidth();
-
+	
+	public void openSettingsFile();
+	
 }

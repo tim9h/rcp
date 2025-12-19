@@ -3,24 +3,12 @@ package dev.tim9h.rcp.core.ui;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.KeyStroke;
 
@@ -41,11 +29,11 @@ import com.google.inject.Injector;
 import com.kieferlam.javafxblur.Blur;
 import com.tulskiy.keymaster.common.Provider;
 
+import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
 import dev.tim9h.rcp.core.service.ThemeService;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.BasicModule;
-import dev.tim9h.rcp.core.util.CCardSorter;
 import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.CcEvent;
@@ -53,10 +41,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CCard;
-import dev.tim9h.rcp.spi.CCardFactory;
 import dev.tim9h.rcp.spi.Position;
-import dev.tim9h.rcp.spi.StringNode;
-import dev.tim9h.rcp.spi.TreeNode;
 import javafx.animation.Animation.Status;
 import javafx.animation.FadeTransition;
 import javafx.application.Application;
@@ -76,27 +61,11 @@ import javafx.util.Duration;
 
 public class UiApplication extends Application {
 
-	private static final String WHITELIST = "whitelist";
-
-	private static final String BLACKLIST = "blacklist";
-
-	private static final String RELOAD = "reload";
-
-	private static final String SETTING = "setting";
-
-	private static final String CONST_SETTINGS = "settings";
-
-	private static final String PLUGINS = "plugins";
-
-	private static final String CONST_REPOSITION = "reposition";
-
 	@InjectLogger
 	private Logger logger;
 
 	@Inject
 	private EventManager eventManager;
-
-	private ServiceLoader<CCardFactory> loader;
 
 	private Stage stage;
 
@@ -122,59 +91,26 @@ public class UiApplication extends Application {
 	@Inject
 	private ThemeService themeService;
 
-	private List<CCard> ccards;
+	@Inject
+	private PluginLoader pluginLoader;
 
 	private double maxHeight;
 
-	private static List<String> pluginBlacklist;
+	private static String[] argsGlobal;
 
-	private static List<String> pluginWhitelist;
-
-	private static List<String> settingsOverwrites;
-
-	public static void main(String[] args) throws ParseException {
+	public static void main(String[] args) {
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
-		parseOptions(args);
+		argsGlobal = args;
 		launch(args);
-	}
-
-	private static void parseOptions(String[] args) throws ParseException {
-		var options = new Options();
-
-		var optionBlacklist = new Option("b", BLACKLIST, true, "Do not activate specific plugins");
-		optionBlacklist.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionBlacklist);
-
-		var optionWhitelist = new Option("w", WHITELIST, true, "Only activate specific plugins");
-		optionWhitelist.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionWhitelist);
-
-		var optionSetting = new Option("s", SETTING, true, "Overwrite persisted setting");
-		optionSetting.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionSetting);
-
-		var parser = new DefaultParser();
-		var parse = parser.parse(options, args);
-
-		if (parse.hasOption(optionBlacklist) && parse.hasOption(optionWhitelist)) {
-			throw new ParseException("Invalid combination of options: whitelist and blacklist");
-		} else if (parse.hasOption(optionBlacklist)) {
-			pluginBlacklist = Arrays.stream(parse.getOptionValues(optionBlacklist)).map(String::toLowerCase).toList();
-		} else if (parse.hasOption(optionWhitelist)) {
-			pluginWhitelist = Arrays.stream(parse.getOptionValues(optionWhitelist)).map(String::toLowerCase).toList();
-		}
-		if (parse.hasOption(optionSetting)) {
-			settingsOverwrites = Arrays.asList(parse.getOptionValues(optionSetting));
-		}
 	}
 
 	@Override
 	public void start(Stage hiddenStage) throws Exception {
 		injector = Guice.createInjector(new BasicModule());
 		injector.injectMembers(this);
-		settings.addOverwrites(settingsOverwrites);
 
-		initServiceLoader();
+		parseArgs();
+
 		var cardContainer = initScene();
 		createTray();
 		initGlobalHotkeys();
@@ -199,6 +135,38 @@ public class UiApplication extends Application {
 		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> shutdown());
 
 		modeService.initDefaultModes();
+	}
+
+	private void parseArgs() throws ParseException {
+		var options = new Options();
+
+		var optionBlacklist = new Option("b", "blacklist", true, "Do not activate specific plugins");
+		optionBlacklist.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(optionBlacklist);
+
+		var optionWhitelist = new Option("w", "blacklist", true, "Only activate specific plugins");
+		optionWhitelist.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(optionWhitelist);
+
+		var optionSetting = new Option("s", "setting", true, "Overwrite persisted setting");
+		optionSetting.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(optionSetting);
+
+		var parser = new DefaultParser();
+		var parse = parser.parse(options, argsGlobal);
+
+		if (parse.hasOption(optionBlacklist) && parse.hasOption(optionWhitelist)) {
+			throw new ParseException("Invalid combination of options: whitelist and blacklist");
+		} else if (parse.hasOption(optionBlacklist)) {
+			var blacklist = Arrays.stream(parse.getOptionValues(optionBlacklist)).map(String::toLowerCase).toList();
+			pluginLoader.setPluginBlacklist(blacklist);
+		} else if (parse.hasOption(optionWhitelist)) {
+			var whitelist = Arrays.stream(parse.getOptionValues(optionWhitelist)).map(String::toLowerCase).toList();
+			pluginLoader.setPluginWhitelist(whitelist);
+		}
+		if (parse.hasOption(optionSetting)) {
+			settings.addOverwrites(Arrays.asList(parse.getOptionValues(optionSetting)));
+		}
 	}
 
 	private Stage createStage(Stage hiddenStage) {
@@ -230,9 +198,22 @@ public class UiApplication extends Application {
 		return stage;
 	}
 
+	public void initNodes(VBox vbox) {
+		var plugins = pluginLoader.loadPlugins();
+		plugins.forEach(card -> initPluginUi(vbox, card));
+
+		// create spacer between middle and bottom cards
+		if (settings.getBoolean(SettingsConsts.BOTTOM_SPACER).booleanValue()) {
+			var upperCards = plugins.stream().filter(card -> card.getGravity().position() != Position.BOTTOM).count();
+			var spacer = new Region();
+			VBox.setVgrow(spacer, Priority.ALWAYS);
+			vbox.getChildren().add((int) upperCards, spacer);
+		}
+	}
+
 	private double calculateXposition() {
 		Screen screen = null;
-		int index = 0;
+		var index = 0;
 		for (Screen s : Screen.getScreens()) {
 			if (index == settings.getInt(SettingsConsts.MONITOR).intValue()) {
 				screen = s;
@@ -351,156 +332,23 @@ public class UiApplication extends Application {
 
 	private void createTray() {
 		themeService.createThemeMenu();
-		tray.createMenuItem(PLUGINS, "Open plugins directory", this::openPluginsDirectory, true);
-		tray.createMenuItem(CONST_REPOSITION, "Reposition", this::reposition);
-		tray.createMenuItem(RELOAD, "Restart Application", this::restartApplication);
+		tray.createMenuItem("plugins", "Open plugins directory", pluginLoader::openPluginsDirectory, true);
+		tray.createMenuItem("reposition", "Reposition", this::reposition);
+		tray.createMenuItem("reload", "Restart Application", this::restartApplication);
 		tray.createMenuItem("f5settings", "Reload Settings", settings::loadProperties);
-		tray.createMenuItem(CONST_SETTINGS, "Open Settings", this::openSettingsFile, true);
+		tray.createMenuItem("settings", "Open Settings", settings::openSettingsFile, true);
 		tray.createMenuItem("exitApp", "Exit", this::shutdown);
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> toggleVisibility(true, false)));
 	}
 
-	private void initServiceLoader() {
-		var jarDirectory = getJarDirectory();
-		if (jarDirectory != null) {
-			var pluginDirectory = Path.of(jarDirectory + "/plugins");
-			logger.debug(() -> "Initializing service loader - jar mode");
-			if (Files.exists(pluginDirectory)) {
-				logger.debug(() -> "PLugins directory found: " + pluginDirectory);
-				try (Stream<URL> urls = Files.list(pluginDirectory).filter(Files::isRegularFile)
-						.filter(path -> path.toString().toLowerCase().endsWith(".jar")).map(this::toURL)) {
-					var urlArray = urls.toArray(URL[]::new);
-					logger.debug(() -> urlArray.length + " jars found");
-					var ucl = new URLClassLoader(urlArray);
-					loader = ServiceLoader.load(CCardFactory.class, ucl);
-				} catch (IOException e) {
-					logger.error(() -> "Unable to load plugin jars", e);
-				}
-			} else {
-				logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
-			}
-
-		} else {
-			logger.debug(() -> "Initializing service loader - non-jar-mode");
-			loader = ServiceLoader.load(CCardFactory.class);
-		}
-	}
-
-	private String getJarDirectory() {
+	private void initPluginUi(VBox vbox, CCard plugin) {
+		plugin.getStylesheet().ifPresent(scene.getStylesheets()::add);
 		try {
-			var sourcepath = getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
-			if (Strings.CS.endsWith(sourcepath, ".jar")) {
-				return new File(sourcepath).getParentFile().getPath();
-			} else {
-				return null;
-			}
-		} catch (URISyntaxException e) {
-			logger.error(() -> "Unable to detect source location", e);
-			return null;
-		}
-	}
-
-	private URL toURL(Path path) {
-		try {
-			return path.toUri().toURL();
-		} catch (MalformedURLException _) {
-			logger.error(() -> "Unable to create ULR for path " + path);
-			return null;
-		}
-	}
-
-	private void initNodes(VBox vbox) {
-		ccards = loader.stream().filter(filterCards()).map(fac -> {
-			settings.addSettings(fac.get().getSettingsContributions());
-			logger.info(() -> "Injecting " + fac.get().getClass().getSimpleName());
-			return injector.getInstance(fac.get().getClass()).createCCard();
-		}).sorted(new CCardSorter()).toList();
-		var commands = new StringNode();
-		ccards.forEach(card -> initCard(vbox, commands, card));
-		addAdditionalCommands(commands);
-		eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, commands.getChildren().toArray()));
-
-		initSettings();
-		settings.persistProperties();
-
-		// create spacer between middle and bottom cards
-		if (settings.getBoolean(SettingsConsts.BOTTOM_SPACER).booleanValue()) {
-			var upperCards = ccards.stream().filter(card -> card.getGravity().position() != Position.BOTTOM).count();
-			var spacer = new Region();
-			VBox.setVgrow(spacer, Priority.ALWAYS);
-			vbox.getChildren().add((int) upperCards, spacer);
-		}
-	}
-
-	private Predicate<? super java.util.ServiceLoader.Provider<CCardFactory>> filterCards() {
-		return fac -> {
-			if (pluginWhitelist != null) {
-				var value = pluginWhitelist.contains(fac.get().getId().toLowerCase());
-				if (value) {
-					logger.info(() -> "Loading plugin " + fac.get().getId() + " (whitelist)");
-				}
-				return value;
-			} else if (pluginBlacklist != null) {
-				var value = !pluginBlacklist.contains(fac.get().getId().toLowerCase());
-				if (!value) {
-					logger.info(() -> "Skip loading plugin " + fac.get().getId() + " (blacklist)");
-				}
-				return value;
-			}
-			return true;
-		};
-	}
-
-	private void initCard(VBox vbox, TreeNode<String> commands, CCard card) {
-		card.getStylesheet().ifPresent(scene.getStylesheets()::add);
-		card.init();
-		try {
-			card.getNode().ifPresent(vbox.getChildren()::add);
-			logger.info(() -> "Plugin loaded: " + card.getName());
+			plugin.getNode().ifPresent(vbox.getChildren()::add);
+			logger.info(() -> "Plugin UI loaded: " + plugin.getName());
 		} catch (IOException e) {
-			logger.error(() -> "Unable to initialize nodes", e);
+			logger.error(() -> "Unable to initialize plugin UI for " + plugin.getName(), e);
 		}
-		card.initBus(eventManager);
-		card.getModes().ifPresent(modes -> modes.forEach(mode -> {
-			modeService.initMode(mode);
-			commands.add(mode.getCommandTree());
-		}));
-		card.getMenuItems().ifPresent(list -> {
-			Collections.reverse(list);
-			list.forEach(menuItem -> tray.createMenuItem(menuItem.name(), menuItem.label(), menuItem.action()));
-		});
-		card.getModelessCommands().ifPresent(command -> {
-			if (!command.get().isBlank()) {
-				commands.add(command);
-			} else {
-				command.getChildren().forEach(c -> {
-					if (commands.getChildren().stream().filter(existing -> existing.get().equals(c.get())).findAny().isEmpty()) {
-						commands.add(c);
-					} else {
-						commands.getChildren().stream().filter(existing -> existing.get().equals(c.get())).findFirst().ifPresent(existing -> existing.getChildren().addAll(c.getChildren()));
-					}
-				});
-				logger.debug(() -> "Added command: " + command);
-			}
-		});
-	}
-
-	private TreeNode<String> addAdditionalCommands(TreeNode<String> commands) {
-		commands.add(themeService.getThemeCommands());
-		commands.add("restart", "exit", "modes", SETTING, "plugindir", "clear", "logs");
-
-		var commandPlugins = new TreeNode<>(PLUGINS);
-		commandPlugins.add(WHITELIST, BLACKLIST);
-		commands.add(commandPlugins);
-
-		var commandSettings = new TreeNode<>(CONST_SETTINGS);
-		commandSettings.add("overwrites", RELOAD);
-		commands.add(commandSettings);
-
-		var commandReposition = new TreeNode<>(CONST_REPOSITION);
-		commands.add(commandReposition);
-
-		return commands;
 	}
 
 	private void initGlobalHotkeys() {
@@ -528,61 +376,6 @@ public class UiApplication extends Application {
 		}
 	}
 
-	private void openSettingsFile() {
-		if (WindowsUtils.isWindows()) {
-			CompletableFuture.runAsync(() -> {
-				try {
-					new ProcessBuilder("cmd", "/c", "start", "/wait", "notepad",
-							settings.getSettingsFile().getAbsolutePath()).start().waitFor();
-					settings.loadProperties();
-					eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
-				} catch (InterruptedException | IOException e) {
-					logger.warn(() -> "Unable to open settings file", e);
-					Thread.currentThread().interrupt();
-				}
-			});
-		} else {
-			try {
-				Desktop.getDesktop().edit(settings.getSettingsFile());
-			} catch (IOException e) {
-				logger.warn(() -> "Unable to open settings file (non windows)", e);
-				Thread.currentThread().interrupt();
-			}
-			// Reloading of properties not yet implemented
-		}
-	}
-
-	private void openPluginsDirectory() {
-		var jarDirectory = getJarDirectory();
-		if (jarDirectory != null) {
-			try {
-				var pluginDirectory = Path.of(jarDirectory + "/plugins");
-				Desktop.getDesktop().open(pluginDirectory.toFile());
-			} catch (IOException e) {
-				logger.warn(() -> "Unable to open plugins directory: " + e.getMessage(), e);
-			}
-		} else {
-			logger.warn(() -> "Unable to open plugins directory: Not in jar mode");
-			eventManager.echo("Not in jar mode");
-		}
-	}
-
-	private void initSettings() {
-		var settingsMap = new HashMap<String, String>();
-		settingsMap.put(SettingsConsts.APPLICATION_TITLE, "rcp");
-		settingsMap.put(SettingsConsts.WIDTH, "500");
-		settingsMap.put(SettingsConsts.BOTTOM_SPACER, "false");
-		settingsMap.put(SettingsConsts.ANIMATIONS_ENABLED, "true");
-		settingsMap.put(SettingsConsts.BLUR_ENABLED, "true");
-		settingsMap.put(SettingsConsts.RESTORE_PREVIOUS_FOCUS, "true");
-		settingsMap.put(SettingsConsts.HOT_KEY, "alt SPACE");
-		settingsMap.put(SettingsConsts.FOCUS_APPLICATION, "Vivaldi");
-		settingsMap.put(SettingsConsts.MONITOR, "0");
-		settingsMap.put(SettingsConsts.MODES, StringUtils.EMPTY);
-		settingsMap.put(SettingsConsts.THEME, "deepdarkness");
-		settings.addSettings(settingsMap);
-	}
-
 	private void shutdown() {
 		logger.debug(() -> "Shutting down");
 		eventManager.echo("kthxbye.");
@@ -594,7 +387,7 @@ public class UiApplication extends Application {
 				logger.error(() -> "Error while shutdown", e);
 				Thread.currentThread().interrupt();
 			}
-			ccards.forEach(CCard::onShutdown);
+			pluginLoader.getPlugins().forEach(CCard::onShutdown);
 			tray.removeTrayIcon();
 			Platform.exit();
 			Platform.runLater(() -> System.exit(0));
@@ -604,7 +397,7 @@ public class UiApplication extends Application {
 	private void prepareShutdown() {
 		logger.debug(() -> "Shutting down immediately");
 		CompletableFuture.runAsync(() -> {
-			ccards.forEach(CCard::onShutdown);
+			pluginLoader.getPlugins().forEach(CCard::onShutdown);
 			tray.removeTrayIcon();
 		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
 	}
@@ -612,12 +405,10 @@ public class UiApplication extends Application {
 	private void subscribeToDefaultEvents() {
 		eventManager.listen("exit", _ -> shutdown());
 		eventManager.listen("exitimmediately", _ -> prepareShutdown());
-		eventManager.listen(SETTING, this::handleSettingCommand);
-		eventManager.listen(CONST_SETTINGS, this::handleSettingsCommand);
+		eventManager.listen("setting", this::handleSettingCommand);
+		eventManager.listen("settings", this::handleSettingsCommand);
 		eventManager.listen("restart", _ -> restartApplication());
-		eventManager.listen(PLUGINS, this::handlePluginsCommand);
-		eventManager.listen("plugindir", _ -> openPluginsDirectory());
-		eventManager.listen(CONST_REPOSITION, _ -> reposition());
+		eventManager.listen("reposition", _ -> reposition());
 		eventManager.listen("clear", _ -> eventManager.clear());
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
@@ -650,7 +441,7 @@ public class UiApplication extends Application {
 
 	private void handleSettingsCommand(Object[] args) {
 		var join = StringUtils.join(args);
-		if (RELOAD.equals(join)) {
+		if ("reload".equals(join)) {
 			settings.loadProperties();
 			eventManager.echo("Settings reloaded");
 		} else if ("overwrites".equals(join)) {
@@ -663,7 +454,7 @@ public class UiApplication extends Application {
 			}
 		} else {
 			hide();
-			openSettingsFile();
+			settings.openSettingsFile();
 		}
 	}
 
@@ -680,29 +471,6 @@ public class UiApplication extends Application {
 					}
 				});
 
-	}
-
-	private void handlePluginsCommand(Object[] args) {
-		var join = StringUtils.join(args);
-		if (WHITELIST.equals(join)) {
-			if (pluginWhitelist != null) {
-				var list = pluginWhitelist.stream().collect(Collectors.joining(", "));
-				eventManager.echo("Whitelisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
-			} else {
-				eventManager.echo("No plugins whitelisted");
-			}
-		} else if (BLACKLIST.equals(join)) {
-			if (pluginBlacklist != null) {
-				var list = pluginBlacklist.stream().collect(Collectors.joining(", "));
-				eventManager.echo("Blacklisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
-			} else {
-				eventManager.echo("No plugins blacklisted");
-			}
-		} else {
-			var pluginlist = ccards.stream().map(CCard::getName).sorted().collect(Collectors.joining(", "));
-			logger.info(() -> "Active plugins: " + pluginlist);
-			eventManager.echo("Active plugins", StringUtils.abbreviate(pluginlist, settings.getCharWidth()));
-		}
 	}
 
 	private void reposition() {

@@ -1,5 +1,6 @@
 package dev.tim9h.rcp.core.settings;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
+import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
@@ -51,6 +54,7 @@ public class SettingsImpl implements Settings {
 		if (properties == null) {
 			loadProperties();
 		}
+		initDefaultSettings();
 	}
 
 	@Override
@@ -196,6 +200,48 @@ public class SettingsImpl implements Settings {
 	@Override
 	public int getCharWidth() {
 		return (int) (getInt("core.ui.stage.width").doubleValue() / 6.9);
+	}
+
+	@Override
+	public void openSettingsFile() {
+		if (WindowsUtils.isWindows()) {
+			CompletableFuture.runAsync(() -> {
+				try {
+					new ProcessBuilder("cmd", "/c", "start", "/wait", "notepad", getSettingsFile().getAbsolutePath())
+							.start().waitFor();
+					loadProperties();
+					eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
+				} catch (InterruptedException | IOException e) {
+					logger.warn(() -> "Unable to open settings file", e);
+					Thread.currentThread().interrupt();
+				}
+			});
+		} else {
+			try {
+				Desktop.getDesktop().edit(getSettingsFile());
+			} catch (IOException e) {
+				logger.warn(() -> "Unable to open settings file (non windows)", e);
+				Thread.currentThread().interrupt();
+			}
+			// Reloading of properties not yet implemented
+		}
+	}
+	
+	private void initDefaultSettings() {
+		var settingsMap = new HashMap<String, String>();
+		settingsMap.put(SettingsConsts.APPLICATION_TITLE, "rcp");
+		settingsMap.put(SettingsConsts.WIDTH, "500");
+		settingsMap.put(SettingsConsts.BOTTOM_SPACER, "false");
+		settingsMap.put(SettingsConsts.ANIMATIONS_ENABLED, "true");
+		settingsMap.put(SettingsConsts.BLUR_ENABLED, "true");
+		settingsMap.put(SettingsConsts.RESTORE_PREVIOUS_FOCUS, "true");
+		settingsMap.put(SettingsConsts.HOT_KEY, "alt SPACE");
+		settingsMap.put(SettingsConsts.FOCUS_APPLICATION, "Vivaldi");
+		settingsMap.put(SettingsConsts.MONITOR, "0");
+		settingsMap.put(SettingsConsts.MODES, StringUtils.EMPTY);
+		settingsMap.put(SettingsConsts.THEME, "deepdarkness");
+		addSettings(settingsMap);
+		persistProperties();
 	}
 
 }
