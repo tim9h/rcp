@@ -26,8 +26,8 @@ module rcp.core {
 	requires org.apache.logging.log4j;
 	requires javafx.controls;
 	requires javafx.media;
-	requires commons.cli;
 	requires org.apache.logging.log4j.core;
+	requires org.apache.commons.cli;
 
 	opens dev.tim9h.rcp.core.ui;
 	opens dev.tim9h.rcp.core.service;
