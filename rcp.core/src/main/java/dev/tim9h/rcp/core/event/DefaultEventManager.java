@@ -26,6 +26,7 @@ public class DefaultEventManager implements EventManager {
 
 	public DefaultEventManager() {
 		bus = new EventBus("rcp");
+		listen("clear", _ -> clear());
 	}
 
 	@Override

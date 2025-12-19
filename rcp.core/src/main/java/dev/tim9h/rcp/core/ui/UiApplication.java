@@ -1,27 +1,12 @@
 package dev.tim9h.rcp.core.ui;
 
-import java.awt.Desktop;
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 
 import javax.swing.KeyStroke;
 
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.FileAppender;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -30,6 +15,7 @@ import com.kieferlam.javafxblur.Blur;
 import com.tulskiy.keymaster.common.Provider;
 
 import dev.tim9h.rcp.core.plugin.PluginLoader;
+import dev.tim9h.rcp.core.service.CoreService;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
 import dev.tim9h.rcp.core.service.ThemeService;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
@@ -94,6 +80,9 @@ public class UiApplication extends Application {
 	@Inject
 	private PluginLoader pluginLoader;
 
+	@Inject
+	private CoreService coreService;
+
 	private double maxHeight;
 
 	private static String[] argsGlobal;
@@ -107,14 +96,22 @@ public class UiApplication extends Application {
 	@Override
 	public void start(Stage hiddenStage) throws Exception {
 		injector = Guice.createInjector(new BasicModule());
-		injector.injectMembers(this);
+		
+		try {
+			injector.injectMembers(this);
+		} catch (Exception e) {
+			System.err.println("Unable to inject members: " + e.getMessage());
+			e.printStackTrace();
+			Platform.exit();
+			return;
+		}
 
-		parseArgs();
+		coreService.parseArgs(argsGlobal);
 
 		var cardContainer = initScene();
 		createTray();
 		initGlobalHotkeys();
-		subscribeToDefaultEvents();
+		subscribeToUiEvents();
 
 		hiddenStage.initStyle(StageStyle.UTILITY);
 		hiddenStage.setOpacity(0);
@@ -132,41 +129,9 @@ public class UiApplication extends Application {
 			Blur.loadBlurLibrary();
 			Blur.applyBlur(stage, Blur.BLUR_BEHIND);
 		}
-		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> shutdown());
+		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> coreService.shutdown());
 
 		modeService.initDefaultModes();
-	}
-
-	private void parseArgs() throws ParseException {
-		var options = new Options();
-
-		var optionBlacklist = new Option("b", "blacklist", true, "Do not activate specific plugins");
-		optionBlacklist.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionBlacklist);
-
-		var optionWhitelist = new Option("w", "blacklist", true, "Only activate specific plugins");
-		optionWhitelist.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionWhitelist);
-
-		var optionSetting = new Option("s", "setting", true, "Overwrite persisted setting");
-		optionSetting.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(optionSetting);
-
-		var parser = new DefaultParser();
-		var parse = parser.parse(options, argsGlobal);
-
-		if (parse.hasOption(optionBlacklist) && parse.hasOption(optionWhitelist)) {
-			throw new ParseException("Invalid combination of options: whitelist and blacklist");
-		} else if (parse.hasOption(optionBlacklist)) {
-			var blacklist = Arrays.stream(parse.getOptionValues(optionBlacklist)).map(String::toLowerCase).toList();
-			pluginLoader.setPluginBlacklist(blacklist);
-		} else if (parse.hasOption(optionWhitelist)) {
-			var whitelist = Arrays.stream(parse.getOptionValues(optionWhitelist)).map(String::toLowerCase).toList();
-			pluginLoader.setPluginWhitelist(whitelist);
-		}
-		if (parse.hasOption(optionSetting)) {
-			settings.addOverwrites(Arrays.asList(parse.getOptionValues(optionSetting)));
-		}
 	}
 
 	private Stage createStage(Stage hiddenStage) {
@@ -282,9 +247,7 @@ public class UiApplication extends Application {
 			fade.setFromValue(0.0);
 			fade.setToValue(1.0);
 			fade.play();
-
 			stage.setHeight(maxHeight - 100.0f);
-
 			new Timer("showUiTimer").scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run() {
@@ -307,7 +270,6 @@ public class UiApplication extends Application {
 			fade.setFromValue(1.0);
 			fade.setToValue(0.0);
 			fade.play();
-
 			new Timer("hideUiTimer").scheduleAtFixedRate(new TimerTask() {
 				@Override
 				public void run() {
@@ -334,10 +296,10 @@ public class UiApplication extends Application {
 		themeService.createThemeMenu();
 		tray.createMenuItem("plugins", "Open plugins directory", pluginLoader::openPluginsDirectory, true);
 		tray.createMenuItem("reposition", "Reposition", this::reposition);
-		tray.createMenuItem("reload", "Restart Application", this::restartApplication);
+		tray.createMenuItem("reload", "Restart Application", coreService::restartApplication);
 		tray.createMenuItem("f5settings", "Reload Settings", settings::loadProperties);
 		tray.createMenuItem("settings", "Open Settings", settings::openSettingsFile, true);
-		tray.createMenuItem("exitApp", "Exit", this::shutdown);
+		tray.createMenuItem("exitApp", "Exit", coreService::shutdown);
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> toggleVisibility(true, false)));
 	}
 
@@ -357,120 +319,13 @@ public class UiApplication extends Application {
 				_ -> Platform.runLater(() -> toggleVisibility(true, true)));
 	}
 
-	private void restartApplication() {
-		logger.debug(() -> "Restarting application");
-		try {
-			var javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw";
-			var sourcepath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).toFile()
-					.toString();
-			if (Strings.CS.endsWith(sourcepath, ".jar")) {
-				new ProcessBuilder(javaBin, "-jar", sourcepath).start();
-				eventManager.post(new CcEvent(CcEvent.EVENT_RESTARTING));
-				shutdown();
-			} else {
-				logger.warn(() -> "Unable to restart application: Not in jar mode");
-				eventManager.echo("Unable to restart: Not in jar mode");
-			}
-		} catch (IOException | URISyntaxException e) {
-			logger.error(() -> "Unable to restart application", e);
-		}
-	}
-
-	private void shutdown() {
-		logger.debug(() -> "Shutting down");
-		eventManager.echo("kthxbye.");
-		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
-		CompletableFuture.runAsync(() -> {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				logger.error(() -> "Error while shutdown", e);
-				Thread.currentThread().interrupt();
-			}
-			pluginLoader.getPlugins().forEach(CCard::onShutdown);
-			tray.removeTrayIcon();
-			Platform.exit();
-			Platform.runLater(() -> System.exit(0));
-		});
-	}
-
-	private void prepareShutdown() {
-		logger.debug(() -> "Shutting down immediately");
-		CompletableFuture.runAsync(() -> {
-			pluginLoader.getPlugins().forEach(CCard::onShutdown);
-			tray.removeTrayIcon();
-		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
-	}
-
-	private void subscribeToDefaultEvents() {
-		eventManager.listen("exit", _ -> shutdown());
-		eventManager.listen("exitimmediately", _ -> prepareShutdown());
-		eventManager.listen("setting", this::handleSettingCommand);
-		eventManager.listen("settings", this::handleSettingsCommand);
-		eventManager.listen("restart", _ -> restartApplication());
+	private void subscribeToUiEvents() {
 		eventManager.listen("reposition", _ -> reposition());
-		eventManager.listen("clear", _ -> eventManager.clear());
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
 			show();
 			stage.requestFocus();
 		});
-		eventManager.listen("logs", _ -> openLogFile());
-	}
-
-	private void handleSettingCommand(Object[] args) {
-		if (args == null) {
-			eventManager.echo("Missing setting key");
-		} else if (args.length == 1 && StringUtils.split((String) args[0], "=").length == 2) {
-			var split = StringUtils.split((String) args[0], "=");
-			settings.persist(split[0], split[1]);
-			logger.info(() -> "Setting " + split[0] + " persisted");
-			eventManager.echo("Setting persisted");
-		} else if (args.length == 1) {
-			var key = StringUtils.join(args);
-			var val = settings.getString(key);
-			eventManager.echo(key, StringUtils.defaultIfBlank(val, "Setting not found"));
-		} else if (args.length > 1) {
-			var key = (String) args[0];
-			var val = StringUtils.join(Arrays.copyOfRange(args, 1, args.length), StringUtils.SPACE);
-			settings.persist(key, val);
-			logger.info(() -> "Setting " + key + " persisted");
-			eventManager.echo("Setting persisted");
-		}
-	}
-
-	private void handleSettingsCommand(Object[] args) {
-		var join = StringUtils.join(args);
-		if ("reload".equals(join)) {
-			settings.loadProperties();
-			eventManager.echo("Settings reloaded");
-		} else if ("overwrites".equals(join)) {
-			var overwrites = settings.getOverwrites().keySet();
-			if (!overwrites.isEmpty()) {
-				eventManager.echo("Overwriting",
-						StringUtils.abbreviate(StringUtils.join(overwrites, ", "), settings.getCharWidth()));
-			} else {
-				eventManager.echo("No settings overwritten");
-			}
-		} else {
-			hide();
-			settings.openSettingsFile();
-		}
-	}
-
-	private void openLogFile() {
-		var ctx = (LoggerContext) LogManager.getContext(false);
-		var config = ctx.getConfiguration();
-		var appenders = config.getAppenders();
-		appenders.values().stream().filter(FileAppender.class::isInstance).map(FileAppender.class::cast)
-				.map(FileAppender::getFileName).findFirst().ifPresent(fileName -> {
-					try {
-						Desktop.getDesktop().open(new File(fileName));
-					} catch (IOException e) {
-						logger.error(() -> "Unable to open log file", e);
-					}
-				});
-
 	}
 
 	private void reposition() {

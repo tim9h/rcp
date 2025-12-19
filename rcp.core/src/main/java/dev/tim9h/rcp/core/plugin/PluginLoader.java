@@ -44,7 +44,6 @@ public class PluginLoader {
 
 	private Injector injector;
 
-	@Inject
 	private EventManager eventManager;
 
 	@Inject
@@ -66,10 +65,9 @@ public class PluginLoader {
 	private List<CCard> plugins;
 
 	@Inject
-	public PluginLoader(Injector injector) {
-		injector.injectMembers(this);
+	public PluginLoader(Injector injector, EventManager eventManager) {
 		this.injector = injector;
-		logger.debug(() -> "Initializing PluginLoader");
+		this.eventManager = eventManager;
 		subscribeEvents();
 	}
 

@@ -45,5 +45,9 @@ public interface Settings {
 	public int getCharWidth();
 	
 	public void openSettingsFile();
+
+	void handleSettingCommand(Object[] args);
+
+	void handleSettingsCommand(Object[] args);
 	
 }

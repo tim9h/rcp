@@ -29,7 +29,7 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 
 @Singleton
-public class ThemeService {
+public class ThemeServiceImpl implements ThemeService {
 
 	@InjectLogger
 	private Logger logger;
@@ -47,7 +47,7 @@ public class ThemeService {
 	private Menu themeMenu;
 
 	@Inject
-	public ThemeService(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
+	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
 			TrayManager trayManager) {
 		this.scene = scene;
 		this.settings = settings;
@@ -61,6 +61,7 @@ public class ThemeService {
 		subscribeToThemeEvents();
 	}
 
+	@Override
 	public void subscribeToThemeEvents() {
 		eventManager.listen("theme", args -> {
 			if (!modeService.isModeActive("alert")) {
@@ -73,6 +74,7 @@ public class ThemeService {
 		});
 	}
 
+	@Override
 	public void setTheme(String theme, boolean persist) {
 		var url = getClass().getResource(String.format("/css/theme_%s.css", theme.toLowerCase()));
 		if (url == null) {
@@ -99,6 +101,7 @@ public class ThemeService {
 		}
 	}
 
+	@Override
 	public TreeNode<String> getThemeCommands() {
 		var themes = getThemeNames();
 		var node = new TreeNode<>("theme");
@@ -153,6 +156,7 @@ public class ThemeService {
 		return filenames;
 	}
 
+	@Override
 	public void createThemeMenu() {
 		themeMenu = new Menu("Theme");
 

@@ -6,6 +6,8 @@ import com.google.inject.matcher.Matchers;
 import dev.tim9h.rcp.core.event.DefaultEventManager;
 import dev.tim9h.rcp.core.logging.Log4jTypeListener;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
+import dev.tim9h.rcp.core.service.ThemeService;
+import dev.tim9h.rcp.core.service.ThemeServiceImpl;
 import dev.tim9h.rcp.core.service.CryptoServiceImpl;
 import dev.tim9h.rcp.core.service.ModeService;
 import dev.tim9h.rcp.core.settings.SettingsImpl;
@@ -24,7 +26,7 @@ public class BasicModule extends AbstractModule {
 		bind(Scene.class).to(InjectableScene.class);
 		bind(ModeService.class).to(ModeServiceImpl.class);
 		bind(CryptoService.class).to(CryptoServiceImpl.class);
-
+		bind(ThemeService.class).to(ThemeServiceImpl.class);
 		bindListener(Matchers.any(), new Log4jTypeListener());
 	}
 
