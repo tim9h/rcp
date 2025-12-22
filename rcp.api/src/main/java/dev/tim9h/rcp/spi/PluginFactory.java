@@ -3,11 +3,11 @@ package dev.tim9h.rcp.spi;
 import java.util.Collections;
 import java.util.Map;
 
-public interface CCardFactory {
+public interface PluginFactory {
 
 	public String getId();
 
-	public CCard createCCard();
+	public Plugin create();
 
 	public default Map<String, String> getSettingsContributions() {
 		return Collections.emptyMap();

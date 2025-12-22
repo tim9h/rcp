@@ -27,7 +27,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
+import dev.tim9h.rcp.spi.Plugin;
 import javafx.application.Platform;
 
 @Singleton
@@ -129,7 +129,7 @@ public class CoreService {
 				logger.error(() -> "Error while shutdown", e);
 				Thread.currentThread().interrupt();
 			}
-			pluginLoader.getPlugins().forEach(CCard::onShutdown);
+			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
 			Platform.exit();
 			Platform.runLater(() -> System.exit(0));
@@ -139,7 +139,7 @@ public class CoreService {
 	public void prepareShutdown() {
 		logger.debug(() -> "Shutting down immediately");
 		CompletableFuture.runAsync(() -> {
-			pluginLoader.getPlugins().forEach(CCard::onShutdown);
+			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
 		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
 	}

@@ -25,8 +25,8 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
 import dev.tim9h.rcp.spi.Gravity;
+import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
 import dev.tim9h.rcp.spi.TreeNode;
 import javafx.application.Platform;
@@ -37,7 +37,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
-public class CliView implements CCard {
+public class CliView implements Plugin {
 
 	@InjectLogger
 	private Logger logger;
@@ -67,7 +67,7 @@ public class CliView implements CCard {
 
 	@Override
 	public void initBus(EventManager em) {
-		CCard.super.initBus(em);
+		Plugin.super.initBus(em);
 		em.listen(CcEvent.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
 		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
 		em.listen(CcEvent.EVENT_CLI_ADD_PROPOSALS, data -> {

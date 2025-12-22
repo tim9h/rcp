@@ -5,10 +5,10 @@ import java.util.Map;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.spi.CCard;
-import dev.tim9h.rcp.spi.CCardFactory;
+import dev.tim9h.rcp.spi.Plugin;
+import dev.tim9h.rcp.spi.PluginFactory;
 
-public class CliViewFactory implements CCardFactory {
+public class CliViewFactory implements PluginFactory {
 
 	public static final String SETTING_QUERYDELAY = "cli.query.delay";
 
@@ -25,7 +25,7 @@ public class CliViewFactory implements CCardFactory {
 	}
 
 	@Override
-	public CCard createCCard() {
+	public Plugin create() {
 		return cliView;
 	}
 

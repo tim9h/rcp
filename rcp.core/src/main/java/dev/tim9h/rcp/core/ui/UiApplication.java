@@ -26,7 +26,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
+import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
 import javafx.animation.Animation.Status;
 import javafx.animation.FadeTransition;
@@ -303,7 +303,7 @@ public class UiApplication extends Application {
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> toggleVisibility(true, false)));
 	}
 
-	private void initPluginUi(VBox vbox, CCard plugin) {
+	private void initPluginUi(VBox vbox, Plugin plugin) {
 		plugin.getStylesheet().ifPresent(scene.getStylesheets()::add);
 		try {
 			plugin.getNode().ifPresent(vbox.getChildren()::add);

@@ -5,9 +5,9 @@ import com.google.inject.Inject;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
+import dev.tim9h.rcp.spi.Plugin;
 
-public class ${pluginNameHyphened}View implements CCard {
+public class ${pluginNameHyphened}View implements Plugin {
 	
 	@InjectLogger
 	private Logger logger;

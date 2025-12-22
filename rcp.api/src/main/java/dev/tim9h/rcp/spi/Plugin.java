@@ -8,7 +8,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import javafx.scene.Node;
 
-public interface CCard {
+public interface Plugin {
 
 	public String getName();
 

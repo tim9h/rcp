@@ -28,13 +28,13 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.ModeService;
-import dev.tim9h.rcp.core.util.CCardSorter;
+import dev.tim9h.rcp.core.util.PluginNodeSorter;
 import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.CCard;
-import dev.tim9h.rcp.spi.CCardFactory;
+import dev.tim9h.rcp.spi.Plugin;
+import dev.tim9h.rcp.spi.PluginFactory;
 
 @Singleton
 public class PluginLoader {
@@ -62,7 +62,7 @@ public class PluginLoader {
 
 	private List<String> pluginWhitelist;
 
-	private List<CCard> plugins;
+	private List<Plugin> plugins;
 
 	@Inject
 	public PluginLoader(Injector injector, EventManager eventManager) {
@@ -115,7 +115,7 @@ public class PluginLoader {
 				eventManager.echo("No plugins blacklisted");
 			}
 		} else {
-			var pluginlist = getPlugins().stream().map(CCard::getName).sorted().collect(Collectors.joining(", "));
+			var pluginlist = getPlugins().stream().map(Plugin::getName).sorted().collect(Collectors.joining(", "));
 			logger.info(() -> "Active plugins: " + pluginlist);
 			eventManager.echo("Active plugins", StringUtils.abbreviate(pluginlist, settings.getCharWidth()));
 		}
@@ -150,24 +150,24 @@ public class PluginLoader {
 		}
 	}
 
-	public List<CCard> loadPlugins() {
+	public List<Plugin> loadPlugins() {
 		plugins = createPluginFactories().stream().map(fac -> {
 			logger.info(() -> "Injecting " + fac.getClass().getSimpleName());
-			return injector.getInstance(fac.getClass()).createCCard();
-		}).sorted(new CCardSorter()).toList();
+			return injector.getInstance(fac.getClass()).create();
+		}).sorted(new PluginNodeSorter()).toList();
 		plugins.forEach(this::initPlugin);
 		commandsService.propagateCommands();
 		return plugins;
 	}
 
-	private List<CCardFactory> createPluginFactories() {
+	private List<PluginFactory> createPluginFactories() {
 		return createServiceLoader().stream().filter(filterCards()).map(fac -> {
 			settings.addSettings(fac.get().getSettingsContributions());
 			return fac.get();
 		}).toList();
 	}
 
-	private ServiceLoader<CCardFactory> createServiceLoader() {
+	private ServiceLoader<PluginFactory> createServiceLoader() {
 		var jarDirectory = getJarDirectory();
 		if (jarDirectory != null) {
 			var pluginDirectory = Path.of(jarDirectory + "/plugins");
@@ -179,7 +179,7 @@ public class PluginLoader {
 					var urlArray = urls.toArray(URL[]::new);
 					logger.debug(() -> urlArray.length + " jars found");
 					var ucl = new URLClassLoader(urlArray);
-					return ServiceLoader.load(CCardFactory.class, ucl);
+					return ServiceLoader.load(PluginFactory.class, ucl);
 				} catch (IOException e) {
 					logger.error(() -> "Unable to load plugin jars", e);
 				}
@@ -188,7 +188,7 @@ public class PluginLoader {
 			}
 		}
 		logger.debug(() -> "Initializing service loader - non-jar-mode");
-		return ServiceLoader.load(CCardFactory.class);
+		return ServiceLoader.load(PluginFactory.class);
 	}
 
 	private URL toURL(Path path) {
@@ -200,7 +200,7 @@ public class PluginLoader {
 		}
 	}
 
-	private Predicate<? super Provider<CCardFactory>> filterCards() {
+	private Predicate<? super Provider<PluginFactory>> filterCards() {
 		return fac -> {
 			if (!getPluginWhitelist().isEmpty()) {
 				boolean value = getPluginWhitelist().contains(fac.get().getId().toLowerCase());
@@ -219,7 +219,7 @@ public class PluginLoader {
 		};
 	}
 
-	public void initPlugin(CCard plugin) {
+	public void initPlugin(Plugin plugin) {
 		plugin.init();
 		plugin.initBus(eventManager);
 		plugin.getModes().ifPresent(modes -> {
@@ -235,7 +235,7 @@ public class PluginLoader {
 		});
 	}
 
-	public List<CCard> getPlugins() {
+	public List<Plugin> getPlugins() {
 		if (plugins == null) {
 			return loadPlugins();
 		}

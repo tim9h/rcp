@@ -1,4 +1,4 @@
-import dev.tim9h.rcp.spi.CCardFactory;
+import dev.tim9h.rcp.spi.PluginFactory;
 
 module rcp.core {
 	exports dev.tim9h.rcp.core.logging;
@@ -35,5 +35,5 @@ module rcp.core {
 	opens dev.tim9h.rcp.core.settings;
 	opens dev.tim9h.rcp.core.plugin;
 
-	uses CCardFactory;
+	uses PluginFactory;
 }
