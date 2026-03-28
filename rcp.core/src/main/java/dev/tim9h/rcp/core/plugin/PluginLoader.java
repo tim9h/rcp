@@ -151,14 +151,14 @@ public class PluginLoader {
 	public List<Plugin> loadPlugins() {
 		if (plugins == null) {
 			plugins = new ArrayList<>();
-			createServiceLoader().forEach(plugin -> {
-				plugins.add(plugin);
+			createServiceLoader().forEach(plugins::add);
+			plugins = plugins.stream().filter(filterCards()).sorted(new PluginNodeSorter()).toList();
+			plugins.forEach(plugin -> {
 				logger.info(() -> "Injecting " + plugin.getName());
 				injector.injectMembers(plugin);
 				initPlugin(plugin);
 			});
 			commandsService.propagateCommands();
-			plugins = plugins.stream().filter(filterCards()).sorted(new PluginNodeSorter()).toList();
 		}
 		return plugins;
 	}
@@ -199,13 +199,13 @@ public class PluginLoader {
 	private Predicate<Plugin> filterCards() {
 		return plugin -> {
 			if (!getPluginWhitelist().isEmpty()) {
-				boolean value = getPluginWhitelist().contains(plugin.getName().toLowerCase());
+				boolean value = getPluginWhitelist().contains(plugin.getId().toLowerCase());
 				if (value) {
 					logger.info(() -> "Loading plugin " + plugin.getName() + " (whitelist)");
 				}
 				return value;
 			} else if (!getPluginBlacklist().isEmpty()) {
-				boolean value = !getPluginBlacklist().contains(plugin.getName().toLowerCase());
+				boolean value = !getPluginBlacklist().contains(plugin.getId().toLowerCase());
 				if (!value) {
 					logger.info(() -> "Skip loading plugin " + plugin.getName() + " (blacklist)");
 				}

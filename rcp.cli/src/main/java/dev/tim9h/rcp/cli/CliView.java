@@ -9,7 +9,9 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,6 +40,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
 public class CliView implements Plugin {
+
+	public static final String SETTING_QUERYDELAY = "cli.query.delay";
+
+	static final String SETTING_SEARCH_URL = "cli.url.search";
+
+	static final String SETTING_SUGGEST_URL = "cli.url.suggest";
 
 	@InjectLogger
 	private Logger logger;
@@ -131,7 +139,7 @@ public class CliView implements Plugin {
 		outerPane.getStyleClass().add("plugin-cli");
 		return Optional.of(outerPane);
 	}
-	
+
 	private void calculateWidth() {
 		var width = settings.getDouble("core.ui.stage.width").doubleValue() - 25;
 		lblInterpretation.setClipWidth(width);
@@ -178,7 +186,7 @@ public class CliView implements Plugin {
 		if (StringUtils.isNotBlank(query) && Desktop.isDesktopSupported()
 				&& Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 			try {
-				var url = String.format(settings.getString(CliViewFactory.SETTING_SEARCH_URL),
+				var url = String.format(settings.getString(SETTING_SEARCH_URL),
 						URLEncoder.encode(query, StandardCharsets.UTF_8));
 				Desktop.getDesktop().browse(new URI(url));
 			} catch (IOException | URISyntaxException e) {
@@ -187,10 +195,19 @@ public class CliView implements Plugin {
 		}
 
 	}
-	
+
 	@Override
 	public void onSettingsChanged() {
 		calculateWidth();
+	}
+
+	@Override
+	public Map<String, String> getSettingsContributions() {
+		var properties = new HashMap<String, String>();
+		properties.put(SETTING_QUERYDELAY, "50");
+		properties.put(SETTING_SEARCH_URL, "https://www.google.com/search?q=%s");
+		properties.put(SETTING_SUGGEST_URL, "https://ac.duckduckgo.com/ac/?q=%s&type=json");
+		return properties;
 	}
 
 }

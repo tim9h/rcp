@@ -13,6 +13,10 @@ import javafx.scene.Node;
 public interface Plugin {
 
 	public String getName();
+	
+	public default String getId() {
+		return getName().toLowerCase();
+	}
 
 	public default Optional<Node> getNode() throws IOException {
 		return Optional.empty();

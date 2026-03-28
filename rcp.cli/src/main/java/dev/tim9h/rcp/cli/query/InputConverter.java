@@ -9,7 +9,7 @@ import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-import dev.tim9h.rcp.cli.CliViewFactory;
+import dev.tim9h.rcp.cli.CliView;
 import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.utils.DelayedRunner;
@@ -44,7 +44,7 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	private void initSettings() {
-		setMaxDelay(settings.getInt(CliViewFactory.SETTING_QUERYDELAY).intValue());
+		setMaxDelay(settings.getInt(CliView.SETTING_QUERYDELAY).intValue());
 	}
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
