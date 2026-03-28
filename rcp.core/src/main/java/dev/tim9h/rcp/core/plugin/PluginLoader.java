@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.ServiceLoader.Provider;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,7 +33,6 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.Plugin;
-import dev.tim9h.rcp.spi.PluginFactory;
 
 @Singleton
 public class PluginLoader {
@@ -151,23 +149,21 @@ public class PluginLoader {
 	}
 
 	public List<Plugin> loadPlugins() {
-		plugins = createPluginFactories().stream().map(fac -> {
-			logger.info(() -> "Injecting " + fac.getClass().getSimpleName());
-			return injector.getInstance(fac.getClass()).create();
-		}).sorted(new PluginNodeSorter()).toList();
-		plugins.forEach(this::initPlugin);
-		commandsService.propagateCommands();
+		if (plugins == null) {
+			plugins = new ArrayList<>();
+			createServiceLoader().forEach(plugin -> {
+				plugins.add(plugin);
+				logger.info(() -> "Injecting " + plugin.getName());
+				injector.injectMembers(plugin);
+				initPlugin(plugin);
+			});
+			commandsService.propagateCommands();
+			plugins = plugins.stream().filter(filterCards()).sorted(new PluginNodeSorter()).toList();
+		}
 		return plugins;
 	}
 
-	private List<PluginFactory> createPluginFactories() {
-		return createServiceLoader().stream().filter(filterCards()).map(fac -> {
-			settings.addSettings(fac.get().getSettingsContributions());
-			return fac.get();
-		}).toList();
-	}
-
-	private ServiceLoader<PluginFactory> createServiceLoader() {
+	private ServiceLoader<Plugin> createServiceLoader() {
 		var jarDirectory = getJarDirectory();
 		if (jarDirectory != null) {
 			var pluginDirectory = Path.of(jarDirectory + "/plugins");
@@ -179,7 +175,7 @@ public class PluginLoader {
 					var urlArray = urls.toArray(URL[]::new);
 					logger.debug(() -> urlArray.length + " jars found");
 					var ucl = new URLClassLoader(urlArray);
-					return ServiceLoader.load(PluginFactory.class, ucl);
+					return ServiceLoader.load(Plugin.class, ucl);
 				} catch (IOException e) {
 					logger.error(() -> "Unable to load plugin jars", e);
 				}
@@ -188,7 +184,7 @@ public class PluginLoader {
 			}
 		}
 		logger.debug(() -> "Initializing service loader - non-jar-mode");
-		return ServiceLoader.load(PluginFactory.class);
+		return ServiceLoader.load(Plugin.class);
 	}
 
 	private URL toURL(Path path) {
@@ -200,18 +196,18 @@ public class PluginLoader {
 		}
 	}
 
-	private Predicate<? super Provider<PluginFactory>> filterCards() {
-		return fac -> {
+	private Predicate<Plugin> filterCards() {
+		return plugin -> {
 			if (!getPluginWhitelist().isEmpty()) {
-				boolean value = getPluginWhitelist().contains(fac.get().getId().toLowerCase());
+				boolean value = getPluginWhitelist().contains(plugin.getName().toLowerCase());
 				if (value) {
-					logger.info(() -> "Loading plugin " + fac.get().getId() + " (whitelist)");
+					logger.info(() -> "Loading plugin " + plugin.getName() + " (whitelist)");
 				}
 				return value;
 			} else if (!getPluginBlacklist().isEmpty()) {
-				boolean value = !getPluginBlacklist().contains(fac.get().getId().toLowerCase());
+				boolean value = !getPluginBlacklist().contains(plugin.getName().toLowerCase());
 				if (!value) {
-					logger.info(() -> "Skip loading plugin " + fac.get().getId() + " (blacklist)");
+					logger.info(() -> "Skip loading plugin " + plugin.getName() + " (blacklist)");
 				}
 				return value;
 			}
@@ -233,6 +229,7 @@ public class PluginLoader {
 			Collections.reverse(menuItems);
 			menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.name(), menuItem.label(), menuItem.action()));
 		});
+		settings.addSettings(plugin.getSettingsContributions());
 	}
 
 	public List<Plugin> getPlugins() {

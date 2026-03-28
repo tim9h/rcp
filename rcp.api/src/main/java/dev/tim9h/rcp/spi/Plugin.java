@@ -1,7 +1,9 @@
 package dev.tim9h.rcp.spi;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import dev.tim9h.rcp.event.CcEvent;
@@ -60,6 +62,10 @@ public interface Plugin {
 
 	public default Optional<TreeNode<String>> getModelessCommands() {
 		return Optional.empty();
+	}
+	
+	public default Map<String, String> getSettingsContributions() {
+		return Collections.emptyMap();
 	}
 
 }

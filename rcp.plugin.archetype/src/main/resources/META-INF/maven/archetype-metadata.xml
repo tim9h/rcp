@@ -33,7 +33,7 @@
 		<fileSet filtered="true" packaged="false">
 			<directory>src/main/resources/META-INF/services</directory>
 			<includes>
-				<include>dev.tim9h.rcp.spi.CCardFactory</include>
+				<include>dev.tim9h.rcp.spi.Plugin</include>
 			</includes>
 		</fileSet>
 	</fileSets>

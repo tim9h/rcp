@@ -9,6 +9,8 @@ import dev.tim9h.rcp.spi.Plugin;
 
 public class ${pluginNameHyphened}View implements Plugin {
 	
+	static final String SETTING_FOO = "${pluginName}.sample.setting";
+	
 	@InjectLogger
 	private Logger logger;
 
@@ -21,6 +23,12 @@ public class ${pluginNameHyphened}View implements Plugin {
 	@Override
 	public String getName() {
 		return "${pluginName}";
+	}
+	
+	@Override
+	public Map<String, String> getSettingsContributions() {
+		// return Map.of(SETTING_FOO, "bar");
+		return Collections.emptyMap();
 	}
 
 }
