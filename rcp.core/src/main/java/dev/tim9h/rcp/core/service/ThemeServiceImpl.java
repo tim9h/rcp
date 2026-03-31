@@ -1,7 +1,5 @@
 package dev.tim9h.rcp.core.service;
 
-import java.awt.CheckboxMenuItem;
-import java.awt.Menu;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -9,9 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
@@ -19,6 +17,7 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.TrayManager;
+import dev.tim9h.rcp.core.util.TrayManager.MenuItemData;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
@@ -43,8 +42,6 @@ public class ThemeServiceImpl implements ThemeService {
 	private ModeService modeService;
 
 	private TrayManager trayManager;
-
-	private Menu themeMenu;
 
 	@Inject
 	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
@@ -87,16 +84,6 @@ public class ThemeServiceImpl implements ThemeService {
 					.removeIf(style -> style.contains("/css/theme_") && !url.toExternalForm().equals(style));
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
-			}
-			selectThemeCheckbox(theme);
-		}
-	}
-
-	private void selectThemeCheckbox(String theme) {
-		for (var i = 0; i < themeMenu.getItemCount(); i++) {
-			var item = themeMenu.getItem(i);
-			if (item instanceof CheckboxMenuItem check) {
-				check.setState(Strings.CI.equals(theme, check.getName()));
 			}
 		}
 	}
@@ -158,18 +145,14 @@ public class ThemeServiceImpl implements ThemeService {
 
 	@Override
 	public void createThemeMenu() {
-		themeMenu = new Menu("Theme");
-
-		Arrays.stream(getThemeNames()).forEach(theme -> {
-			var menuItem = new CheckboxMenuItem(theme);
-			menuItem.setName(theme.toLowerCase());
-			menuItem.addItemListener(_ -> Platform.runLater(() -> {
-				setTheme(theme, true);
-				eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
-			}));
-			themeMenu.add(menuItem);
-		});
-		trayManager.createSubMenu(themeMenu, true);
+		var themes = getThemeNames();
+		var items = Arrays.stream(themes)
+				.map(theme -> new MenuItemData(StringUtils.capitalize(theme), () -> Platform.runLater(() -> {
+					setTheme(theme, true);
+					eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
+				}), true, settings.getString(SettingsConsts.THEME).equalsIgnoreCase(theme)))
+				.collect(Collectors.toList());
+		trayManager.createSubMenu("Theme", items);
 	}
 
 	private String[] getThemeNames() {
