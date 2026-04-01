@@ -15,9 +15,9 @@ import org.apache.logging.log4j.Logger;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import dev.tim9h.rcp.controls.tray.MenuItemData;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.TrayManager;
-import dev.tim9h.rcp.core.util.TrayManager.MenuItemData;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;

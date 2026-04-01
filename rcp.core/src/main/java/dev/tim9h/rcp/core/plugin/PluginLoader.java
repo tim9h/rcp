@@ -227,7 +227,7 @@ public class PluginLoader {
 		plugin.getModelessCommands().ifPresent(commandsService::add);
 		plugin.getMenuItems().ifPresent(menuItems -> {
 			Collections.reverse(menuItems);
-			menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.name(), menuItem.label(), menuItem.action()));
+			menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.label(), menuItem.action()));
 		});
 		settings.addSettings(plugin.getSettingsContributions());
 	}
