@@ -11,7 +11,7 @@ module rcp.controls {
 	requires org.apache.commons.lang3;
 	requires org.apache.logging.log4j;
 	requires dev.tim9h.collections;
-	requires java.desktop;
+	requires transitive java.desktop;
 
 	opens dev.tim9h.rcp.controls;
 }

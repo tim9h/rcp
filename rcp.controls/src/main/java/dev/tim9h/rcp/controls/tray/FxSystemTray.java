@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
@@ -25,8 +26,12 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Line;
 import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -34,6 +39,10 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 
 public class FxSystemTray {
+
+	private static final String CSS_BUTTON = "-fx-background-color: transparent; -fx-padding: 4 8 4 8; -fx-text-alignment: left;";
+
+	private static final String CSS_MENU = "-fx-background-color: white; -fx-padding: 5; -fx-border-color: gray; -fx-border-width: 1;";
 
 	private static final Logger logger = LogManager.getLogger(FxSystemTray.class);
 
@@ -92,8 +101,8 @@ public class FxSystemTray {
 			}
 			menuPane = new VBox();
 			menuPane.setAlignment(Pos.TOP_LEFT);
-			menuPane.setStyle(
-					"-fx-background-color: white; -fx-padding: 5; -fx-border-color: gray; -fx-border-width: 1;");
+			menuPane.getStyleClass().add("traymenu");
+			menuPane.setStyle(CSS_MENU);
 			menuStage = new Stage(StageStyle.UNDECORATED);
 			menuStage.setAlwaysOnTop(true);
 			menuStage.initOwner(hiddenOwnerStage);
@@ -119,7 +128,7 @@ public class FxSystemTray {
 		Platform.runLater(() -> {
 			var btn = new Button(label);
 			btn.setAlignment(Pos.BASELINE_LEFT);
-			btn.setStyle("-fx-background-color: transparent; -fx-padding: 4 8 4 8; -fx-text-alignment: left;");
+			btn.setStyle(CSS_BUTTON);
 			btn.setMaxWidth(Double.MAX_VALUE);
 			btn.setOnAction(_ -> {
 				action.run();
@@ -133,8 +142,7 @@ public class FxSystemTray {
 		createMenuItem(label, action);
 		if (withSeparator) {
 			Platform.runLater(() -> {
-				var sep = new Line(0, 0, 120, 0);
-				sep.setStyle("-fx-stroke: #ccc; -fx-stroke-width: 1;");
+				var sep = new Separator();
 				menuPane.getChildren().add(sep);
 			});
 		}
@@ -142,12 +150,17 @@ public class FxSystemTray {
 
 	public void createSubMenu(String label, List<MenuItemData> items) {
 		Platform.runLater(() -> {
-			var submenuButton = new Button(label + "  ▶");
+			var hbox = new HBox();
+			var labelNode = new Label(label);
+			var region = new Region();
+			var arrow = new Label("▶");
+			HBox.setHgrow(region, Priority.ALWAYS);
+			hbox.getChildren().addAll(labelNode, region, arrow);
+			var submenuButton = new Button();
+			submenuButton.setGraphic(hbox);
 			submenuButton.setMaxWidth(Double.MAX_VALUE);
 			submenuButton.setFocusTraversable(true);
-			submenuButton.setAlignment(Pos.BASELINE_LEFT);
-			submenuButton
-					.setStyle("-fx-background-color: transparent; -fx-padding: 4 8 4 8; -fx-text-alignment: left;");
+			submenuButton.setStyle(CSS_BUTTON);
 			menuPane.getChildren().add(submenuButton);
 			var def = new SubMenuDef(submenuButton, items);
 			subMenus.add(def);
@@ -202,14 +215,32 @@ public class FxSystemTray {
 				var submenuPopup = new Popup();
 				var submenuPane = new VBox();
 				submenuPane.setAlignment(Pos.TOP_LEFT);
-				submenuPane.setStyle(
-						"-fx-background-color: white; -fx-padding: 5; -fx-border-color: gray; -fx-border-width: 1;");
+				submenuPane.setStyle(CSS_MENU);
+				submenuPane.getStyleClass().add("traymenu");
 				for (var item : def.items) {
-					var btn = new Button(item.label);
+					var hbox = new HBox();
+					var checkLabel = new Label(item.checked ? "✓" : "");
+					checkLabel.setPrefWidth(16);
+					var spacer = new Label(" ");
+					var itemLabel = new Label(item.label);
+					hbox.getChildren().addAll(checkLabel, spacer, itemLabel);
+					var btn = new Button();
+					btn.setGraphic(hbox);
 					btn.setAlignment(Pos.BASELINE_LEFT);
-					btn.setStyle("-fx-background-color: transparent; -fx-padding: 4 8 4 8; -fx-text-alignment: left;");
+					btn.setStyle(CSS_BUTTON);
 					btn.setMaxWidth(Double.MAX_VALUE);
 					btn.setOnAction(_ -> {
+						if (item.checkable) {
+							var updatedItems = def.items.stream()
+									.map(i -> new MenuItemData(i.label, i.action, i.checkable,
+											i.label.equals(item.label)))
+									.collect(Collectors.toList());
+							def.items.clear();
+							def.items.addAll(updatedItems);
+							def.submenuPopup = null;
+							def.submenuPane = null;
+							showMenuAndSubmenus(menuStage.getX(), menuStage.getY());
+						}
 						item.action.run();
 						submenuPopup.hide();
 						menuStage.hide();
