@@ -40,10 +40,6 @@ import javafx.util.Duration;
 
 public class FxSystemTray {
 
-	private static final String CSS_BUTTON = "-fx-background-color: transparent; -fx-padding: 4 8 4 8; -fx-text-alignment: left;";
-
-	private static final String CSS_MENU = "-fx-background-color: white; -fx-padding: 5; -fx-border-color: gray; -fx-border-width: 1;";
-
 	private static final Logger logger = LogManager.getLogger(FxSystemTray.class);
 
 	private Stage menuStage;
@@ -59,6 +55,10 @@ public class FxSystemTray {
 	private Timer timer;
 
 	private int trayIconClicks;
+
+	private String coreStyle;
+
+	private String currentTheme;
 
 	@Inject
 	public FxSystemTray(Image trayImage, String applicationTitle) {
@@ -102,11 +102,17 @@ public class FxSystemTray {
 			menuPane = new VBox();
 			menuPane.setAlignment(Pos.TOP_LEFT);
 			menuPane.getStyleClass().add("traymenu");
-			menuPane.setStyle(CSS_MENU);
 			menuStage = new Stage(StageStyle.UNDECORATED);
 			menuStage.setAlwaysOnTop(true);
 			menuStage.initOwner(hiddenOwnerStage);
-			menuStage.setScene(new Scene(menuPane));
+			var scene = new Scene(menuPane);
+			if (coreStyle != null) {
+				scene.getStylesheets().add(coreStyle);
+			}
+			if (this.currentTheme != null) {
+				scene.getStylesheets().add(this.currentTheme);
+			}
+			menuStage.setScene(scene);
 			menuStage.getScene().setOnKeyPressed(event -> {
 				if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
 					closeAllMenus();
@@ -128,11 +134,10 @@ public class FxSystemTray {
 		Platform.runLater(() -> {
 			var btn = new Button(label);
 			btn.setAlignment(Pos.BASELINE_LEFT);
-			btn.setStyle(CSS_BUTTON);
 			btn.setMaxWidth(Double.MAX_VALUE);
 			btn.setOnAction(_ -> {
 				action.run();
-				menuStage.hide();
+				closeAllMenus();
 			});
 			menuPane.getChildren().add(btn);
 		});
@@ -153,14 +158,13 @@ public class FxSystemTray {
 			var hbox = new HBox();
 			var labelNode = new Label(label);
 			var region = new Region();
-			var arrow = new Label("▶");
+			var arrow = new Label("◀");
 			HBox.setHgrow(region, Priority.ALWAYS);
 			hbox.getChildren().addAll(labelNode, region, arrow);
 			var submenuButton = new Button();
 			submenuButton.setGraphic(hbox);
 			submenuButton.setMaxWidth(Double.MAX_VALUE);
 			submenuButton.setFocusTraversable(true);
-			submenuButton.setStyle(CSS_BUTTON);
 			menuPane.getChildren().add(submenuButton);
 			var def = new SubMenuDef(submenuButton, items);
 			subMenus.add(def);
@@ -180,6 +184,7 @@ public class FxSystemTray {
 		menuStage.setY(y);
 		menuStage.show();
 		menuStage.toFront();
+
 		Platform.runLater(() -> {
 			var actualWidth = menuStage.getWidth();
 			var actualHeight = menuStage.getHeight();
@@ -210,13 +215,22 @@ public class FxSystemTray {
 			menuStage.setX(newX);
 			menuStage.setY(newY);
 		});
+
 		for (var def : subMenus) {
 			if (def.submenuPopup == null) {
-				var submenuPopup = new Popup();
-				var submenuPane = new VBox();
-				submenuPane.setAlignment(Pos.TOP_LEFT);
-				submenuPane.setStyle(CSS_MENU);
-				submenuPane.getStyleClass().add("traymenu");
+				def.submenuPopup = new Popup();
+				def.submenuPane = new VBox();
+				def.submenuPane.getStyleClass().add("traymenu");
+				def.submenuPane.setPickOnBounds(true);
+				// Ensure background catches events even if CSS border is 0
+				def.submenuPane.setStyle(
+						"-fx-background-color: transparent, -fx-control-inner-background; -fx-background-insets: 0, 0;");
+
+				if (coreStyle != null)
+					def.submenuPane.getStylesheets().add(coreStyle);
+				if (currentTheme != null)
+					def.submenuPane.getStylesheets().add(currentTheme);
+
 				for (var item : def.items) {
 					var hbox = new HBox();
 					var checkLabel = new Label(item.checked ? "✓" : "");
@@ -226,84 +240,106 @@ public class FxSystemTray {
 					hbox.getChildren().addAll(checkLabel, spacer, itemLabel);
 					var btn = new Button();
 					btn.setGraphic(hbox);
-					btn.setAlignment(Pos.BASELINE_LEFT);
-					btn.setStyle(CSS_BUTTON);
+					btn.setAlignment(Pos.CENTER_LEFT);
 					btn.setMaxWidth(Double.MAX_VALUE);
 					btn.setOnAction(_ -> {
 						if (item.checkable) {
-							var updatedItems = def.items.stream()
-									.map(i -> new MenuItemData(i.label, i.action, i.checkable,
-											i.label.equals(item.label)))
+							var updatedItems = def.items.stream().map(
+									i -> new MenuItemData(i.label, i.action, i.checkable, i.label.equals(item.label)))
 									.collect(Collectors.toList());
 							def.items.clear();
 							def.items.addAll(updatedItems);
+							def.submenuPopup.hide();
 							def.submenuPopup = null;
 							def.submenuPane = null;
 							showMenuAndSubmenus(menuStage.getX(), menuStage.getY());
 						}
 						item.action.run();
-						submenuPopup.hide();
-						menuStage.hide();
+						closeAllMenus();
 					});
-					submenuPane.getChildren().add(btn);
+					def.submenuPane.getChildren().add(btn);
 				}
-				submenuPopup.getContent().add(submenuPane);
-				def.submenuPopup = submenuPopup;
-				def.submenuPane = submenuPane;
-			}
-			var hideTimer = new PauseTransition(Duration.millis(150));
-			hideTimer.setOnFinished(_ -> def.submenuPopup.hide());
-			def.parentNode.setOnMouseEntered(null);
-			def.parentNode.setOnMouseExited(null);
-			def.submenuPane.setOnMouseEntered(null);
-			def.submenuPane.setOnMouseExited(null);
-			def.parentNode.setOnMouseEntered(_ -> {
-				hideTimer.stop();
-				showSubmenuLeft(def.submenuPopup, def.submenuPane, def.parentNode, menuStage);
-			});
-			def.parentNode.setOnMouseExited(_ -> hideTimer.playFromStart());
-			def.submenuPane.setOnMouseEntered(_ -> hideTimer.stop());
-			def.submenuPane.setOnMouseExited(_ -> hideTimer.playFromStart());
-			if (def.parentNode instanceof Button btn) {
-				btn.setOnKeyPressed(event -> {
-					switch (event.getCode()) {
-					case RIGHT:
-						break;
-					case LEFT:
-						hideTimer.stop();
-						showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuStage);
-						if (!def.submenuPane.getChildren().isEmpty()
-								&& def.submenuPane.getChildren().get(0) instanceof Button firstBtn) {
-							Platform.runLater(firstBtn::requestFocus);
-						}
-						break;
-					default:
-						break;
+				def.submenuPopup.getContent().add(def.submenuPane);
+
+				def.hideTimer = new PauseTransition(Duration.millis(400));
+				def.hideTimer.setOnFinished(_ -> def.submenuPopup.hide());
+
+				def.parentNode.setOnMouseEntered(_ -> {
+					def.hideTimer.stop();
+					if (!def.submenuPopup.isShowing()) {
+						showSubmenuLeft(def.submenuPopup, def.submenuPane, def.parentNode, menuStage);
 					}
 				});
+
+				def.parentNode.setOnMouseExited(_ -> {
+					if (def.submenuPopup.isShowing()) {
+						def.hideTimer.playFromStart();
+					}
+				});
+
+				// Use Event Filter to capture events from child elements
+				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_ENTERED, _ -> def.hideTimer.stop());
+				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_MOVED, _ -> def.hideTimer.stop());
+				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_EXITED, e -> {
+					// Only start timer if the mouse actually leaves the container bounds
+					if (!def.submenuPane.getBoundsInLocal().contains(e.getX(), e.getY())) {
+						def.hideTimer.playFromStart();
+					}
+				});
+
+				if (def.parentNode instanceof Button btn) {
+					btn.setOnKeyPressed(event -> {
+						if (event.getCode() == javafx.scene.input.KeyCode.LEFT) {
+							def.hideTimer.stop();
+							showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuStage);
+							if (!def.submenuPane.getChildren().isEmpty()
+									&& def.submenuPane.getChildren().get(0) instanceof Button firstBtn) {
+								Platform.runLater(firstBtn::requestFocus);
+							}
+						}
+					});
+				}
 			}
 		}
 	}
 
 	private void showSubmenuLeft(Popup submenuPopup, VBox submenuPane, Node parentNode, Stage menuStage) {
-		submenuPopup.hide();
 		submenuPane.applyCss();
 		submenuPane.layout();
 		var paneWidth = submenuPane.prefWidth(-1);
 		var paneHeight = submenuPane.prefHeight(-1);
-		var sx = menuStage.getX() - paneWidth + 2;
-		var sy = menuStage.getY() + parentNode.localToScene(0, 0).getY()
-				+ parentNode.getBoundsInParent().getHeight() / 2 - paneHeight / 2;
-		if (sx < 0)
-			sx = 0;
-		submenuPopup.show(menuStage, sx, Math.max(menuStage.getY(), sy));
+
+		var screenPoint = parentNode.localToScreen(0, 0);
+		if (screenPoint == null)
+			return;
+
+		// Force 1px overlap to prevent event gaps
+		var sx = screenPoint.getX() - paneWidth + 1;
+		var sy = screenPoint.getY() + parentNode.getBoundsInLocal().getHeight() / 2 - paneHeight / 2;
+
+		var targetScreen = Screen.getScreensForRectangle(screenPoint.getX(), screenPoint.getY(), 1, 1).get(0);
+		var bounds = targetScreen.getVisualBounds();
+
+		if (sx < bounds.getMinX()) {
+			sx = screenPoint.getX() + parentNode.getBoundsInLocal().getWidth() - 1;
+		}
+
+		if (sy + paneHeight > bounds.getMaxY())
+			sy = bounds.getMaxY() - paneHeight;
+		if (sy < bounds.getMinY())
+			sy = bounds.getMinY();
+
+		submenuPopup.show(menuStage, sx, sy);
 	}
 
 	private void closeAllMenus() {
-		menuStage.hide();
+		if (menuStage != null)
+			menuStage.hide();
 		for (var def : subMenus) {
-			if (def.submenuPopup != null)
+			if (def.submenuPopup != null) {
+				def.hideTimer.stop();
 				def.submenuPopup.hide();
+			}
 		}
 	}
 
@@ -341,4 +377,45 @@ public class FxSystemTray {
 		});
 	}
 
+	public void applyStyle(String stylesheet) {
+		this.coreStyle = stylesheet;
+		Platform.runLater(() -> {
+			if (this.menuStage != null) {
+				updateStylesheets(menuStage.getScene().getStylesheets(), stylesheet, true);
+			}
+			for (var def : subMenus) {
+				if (def.submenuPane != null) {
+					updateStylesheets(def.submenuPane.getStylesheets(), stylesheet, true);
+				}
+			}
+		});
+	}
+
+	public void applyTheme(String themeUrl) {
+		this.currentTheme = themeUrl;
+		Platform.runLater(() -> {
+			if (this.menuStage != null) {
+				updateStylesheets(menuStage.getScene().getStylesheets(), themeUrl, false);
+			}
+			for (var def : subMenus) {
+				if (def.submenuPane != null) {
+					updateStylesheets(def.submenuPane.getStylesheets(), themeUrl, false);
+				}
+			}
+		});
+	}
+
+	private void updateStylesheets(List<String> stylesheets, String url, boolean isCoreStyle) {
+		if (isCoreStyle) {
+			if (url != null && !stylesheets.contains(url)) {
+				stylesheets.add(0, url); // Core style should be first
+			}
+		} else {
+			// Remove old themes
+			stylesheets.removeIf(style -> style.contains("/css/theme_") && !url.equals(style));
+			if (url != null && !stylesheets.contains(url)) {
+				stylesheets.add(url);
+			}
+		}
+	}
 }

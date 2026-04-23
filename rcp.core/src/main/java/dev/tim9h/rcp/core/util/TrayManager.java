@@ -83,4 +83,12 @@ public class TrayManager {
 		systemTray.removeTrayIcon();
 	}
 
+	public void applyStyle(String stylesheet) {
+		systemTray.applyStyle(stylesheet);
+	}
+
+	public void applyTheme(String themeUrl) {
+		systemTray.applyTheme(themeUrl);
+	}
+
 }

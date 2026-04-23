@@ -2,6 +2,7 @@ package dev.tim9h.rcp.controls.tray;
 
 import java.util.List;
 
+import javafx.animation.PauseTransition;
 import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 import javafx.stage.Popup;
@@ -15,6 +16,8 @@ class SubMenuDef {
 	Popup submenuPopup;
 
 	VBox submenuPane;
+	
+	PauseTransition hideTimer;
 
 	SubMenuDef(Node parentNode, List<MenuItemData> items) {
 		this.parentNode = parentNode;

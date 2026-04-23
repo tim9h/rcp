@@ -53,7 +53,9 @@ public class ThemeServiceImpl implements ThemeService {
 		this.trayManager = trayManager;
 
 		scene.setFill(Color.rgb(20, 20, 20, 0.01f));
-		scene.getStylesheets().add(getClass().getResource("/css/core.css").toExternalForm());
+		var stylesheet = getClass().getResource("/css/core.css").toExternalForm();
+		scene.getStylesheets().add(stylesheet);
+		trayManager.applyStyle(stylesheet);
 
 		subscribeToThemeEvents();
 	}
@@ -79,9 +81,10 @@ public class ThemeServiceImpl implements ThemeService {
 			eventManager.echo("Current theme", StringUtils.capitalize(current));
 		} else if (!scene.getStylesheets().contains(url.toExternalForm())) {
 			logger.info(() -> "Setting theme to " + theme);
-			scene.getStylesheets().add(url.toExternalForm());
-			scene.getStylesheets()
-					.removeIf(style -> style.contains("/css/theme_") && !url.toExternalForm().equals(style));
+			var themeUrl = url.toExternalForm();
+			scene.getStylesheets().add(themeUrl);
+			scene.getStylesheets().removeIf(style -> style.contains("/css/theme_") && !themeUrl.equals(style));
+			trayManager.applyTheme(themeUrl);
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
 			}
