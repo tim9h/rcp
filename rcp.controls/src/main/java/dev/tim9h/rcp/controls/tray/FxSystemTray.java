@@ -40,6 +40,8 @@ import javafx.util.Duration;
 
 public class FxSystemTray {
 
+	private static final String CSS_CLASS_TRAYMENU = "traymenu";
+
 	private static final Logger logger = LogManager.getLogger(FxSystemTray.class);
 
 	private Stage menuStage;
@@ -101,7 +103,7 @@ public class FxSystemTray {
 			}
 			menuPane = new VBox();
 			menuPane.setAlignment(Pos.TOP_LEFT);
-			menuPane.getStyleClass().add("traymenu");
+			menuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
 			menuStage = new Stage(StageStyle.UNDECORATED);
 			menuStage.setAlwaysOnTop(true);
 			menuStage.initOwner(hiddenOwnerStage);
@@ -220,11 +222,8 @@ public class FxSystemTray {
 			if (def.submenuPopup == null) {
 				def.submenuPopup = new Popup();
 				def.submenuPane = new VBox();
-				def.submenuPane.getStyleClass().add("traymenu");
+				def.submenuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
 				def.submenuPane.setPickOnBounds(true);
-				// Ensure background catches events even if CSS border is 0
-				def.submenuPane.setStyle(
-						"-fx-background-color: transparent, -fx-control-inner-background; -fx-background-insets: 0, 0;");
 
 				if (coreStyle != null)
 					def.submenuPane.getStylesheets().add(coreStyle);
@@ -233,7 +232,7 @@ public class FxSystemTray {
 
 				for (var item : def.items) {
 					var hbox = new HBox();
-					var checkLabel = new Label(item.checked ? "✓" : "");
+					var checkLabel = new Label(item.checked ? "🔘" : "");
 					checkLabel.setPrefWidth(16);
 					var spacer = new Label(" ");
 					var itemLabel = new Label(item.label);
@@ -313,8 +312,7 @@ public class FxSystemTray {
 		if (screenPoint == null)
 			return;
 
-		// Force 1px overlap to prevent event gaps
-		var sx = screenPoint.getX() - paneWidth + 1;
+		var sx = screenPoint.getX() - paneWidth;
 		var sy = screenPoint.getY() + parentNode.getBoundsInLocal().getHeight() / 2 - paneHeight / 2;
 
 		var targetScreen = Screen.getScreensForRectangle(screenPoint.getX(), screenPoint.getY(), 1, 1).get(0);

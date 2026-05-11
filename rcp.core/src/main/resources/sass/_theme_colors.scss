@@ -114,3 +114,25 @@
 		-fx-border-color: $accent-darker;
 	}
 }
+
+.traymenu {
+	-fx-background-color: $background-color !important; 
+	-fx-border-color: $border-color !important;
+	
+	>.button, .label {
+		-fx-text-fill: $text-color;
+	}
+	
+	>.button {
+		&:hover {
+		    -fx-background-color: $card-background-color;
+		}
+		&:pressed {
+			-fx-background-color: $card-border-color !important;
+		}
+	}
+	
+	.separator .line{
+		-fx-border-color: $border-color;
+	}
+}

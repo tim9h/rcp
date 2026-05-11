@@ -76,3 +76,38 @@ $default-font-size: 14;
 	    -fx-scale-z: 0.95;
 	}
 }
+
+.traymenu {
+	-fx-opacity: 1;
+	-fx-padding: 0;
+	-fx-border-width: 0;
+	-fx-background-radius: 0;
+	-fx-border-radius: 0;
+	-fx-border-width: 1;
+	
+	>.button {
+		-fx-padding: 4 8 4 8;
+		-fx-border-radius: 0 !important;
+		-fx-border-width: 0;
+		-fx-background-radius: 0;
+		
+		&:pressed {
+			-fx-scale-x: 1;
+			-fx-scale-y: 1;
+			-fx-scale-z: 1;
+		}
+	}
+	
+	.separator .line{
+		-fx-border-width: 1 0 0 0;
+	}
+}
+
+.root.popup {
+	-fx-opacity: 1;
+	-fx-padding: 0;
+	-fx-border-width: 0;
+	-fx-border-radius: 0;
+	-fx-background-radius: 0;
+	-fx-font-family: Roboto Regular;
+}
