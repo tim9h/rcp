@@ -103,10 +103,11 @@
 	}
 }
 
+
 .button {
 	-fx-text-fill: $accent-color;
 	
-	&:hover {
+	&:hover, &:focused {
 		-fx-border-color: $accent-color;
 	}
 	
@@ -124,7 +125,7 @@
 	}
 	
 	>.button {
-		&:hover {
+		&:hover, &:focused {
 		    -fx-background-color: $card-background-color;
 		}
 		&:pressed {

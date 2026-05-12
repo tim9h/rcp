@@ -28,6 +28,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -104,6 +106,8 @@ public class FxSystemTray {
 			menuPane = new VBox();
 			menuPane.setAlignment(Pos.TOP_LEFT);
 			menuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
+			menuPane.setFocusTraversable(true);
+
 			menuStage = new Stage(StageStyle.UNDECORATED);
 			menuStage.setAlwaysOnTop(true);
 			menuStage.initOwner(hiddenOwnerStage);
@@ -115,11 +119,28 @@ public class FxSystemTray {
 				scene.getStylesheets().add(this.currentTheme);
 			}
 			menuStage.setScene(scene);
-			menuStage.getScene().setOnKeyPressed(event -> {
-				if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+
+			menuPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+				if (event.getCode() == KeyCode.UP) {
+					navigate(menuPane, -1);
+					event.consume();
+				} else if (event.getCode() == KeyCode.DOWN) {
+					navigate(menuPane, 1);
+					event.consume();
+				} else if (event.getCode() == KeyCode.ESCAPE) {
 					closeAllMenus();
+					event.consume();
+				} else if (event.getCode() == KeyCode.ENTER) {
+					if (menuPane.getScene() != null && menuPane.getScene().getFocusOwner() instanceof Button btn) {
+						boolean isSubmenuBtn = subMenus.stream().anyMatch(sm -> sm.parentNode.equals(btn));
+						if (!isSubmenuBtn) {
+							btn.fire();
+							event.consume();
+						}
+					}
 				}
 			});
+
 			menuStage.getScene().getWindow().focusedProperty().addListener((_, _, isNowFocused) -> {
 				if (!isNowFocused) {
 					closeAllMenus();
@@ -135,12 +156,15 @@ public class FxSystemTray {
 	public void createMenuItem(String label, Runnable action) {
 		Platform.runLater(() -> {
 			var btn = new Button(label);
+			btn.setFocusTraversable(true);
 			btn.setAlignment(Pos.BASELINE_LEFT);
 			btn.setMaxWidth(Double.MAX_VALUE);
 			btn.setOnAction(_ -> {
 				action.run();
 				closeAllMenus();
 			});
+			// Sync hover with keyboard focus
+			btn.setOnMouseEntered(_ -> btn.requestFocus());
 			menuPane.getChildren().add(btn);
 		});
 	}
@@ -167,6 +191,8 @@ public class FxSystemTray {
 			submenuButton.setGraphic(hbox);
 			submenuButton.setMaxWidth(Double.MAX_VALUE);
 			submenuButton.setFocusTraversable(true);
+			// Sync hover with keyboard focus
+			submenuButton.setOnMouseEntered(_ -> submenuButton.requestFocus());
 			menuPane.getChildren().add(submenuButton);
 			var def = new SubMenuDef(submenuButton, items);
 			subMenus.add(def);
@@ -216,6 +242,10 @@ public class FxSystemTray {
 				newY = visualBounds.getMinY();
 			menuStage.setX(newX);
 			menuStage.setY(newY);
+
+			// Focus the container itself so key events work, but no button shows the focus
+			// state
+			menuPane.requestFocus();
 		});
 
 		for (var def : subMenus) {
@@ -224,6 +254,7 @@ public class FxSystemTray {
 				def.submenuPane = new VBox();
 				def.submenuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
 				def.submenuPane.setPickOnBounds(true);
+				def.submenuPane.setFocusTraversable(true);
 
 				if (coreStyle != null)
 					def.submenuPane.getStylesheets().add(coreStyle);
@@ -238,6 +269,7 @@ public class FxSystemTray {
 					var itemLabel = new Label(item.label);
 					hbox.getChildren().addAll(checkLabel, spacer, itemLabel);
 					var btn = new Button();
+					btn.setFocusTraversable(true);
 					btn.setGraphic(hbox);
 					btn.setAlignment(Pos.CENTER_LEFT);
 					btn.setMaxWidth(Double.MAX_VALUE);
@@ -256,6 +288,8 @@ public class FxSystemTray {
 						item.action.run();
 						closeAllMenus();
 					});
+					// Sync hover with keyboard focus in submenu
+					btn.setOnMouseEntered(_ -> btn.requestFocus());
 					def.submenuPane.getChildren().add(btn);
 				}
 				def.submenuPopup.getContent().add(def.submenuPane);
@@ -265,6 +299,8 @@ public class FxSystemTray {
 
 				def.parentNode.setOnMouseEntered(_ -> {
 					def.hideTimer.stop();
+					// Ensure button has focus when hovered to sync with keyboard
+					def.parentNode.requestFocus();
 					if (!def.submenuPopup.isShowing()) {
 						showSubmenuLeft(def.submenuPopup, def.submenuPane, def.parentNode, menuStage);
 					}
@@ -276,25 +312,47 @@ public class FxSystemTray {
 					}
 				});
 
-				// Use Event Filter to capture events from child elements
+				def.submenuPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+					if (event.getCode() == KeyCode.UP) {
+						navigate(def.submenuPane, -1);
+						event.consume();
+					} else if (event.getCode() == KeyCode.DOWN) {
+						navigate(def.submenuPane, 1);
+						event.consume();
+					} else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.RIGHT) {
+						def.submenuPopup.hide();
+						def.parentNode.requestFocus();
+						event.consume();
+					} else if (event.getCode() == KeyCode.ESCAPE) {
+						closeAllMenus();
+						event.consume();
+					} else if (event.getCode() == KeyCode.ENTER) {
+						if (def.submenuPane.getScene() != null
+								&& def.submenuPane.getScene().getFocusOwner() instanceof Button focusedBtn) {
+							focusedBtn.fire();
+							event.consume();
+						}
+					}
+				});
+
 				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_ENTERED, _ -> def.hideTimer.stop());
 				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_MOVED, _ -> def.hideTimer.stop());
 				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_EXITED, e -> {
-					// Only start timer if the mouse actually leaves the container bounds
 					if (!def.submenuPane.getBoundsInLocal().contains(e.getX(), e.getY())) {
 						def.hideTimer.playFromStart();
 					}
 				});
 
 				if (def.parentNode instanceof Button btn) {
-					btn.setOnKeyPressed(event -> {
-						if (event.getCode() == javafx.scene.input.KeyCode.LEFT) {
+					btn.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+						if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.RIGHT
+								|| event.getCode() == KeyCode.ENTER) {
 							def.hideTimer.stop();
-							showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuStage);
-							if (!def.submenuPane.getChildren().isEmpty()
-									&& def.submenuPane.getChildren().get(0) instanceof Button firstBtn) {
-								Platform.runLater(firstBtn::requestFocus);
+							if (!def.submenuPopup.isShowing()) {
+								showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuStage);
 							}
+							Platform.runLater(def.submenuPane::requestFocus);
+							event.consume();
 						}
 					});
 				}
@@ -406,14 +464,37 @@ public class FxSystemTray {
 	private void updateStylesheets(List<String> stylesheets, String url, boolean isCoreStyle) {
 		if (isCoreStyle) {
 			if (url != null && !stylesheets.contains(url)) {
-				stylesheets.add(0, url); // Core style should be first
+				stylesheets.add(0, url);
 			}
 		} else {
-			// Remove old themes
 			stylesheets.removeIf(style -> style.contains("/css/theme_") && !url.equals(style));
 			if (url != null && !stylesheets.contains(url)) {
 				stylesheets.add(url);
 			}
+		}
+	}
+
+	private void navigate(VBox pane, int direction) {
+		var buttons = pane.getChildren().stream().filter(n -> n instanceof Button && !n.isDisabled())
+				.map(n -> (Button) n).collect(Collectors.toList());
+
+		if (buttons.isEmpty())
+			return;
+
+		var scene = pane.getScene();
+		Node focused = scene != null ? scene.getFocusOwner() : null;
+		int currentIndex = buttons.indexOf(focused);
+
+		if (currentIndex == -1) {
+			// If moving up, jump to last. If moving down, jump to first.
+			if (direction > 0) {
+				buttons.get(0).requestFocus();
+			} else {
+				buttons.get(buttons.size() - 1).requestFocus();
+			}
+		} else {
+			int nextIndex = (currentIndex + direction + buttons.size()) % buttons.size();
+			buttons.get(nextIndex).requestFocus();
 		}
 	}
 }
