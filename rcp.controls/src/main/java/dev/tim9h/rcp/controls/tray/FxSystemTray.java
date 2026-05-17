@@ -46,7 +46,7 @@ public class FxSystemTray {
 
 	private static final Logger logger = LogManager.getLogger(FxSystemTray.class);
 
-	private Stage menuStage;
+	private Popup menuPopup;
 
 	private VBox menuPane;
 
@@ -93,32 +93,39 @@ public class FxSystemTray {
 
 	private void setupJavaFxMenu() {
 		Platform.runLater(() -> {
+			// Prevent JavaFX from closing when the popup hides
+			Platform.setImplicitExit(false);
+
 			if (hiddenOwnerStage == null) {
 				hiddenOwnerStage = new Stage(StageStyle.UTILITY);
 				hiddenOwnerStage.setOpacity(0);
 				hiddenOwnerStage.setWidth(1);
 				hiddenOwnerStage.setHeight(1);
-				hiddenOwnerStage.setIconified(true);
+				hiddenOwnerStage.setX(-10000);
+				hiddenOwnerStage.setY(-10000);
+
+				hiddenOwnerStage.setScene(new Scene(new Region(), 1, 1));
+				// IMPORTANT: Do not set iconified to true, it breaks OS focus tracking for
+				// popups
 				hiddenOwnerStage.setAlwaysOnTop(false);
 				hiddenOwnerStage.show();
-				hiddenOwnerStage.toBack();
 			}
 			menuPane = new VBox();
 			menuPane.setAlignment(Pos.TOP_LEFT);
 			menuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
 			menuPane.setFocusTraversable(true);
 
-			menuStage = new Stage(StageStyle.UNDECORATED);
-			menuStage.setAlwaysOnTop(true);
-			menuStage.initOwner(hiddenOwnerStage);
-			var scene = new Scene(menuPane);
+			menuPopup = new Popup();
+			menuPopup.setAutoHide(true);
+			menuPopup.setOnHidden(_ -> closeAllMenus());
+			menuPopup.getContent().add(menuPane);
+
 			if (coreStyle != null) {
-				scene.getStylesheets().add(coreStyle);
+				menuPane.getStylesheets().add(coreStyle);
 			}
 			if (this.currentTheme != null) {
-				scene.getStylesheets().add(this.currentTheme);
+				menuPane.getStylesheets().add(this.currentTheme);
 			}
-			menuStage.setScene(scene);
 
 			menuPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
 				if (event.getCode() == KeyCode.UP) {
@@ -141,9 +148,14 @@ public class FxSystemTray {
 				}
 			});
 
-			menuStage.getScene().getWindow().focusedProperty().addListener((_, _, isNowFocused) -> {
+			// Fallback if autoHide doesn't catch it
+			menuPopup.focusedProperty().addListener((_, _, isNowFocused) -> {
 				if (!isNowFocused) {
-					closeAllMenus();
+					boolean focusInSubmenu = subMenus.stream()
+							.anyMatch(sm -> sm.submenuPopup != null && sm.submenuPopup.isFocused());
+					if (!focusInSubmenu) {
+						closeAllMenus();
+					}
 				}
 			});
 		});
@@ -200,24 +212,22 @@ public class FxSystemTray {
 	}
 
 	private void showMenuAndSubmenus(double x, double y) {
-		var menuWidth = menuStage.getWidth();
-		var menuHeight = menuStage.getHeight();
-		if (menuWidth == 0 || menuHeight == 0) {
-			menuPane.applyCss();
-			menuPane.layout();
-			menuWidth = menuPane.prefWidth(-1);
-			menuHeight = menuPane.prefHeight(-1);
-		}
-		menuStage.setX(x);
-		menuStage.setY(y);
-		menuStage.show();
-		menuStage.toFront();
+		// Move the owner stage to the mouse position and request focus
+		// so the popup can properly grab the OS focus context
+		hiddenOwnerStage.setX(x);
+		hiddenOwnerStage.setY(y);
+		hiddenOwnerStage.requestFocus();
+
+		menuPane.applyCss();
+		menuPane.layout();
+
+		menuPopup.show(hiddenOwnerStage, x, y);
 
 		Platform.runLater(() -> {
-			var actualWidth = menuStage.getWidth();
-			var actualHeight = menuStage.getHeight();
-			var newX = menuStage.getX();
-			var newY = menuStage.getY();
+			var actualWidth = menuPane.prefWidth(-1);
+			var actualHeight = menuPane.prefHeight(-1);
+			var newX = menuPopup.getX();
+			var newY = menuPopup.getY();
 			Screen targetScreen = null;
 			for (var screen : Screen.getScreens()) {
 				var bounds = screen.getBounds();
@@ -240,11 +250,12 @@ public class FxSystemTray {
 				newX = visualBounds.getMinX();
 			if (newY < visualBounds.getMinY())
 				newY = visualBounds.getMinY();
-			menuStage.setX(newX);
-			menuStage.setY(newY);
 
-			// Focus the container itself so key events work, but no button shows the focus
-			// state
+			menuPopup.setX(newX);
+			menuPopup.setY(newY);
+
+			// Explicitly request focus on the popup and container
+			menuPopup.requestFocus();
 			menuPane.requestFocus();
 		});
 
@@ -283,7 +294,7 @@ public class FxSystemTray {
 							def.submenuPopup.hide();
 							def.submenuPopup = null;
 							def.submenuPane = null;
-							showMenuAndSubmenus(menuStage.getX(), menuStage.getY());
+							showMenuAndSubmenus(menuPopup.getX(), menuPopup.getY());
 						}
 						item.action.run();
 						closeAllMenus();
@@ -302,7 +313,7 @@ public class FxSystemTray {
 					// Ensure button has focus when hovered to sync with keyboard
 					def.parentNode.requestFocus();
 					if (!def.submenuPopup.isShowing()) {
-						showSubmenuLeft(def.submenuPopup, def.submenuPane, def.parentNode, menuStage);
+						showSubmenuLeft(def.submenuPopup, def.submenuPane, def.parentNode, menuPopup);
 					}
 				});
 
@@ -349,7 +360,7 @@ public class FxSystemTray {
 								|| event.getCode() == KeyCode.ENTER) {
 							def.hideTimer.stop();
 							if (!def.submenuPopup.isShowing()) {
-								showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuStage);
+								showSubmenuLeft(def.submenuPopup, def.submenuPane, btn, menuPopup);
 							}
 							Platform.runLater(def.submenuPane::requestFocus);
 							event.consume();
@@ -360,7 +371,7 @@ public class FxSystemTray {
 		}
 	}
 
-	private void showSubmenuLeft(Popup submenuPopup, VBox submenuPane, Node parentNode, Stage menuStage) {
+	private void showSubmenuLeft(Popup submenuPopup, VBox submenuPane, Node parentNode, Popup menuPopup) {
 		submenuPane.applyCss();
 		submenuPane.layout();
 		var paneWidth = submenuPane.prefWidth(-1);
@@ -385,12 +396,12 @@ public class FxSystemTray {
 		if (sy < bounds.getMinY())
 			sy = bounds.getMinY();
 
-		submenuPopup.show(menuStage, sx, sy);
+		submenuPopup.show(menuPopup, sx, sy);
 	}
 
 	private void closeAllMenus() {
-		if (menuStage != null)
-			menuStage.hide();
+		if (menuPopup != null)
+			menuPopup.hide();
 		for (var def : subMenus) {
 			if (def.submenuPopup != null) {
 				def.hideTimer.stop();
@@ -436,8 +447,8 @@ public class FxSystemTray {
 	public void applyStyle(String stylesheet) {
 		this.coreStyle = stylesheet;
 		Platform.runLater(() -> {
-			if (this.menuStage != null) {
-				updateStylesheets(menuStage.getScene().getStylesheets(), stylesheet, true);
+			if (this.menuPane != null) {
+				updateStylesheets(menuPane.getStylesheets(), stylesheet, true);
 			}
 			for (var def : subMenus) {
 				if (def.submenuPane != null) {
@@ -450,8 +461,8 @@ public class FxSystemTray {
 	public void applyTheme(String themeUrl) {
 		this.currentTheme = themeUrl;
 		Platform.runLater(() -> {
-			if (this.menuStage != null) {
-				updateStylesheets(menuStage.getScene().getStylesheets(), themeUrl, false);
+			if (this.menuPane != null) {
+				updateStylesheets(menuPane.getStylesheets(), themeUrl, false);
 			}
 			for (var def : subMenus) {
 				if (def.submenuPane != null) {
