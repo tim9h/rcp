@@ -144,6 +144,12 @@ public class SettingsImpl implements Settings {
 	}
 
 	@Override
+	public String getString(String property, String defaultValue) {
+		var value = getProperty(property);
+		return StringUtils.defaultIfBlank(value, defaultValue);
+	}
+
+	@Override
 	public Long getLong(String property) {
 		return NumberUtils.createLong(getProperty(property));
 	}

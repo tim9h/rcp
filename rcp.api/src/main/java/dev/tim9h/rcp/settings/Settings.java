@@ -28,6 +28,8 @@ public interface Settings {
 
 	public String getString(String property);
 
+	public String getString(String property, String defaultValue);
+
 	public Long getLong(String property);
 
 	public List<String> getStringList(String property);
@@ -43,11 +45,11 @@ public interface Settings {
 	public Map<String, Object> getOverwrites();
 
 	public int getCharWidth();
-	
+
 	public void openSettingsFile();
 
 	void handleSettingCommand(Object[] args);
 
 	void handleSettingsCommand(Object[] args);
-	
+
 }
