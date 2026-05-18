@@ -127,9 +127,11 @@ public class PluginLoader {
 				Desktop.getDesktop().open(pluginDirectory.toFile());
 			} catch (IOException e) {
 				logger.warn(() -> "Unable to open plugins directory: " + e.getMessage(), e);
+				eventManager.showToast("Unable to open plugins directory: " + e.getMessage());
 			}
 		} else {
 			logger.warn(() -> "Unable to open plugins directory: Not in jar mode");
+			eventManager.showToast("Unable to open plugins directory: Not in jar mode");
 			eventManager.echo("Not in jar mode");
 		}
 	}

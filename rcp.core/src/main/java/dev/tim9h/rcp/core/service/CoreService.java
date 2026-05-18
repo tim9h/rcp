@@ -41,12 +41,12 @@ public class CoreService {
 
 	@Inject
 	private PluginLoader pluginLoader;
-	
+
 	@Inject
 	private TrayManager tray;
-	
+
 	private EventManager eventManager;
-	
+
 	@Inject
 	public CoreService(EventManager eventManager) {
 		this.eventManager = eventManager;
@@ -98,7 +98,7 @@ public class CoreService {
 					}
 				});
 	}
-	
+
 	public void restartApplication() {
 		logger.debug(() -> "Restarting application");
 		try {
@@ -112,12 +112,14 @@ public class CoreService {
 			} else {
 				logger.warn(() -> "Unable to restart application: Not in jar mode");
 				eventManager.echo("Unable to restart: Not in jar mode");
+				eventManager.showToast("Unable to restart: Not in jar mode");
 			}
 		} catch (IOException | URISyntaxException e) {
 			logger.error(() -> "Unable to restart application", e);
+			eventManager.showToast("Unable to restart: " + e.getMessage());
 		}
 	}
-	
+
 	public void shutdown() {
 		logger.debug(() -> "Shutting down");
 		eventManager.echo("kthxbye.");
@@ -135,7 +137,7 @@ public class CoreService {
 			Platform.runLater(() -> System.exit(0));
 		});
 	}
-	
+
 	public void prepareShutdown() {
 		logger.debug(() -> "Shutting down immediately");
 		CompletableFuture.runAsync(() -> {
@@ -143,7 +145,7 @@ public class CoreService {
 			tray.removeTrayIcon();
 		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
 	}
-	
+
 	private void subscribeToDefaultEvents() {
 		eventManager.listen("exit", _ -> shutdown());
 		eventManager.listen("exitimmediately", _ -> prepareShutdown());
