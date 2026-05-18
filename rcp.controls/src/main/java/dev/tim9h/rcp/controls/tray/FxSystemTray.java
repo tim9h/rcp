@@ -18,8 +18,8 @@ import javax.swing.SwingUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.google.inject.Inject;
-
+import dev.tim9h.rcp.settings.Settings;
+import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -64,8 +64,10 @@ public class FxSystemTray {
 
 	private String currentTheme;
 
-	@Inject
-	public FxSystemTray(Image trayImage, String applicationTitle) {
+	private Settings settings;
+
+	public FxSystemTray(Image trayImage, String applicationTitle, Settings settings) {
+		this.settings = settings;
 		var tray = SystemTray.getSystemTray();
 		trayIcon = new TrayIcon(trayImage, applicationTitle);
 		trayIcon.setImageAutoSize(true);
@@ -116,8 +118,9 @@ public class FxSystemTray {
 			menuPane.setFocusTraversable(true);
 
 			menuPopup = new Popup();
-			menuPopup.setAutoHide(true);
-			menuPopup.setOnHidden(_ -> closeAllMenus());
+			// Handled manually using custom focus listeners to ensure smooth fade out
+			// transition
+			menuPopup.setAutoHide(false);
 			menuPopup.getContent().add(menuPane);
 
 			if (coreStyle != null) {
@@ -139,7 +142,7 @@ public class FxSystemTray {
 					event.consume();
 				} else if (event.getCode() == KeyCode.ENTER) {
 					if (menuPane.getScene() != null && menuPane.getScene().getFocusOwner() instanceof Button btn) {
-						boolean isSubmenuBtn = subMenus.stream().anyMatch(sm -> sm.parentNode.equals(btn));
+						var isSubmenuBtn = subMenus.stream().anyMatch(sm -> sm.parentNode.equals(btn));
 						if (!isSubmenuBtn) {
 							btn.fire();
 							event.consume();
@@ -148,14 +151,16 @@ public class FxSystemTray {
 				}
 			});
 
-			// Fallback if autoHide doesn't catch it
+			// Close all menus when main menu loses focus, allowing smooth fade outs
 			menuPopup.focusedProperty().addListener((_, _, isNowFocused) -> {
 				if (!isNowFocused) {
-					boolean focusInSubmenu = subMenus.stream()
-							.anyMatch(sm -> sm.submenuPopup != null && sm.submenuPopup.isFocused());
-					if (!focusInSubmenu) {
-						closeAllMenus();
-					}
+					Platform.runLater(() -> {
+						var anySubmenuFocused = subMenus.stream()
+								.anyMatch(sm -> sm.submenuPopup != null && sm.submenuPopup.isFocused());
+						if (!anySubmenuFocused && !menuPopup.isFocused()) {
+							closeAllMenus();
+						}
+					});
 				}
 			});
 		});
@@ -221,7 +226,9 @@ public class FxSystemTray {
 		menuPane.applyCss();
 		menuPane.layout();
 
+		menuPane.setOpacity(0);
 		menuPopup.show(hiddenOwnerStage, x, y);
+		fadeIn(menuPane);
 
 		Platform.runLater(() -> {
 			var actualWidth = menuPane.prefWidth(-1);
@@ -306,7 +313,7 @@ public class FxSystemTray {
 				def.submenuPopup.getContent().add(def.submenuPane);
 
 				def.hideTimer = new PauseTransition(Duration.millis(400));
-				def.hideTimer.setOnFinished(_ -> def.submenuPopup.hide());
+				def.hideTimer.setOnFinished(_ -> fadeOutAndHide(def.submenuPopup, def.submenuPane));
 
 				def.parentNode.setOnMouseEntered(_ -> {
 					def.hideTimer.stop();
@@ -331,7 +338,7 @@ public class FxSystemTray {
 						navigate(def.submenuPane, 1);
 						event.consume();
 					} else if (event.getCode() == KeyCode.LEFT || event.getCode() == KeyCode.RIGHT) {
-						def.submenuPopup.hide();
+						fadeOutAndHide(def.submenuPopup, def.submenuPane);
 						def.parentNode.requestFocus();
 						event.consume();
 					} else if (event.getCode() == KeyCode.ESCAPE) {
@@ -351,6 +358,17 @@ public class FxSystemTray {
 				def.submenuPane.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_EXITED, e -> {
 					if (!def.submenuPane.getBoundsInLocal().contains(e.getX(), e.getY())) {
 						def.hideTimer.playFromStart();
+					}
+				});
+
+				// Close submenus on focus loss
+				def.submenuPopup.focusedProperty().addListener((_, _, isNowFocused) -> {
+					if (!isNowFocused) {
+						Platform.runLater(() -> {
+							if (!def.submenuPopup.isFocused() && !menuPopup.isFocused()) {
+								closeAllMenus();
+							}
+						});
 					}
 				});
 
@@ -396,17 +414,43 @@ public class FxSystemTray {
 		if (sy < bounds.getMinY())
 			sy = bounds.getMinY();
 
+		submenuPane.setOpacity(0);
 		submenuPopup.show(menuPopup, sx, sy);
+		fadeIn(submenuPane);
 	}
 
 	private void closeAllMenus() {
-		if (menuPopup != null)
-			menuPopup.hide();
+		if (menuPopup != null && menuPopup.isShowing()) {
+			fadeOutAndHide(menuPopup, menuPane);
+		}
 		for (var def : subMenus) {
-			if (def.submenuPopup != null) {
+			if (def.submenuPopup != null && def.submenuPopup.isShowing()) {
 				def.hideTimer.stop();
-				def.submenuPopup.hide();
+				fadeOutAndHide(def.submenuPopup, def.submenuPane);
 			}
+		}
+	}
+
+	private void fadeIn(Node node) {
+		if (settings.getBoolean("core.ui.animations").booleanValue()) {
+			var ft = new FadeTransition(Duration.millis(150), node);
+			ft.setFromValue(0.0);
+			ft.setToValue(1.0);
+			ft.play();
+		}
+	}
+
+	private void fadeOutAndHide(Popup popup, Node node) {
+		if (settings.getBoolean("core.ui.animations").booleanValue()) {
+			if (!popup.isShowing())
+				return;
+			var ft = new FadeTransition(Duration.millis(150), node);
+			ft.setFromValue(node.getOpacity());
+			ft.setToValue(0.0);
+			ft.setOnFinished(_ -> popup.hide());
+			ft.play();
+		} else {
+			popup.hide();
 		}
 	}
 
@@ -493,7 +537,7 @@ public class FxSystemTray {
 			return;
 
 		var scene = pane.getScene();
-		Node focused = scene != null ? scene.getFocusOwner() : null;
+		var focused = scene != null ? scene.getFocusOwner() : null;
 		int currentIndex = buttons.indexOf(focused);
 
 		if (currentIndex == -1) {
