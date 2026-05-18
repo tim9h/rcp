@@ -41,7 +41,7 @@ public class TrayManager {
 
 		var image = Toolkit.getDefaultToolkit().createImage(getClass().getResource("/icon_small.png"));
 		var title = settings.getString(SettingsConsts.APPLICATION_TITLE);
-		systemTray = new FxSystemTray(image, title);
+		systemTray = new FxSystemTray(image, title, settings);
 
 		subscribeToEvents();
 	}
@@ -77,6 +77,10 @@ public class TrayManager {
 
 	public void createSubMenu(String label, List<MenuItemData> items) {
 		systemTray.createSubMenu(label, items);
+	}
+
+	public void createSubMenu(String label, List<MenuItemData> items, boolean withSeparator) {
+		systemTray.createSubMenu(label, items, withSeparator);
 	}
 
 	public void removeTrayIcon() {

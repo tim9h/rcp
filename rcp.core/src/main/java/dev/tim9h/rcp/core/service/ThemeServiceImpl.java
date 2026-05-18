@@ -155,7 +155,7 @@ public class ThemeServiceImpl implements ThemeService {
 					eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
 				}), true, settings.getString(SettingsConsts.THEME).equalsIgnoreCase(theme)))
 				.collect(Collectors.toList());
-		trayManager.createSubMenu("Theme", items);
+		trayManager.createSubMenu("Theme", items, true);
 	}
 
 	private String[] getThemeNames() {

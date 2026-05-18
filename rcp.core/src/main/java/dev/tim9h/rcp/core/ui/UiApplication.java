@@ -294,9 +294,9 @@ public class UiApplication extends Application {
 
 	private void createTray() {
 		themeService.createThemeMenu();
-		tray.createMenuItem("Open plugins directory", pluginLoader::openPluginsDirectory, true);
+		tray.createMenuItem("Open plugins directory", pluginLoader::openPluginsDirectory);
 		tray.createMenuItem("Reposition", this::reposition);
-		tray.createMenuItem("Restart Application", coreService::restartApplication);
+		tray.createMenuItem("Restart Application", coreService::restartApplication, true);
 		tray.createMenuItem("Reload Settings", settings::loadProperties);
 		tray.createMenuItem("Open Settings", settings::openSettingsFile, true);
 		tray.createMenuItem("Exit", coreService::shutdown);

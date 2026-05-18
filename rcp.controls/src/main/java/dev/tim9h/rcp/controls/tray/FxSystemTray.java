@@ -216,6 +216,17 @@ public class FxSystemTray {
 		});
 	}
 
+	public void createSubMenu(String label, List<MenuItemData> items, boolean withSeparator) {
+		createSubMenu(label, items);
+		if (withSeparator) {
+			Platform.runLater(() -> {
+				var sep = new Separator();
+				menuPane.getChildren().add(sep);
+			});
+		}
+
+	}
+
 	private void showMenuAndSubmenus(double x, double y) {
 		// Move the owner stage to the mouse position and request focus
 		// so the popup can properly grab the OS focus context
