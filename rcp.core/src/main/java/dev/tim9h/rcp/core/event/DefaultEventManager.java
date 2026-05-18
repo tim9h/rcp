@@ -8,11 +8,13 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.common.eventbus.EventBus;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.settings.Settings;
 import javafx.application.Platform;
 import javafx.scene.text.Text;
 
@@ -21,6 +23,9 @@ public class DefaultEventManager implements EventManager {
 
 	@InjectLogger
 	private Logger logger;
+
+	@Inject
+	private Settings settings;
 
 	private EventBus bus;
 
@@ -33,12 +38,12 @@ public class DefaultEventManager implements EventManager {
 	public void post(CcEvent event) {
 		bus.post(event);
 	}
-	
+
 	@Override
 	public void post(String eventName) {
 		post(new CcEvent(eventName));
 	}
-	
+
 	@Override
 	public void post(String eventName, String payload) {
 		post(new CcEvent(eventName, payload));
@@ -94,8 +99,19 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
+	public void showToast(String message) {
+		var appTitle = settings.getString("core.ui.title", "RCP");
+		showToast(appTitle, message);
+	}
+
+	@Override
 	public void showToastAsync(String title, String message) {
 		Platform.runLater(() -> showToast(title, message));
+	}
+
+	@Override
+	public void showToastAsync(String message) {
+		Platform.runLater(() -> showToast(message));
 	}
 
 	@Override

@@ -8,9 +8,9 @@ import javafx.scene.text.Text;
 public interface EventManager {
 
 	public void post(CcEvent event);
-	
+
 	public void post(String eventName);
-	
+
 	public void post(String eventName, String payload);
 
 	public void listen(String name, Consumer<Object[]> action);
@@ -31,7 +31,11 @@ public interface EventManager {
 
 	public void showToast(String title, String message);
 
+	public void showToast(String message);
+
 	public void showToastAsync(String title, String message);
+
+	public void showToastAsync(String message);
 
 	public void textToSpeech(String text);
 
