@@ -35,6 +35,7 @@ module rcp.core {
 	opens dev.tim9h.rcp.core.util;
 	opens dev.tim9h.rcp.core.settings;
 	opens dev.tim9h.rcp.core.plugin;
+	opens dev.tim9h.rcp.core.event to com.google.guice;
 
 	uses Plugin;
 }
