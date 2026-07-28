@@ -117,7 +117,7 @@
 }
 
 .traymenu {
-	-fx-background-color: $background-color !important; 
+	-fx-background-color: $background-color-opaque !important; 
 	-fx-border-color: $border-color !important;
 	
 	>.button, .label {
