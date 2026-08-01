@@ -201,17 +201,21 @@ public class PluginLoader {
 	private Predicate<Plugin> filterCards() {
 		return plugin -> {
 			if (!getPluginWhitelist().isEmpty()) {
-				boolean value = getPluginWhitelist().contains(plugin.getId().toLowerCase());
-				if (value) {
+				var pluginWhitelisted = getPluginWhitelist().contains(plugin.getId().toLowerCase());
+				if (pluginWhitelisted) {
 					logger.info(() -> "Loading plugin " + plugin.getName() + " (whitelist)");
+				} else {
+					logger.debug(() -> "Skipping plugin " + plugin.getName() + " (not whitelist)");
 				}
-				return value;
+				return pluginWhitelisted;
 			} else if (!getPluginBlacklist().isEmpty()) {
-				boolean value = !getPluginBlacklist().contains(plugin.getId().toLowerCase());
-				if (!value) {
+				var pluginBlacklisted = !getPluginBlacklist().contains(plugin.getId().toLowerCase());
+				if (!pluginBlacklisted) {
 					logger.info(() -> "Skip loading plugin " + plugin.getName() + " (blacklist)");
+				} else {
+					logger.debug(() -> "Loading plugin " + plugin.getName() + " (not blacklist)");
 				}
-				return value;
+				return pluginBlacklisted;
 			}
 			return true;
 		};

@@ -13,9 +13,9 @@ import javafx.scene.Node;
 public interface Plugin {
 
 	public String getName();
-	
+
 	public default String getId() {
-		return getName().toLowerCase();
+		return getName().toLowerCase().replace("\\\\w", "");
 	}
 
 	public default Optional<Node> getNode() throws IOException {
@@ -67,7 +67,7 @@ public interface Plugin {
 	public default Optional<TreeNode<String>> getModelessCommands() {
 		return Optional.empty();
 	}
-	
+
 	public default Map<String, String> getSettingsContributions() {
 		return Collections.emptyMap();
 	}
