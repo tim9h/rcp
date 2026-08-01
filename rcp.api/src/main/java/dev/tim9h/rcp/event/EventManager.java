@@ -19,6 +19,10 @@ public interface EventManager {
 
 	public void echo(String details, String response);
 
+	public void echoAsync(String response);
+
+	public void echoAsync(String details, String response);
+
 	public void echo(List<Text> details, List<Text> response);
 
 	public void clear();
