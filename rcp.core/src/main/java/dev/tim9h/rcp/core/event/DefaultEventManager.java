@@ -1,6 +1,9 @@
 package dev.tim9h.rcp.core.event;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +31,15 @@ public class DefaultEventManager implements EventManager {
 	private Settings settings;
 
 	private EventBus bus;
+
+	// For request/response correlation
+	private final ConcurrentHashMap<String, ResponseHandler> responseHandlers = new ConcurrentHashMap<>();
+
+	public record ResponseHandler(CountDownLatch latch, Object[] payload) {
+		public ResponseHandler(CountDownLatch latch) {
+			this(latch, null);
+		}
+	}
 
 	public DefaultEventManager() {
 		bus = new EventBus("rcp");
@@ -143,6 +155,54 @@ public class DefaultEventManager implements EventManager {
 	@Override
 	public void sayAsync(String text) {
 		Platform.runLater(() -> say(text));
+	}
+
+	@Override
+	public void postRequest(String eventName, String correlationId, Object... payload) {
+		var eventPayload = new Object[payload != null ? payload.length + 1 : 1];
+		eventPayload[0] = correlationId;
+		if (payload != null) {
+			System.arraycopy(payload, 0, eventPayload, 1, payload.length);
+		}
+		post(new CcEvent(eventName, eventPayload));
+	}
+
+	@Override
+	public Object[] listenForResponse(String correlationId, long timeoutMs) {
+		var latch = new CountDownLatch(1);
+		var handler = new ResponseHandler(latch, null);
+		responseHandlers.put(correlationId, handler);
+
+		try {
+			if (latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+				// Response received
+				var handlerWithResponse = responseHandlers.remove(correlationId);
+				return handlerWithResponse != null ? handlerWithResponse.payload : null;
+			} else {
+				// Timeout occurred
+				responseHandlers.remove(correlationId);
+				logger.warn(() -> "Timeout waiting for response with correlation ID: " + correlationId);
+				return null;
+			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			responseHandlers.remove(correlationId);
+			logger.error(() -> "Interrupted while waiting for response with correlation ID: " + correlationId, e);
+			return null;
+		}
+	}
+
+	@Override
+	public void postResponse(String correlationId, Object... payload) {
+		var handler = responseHandlers.get(correlationId);
+		if (handler != null) {
+			// Create new handler with the payload and signal completion
+			var updatedHandler = new ResponseHandler(handler.latch(), payload);
+			responseHandlers.put(correlationId, updatedHandler);
+			handler.latch().countDown();
+		} else {
+			logger.debug(() -> "No pending request for correlation ID: " + correlationId);
+		}
 	}
 
 }

@@ -49,4 +49,30 @@ public interface EventManager {
 
 	public void sayAsync(String text);
 
+	/**
+	 * Post a request event with correlation ID for request/response pattern
+	 * 
+	 * @param eventName    the event name
+	 * @param correlationId unique ID to correlate requests and responses
+	 * @param payload      optional payload
+	 */
+	public void postRequest(String eventName, String correlationId, Object... payload);
+
+	/**
+	 * Listen for a response event with the given correlation ID (blocks with timeout)
+	 * 
+	 * @param correlationId unique ID to correlate requests and responses
+	 * @param timeoutMs     maximum time to wait in milliseconds
+	 * @return              the response payload or null if timeout occurs
+	 */
+	public Object[] listenForResponse(String correlationId, long timeoutMs);
+
+	/**
+	 * Post a response event with correlation ID (used by event listeners to send back responses)
+	 * 
+	 * @param correlationId unique ID to correlate requests and responses
+	 * @param payload       response payload
+	 */
+	public void postResponse(String correlationId, Object... payload);
+
 }
