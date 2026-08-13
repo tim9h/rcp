@@ -14,7 +14,7 @@
 		<java.version>25</java.version>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<log4j.version>2.25.4</log4j.version>
+		<log4j.version>2.25.5</log4j.version>
 		<apache.commons.version>3.20.0</apache.commons.version>
 		<apache.commons-io.version>2.21.0</apache.commons-io.version>
 		<apache.commons-cli.version>1.11.0</apache.commons-cli.version>
