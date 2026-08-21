@@ -12,6 +12,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 
 import dev.tim9h.rcp.cli.query.bean.InputResponse;
+import dev.tim9h.rcp.controls.CcTextField;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.scene.text.Text;
 
@@ -39,7 +40,7 @@ public class MathAndQueryInputConverter extends InputConverter {
 
 	@Override
 	protected InputResponse process(String input) {
-		if (input.startsWith(">")) {
+		if (input.startsWith(CcTextField.COMMAND_PREFIX)) {
 			return null;
 		}
 		try {

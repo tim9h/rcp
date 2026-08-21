@@ -12,6 +12,7 @@ import com.google.inject.Injector;
 import dev.tim9h.rcp.cli.CliView;
 import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.AnimatedLabel;
+import dev.tim9h.rcp.controls.CcTextField;
 import dev.tim9h.rcp.controls.utils.DelayedRunner;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
@@ -66,7 +67,7 @@ public abstract class InputConverter extends DelayedRunner {
 					}
 				});
 			}
-		} else if (!oldValue.startsWith(">")) {
+		} else if (!oldValue.startsWith(CcTextField.COMMAND_PREFIX)) {
 			Platform.runLater(() -> {
 				interpretation.hideText();
 				response.hideText();

@@ -169,7 +169,7 @@ public class CliView implements Plugin {
 	}
 
 	private void submitInput(String query) {
-		if (query.startsWith(">")) {
+		if (query.startsWith(CcTextField.COMMAND_PREFIX)) {
 			var split = query.substring(1).trim().split(" ");
 			if (split.length == 1) {
 				eventManager.post(new CcEvent(split[0]));

@@ -18,8 +18,8 @@ public class UserInput {
 	private String rest;
 
 	public UserInput(String userinput, int carret) {
-		var inputWithoutPrefix = userinput.substring(2);
-		var pos = carret - 2;
+		var inputWithoutPrefix = userinput.substring(1);
+		var pos = carret - 1;
 		var start = inputWithoutPrefix.substring(0, pos);
 		var split = start.split(StringUtils.SPACE);
 
@@ -30,7 +30,7 @@ public class UserInput {
 			preceeding = Arrays.asList(split);
 			query = StringUtils.EMPTY;
 		}
-		rest = inputWithoutPrefix.substring(pos, userinput.length() - 2);
+		rest = inputWithoutPrefix.substring(pos, userinput.length() - 1);
 	}
 
 	public List<String> getPreceeding() {
@@ -47,8 +47,8 @@ public class UserInput {
 
 	@Override
 	public String toString() {
-		return CcTextField.COMMAND_PREFIX_SPACED + preceeding.stream().collect(Collectors.joining(StringUtils.SPACE))
-				+ query + rest;
+		return CcTextField.COMMAND_PREFIX + preceeding.stream().collect(Collectors.joining(StringUtils.SPACE)) + query
+				+ rest;
 	}
 
 	@Override

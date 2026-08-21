@@ -32,9 +32,7 @@ public class CcTextField extends TextField {
 
 	private static final String HISTORY = "history";
 
-	private static final String COMMAND_PREFIX = ">";
-
-	public static final String COMMAND_PREFIX_SPACED = COMMAND_PREFIX + StringUtils.SPACE;
+	public static final String COMMAND_PREFIX = "/";
 
 	private Consumer<String> submitAction;
 
@@ -73,11 +71,8 @@ public class CcTextField extends TextField {
 
 	private void initCommandMode() {
 		textProperty().addListener((_, oldval, newval) -> {
-			if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX_SPACED)) {
+			if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX)) {
 				getStyleClass().add(CLASS_HIGHLIGHT);
-			} else if (!oldval.startsWith(COMMAND_PREFIX) && newval.startsWith(COMMAND_PREFIX)) {
-				getStyleClass().add(CLASS_HIGHLIGHT);
-				textProperty().setValue(COMMAND_PREFIX_SPACED);
 			} else if (oldval.startsWith(COMMAND_PREFIX) && !newval.startsWith(COMMAND_PREFIX)) {
 				getStyleClass().remove(CLASS_HIGHLIGHT);
 			}
@@ -160,7 +155,7 @@ public class CcTextField extends TextField {
 		if (textProperty().getValue().startsWith(COMMAND_PREFIX)) {
 			textProperty().set(StringUtils.EMPTY);
 		} else {
-			setText(COMMAND_PREFIX_SPACED);
+			setText(COMMAND_PREFIX);
 			positionCaret(getText().length());
 		}
 	}
@@ -179,15 +174,15 @@ public class CcTextField extends TextField {
 
 	private void handleTab() {
 		var input = textProperty().getValue();
-		if (input.startsWith(COMMAND_PREFIX_SPACED)) {
+		if (input.startsWith(COMMAND_PREFIX)) {
 			var userinput = new UserInput(input, getCaretPosition());
 			var suggestions = getSuggestions(userinput);
 			logger.debug(() -> "Suggestions for " + userinput.getQuery() + ": " + suggestions);
 			if (suggestions.size() == 1) {
 				var preceeding = userinput.getPreceeding().stream().collect(Collectors.joining(StringUtils.SPACE));
 				preceeding = preceeding.isBlank() ? StringUtils.EMPTY : preceeding + StringUtils.SPACE;
-				textProperty().set(COMMAND_PREFIX_SPACED + preceeding + suggestions.get(0) + userinput.getRest());
-				positionCaret((COMMAND_PREFIX_SPACED + preceeding + suggestions.get(0)).length());
+				textProperty().set(COMMAND_PREFIX + preceeding + suggestions.get(0) + userinput.getRest());
+				positionCaret((COMMAND_PREFIX + preceeding + suggestions.get(0)).length());
 				eventManager.clear();
 			} else {
 				completeAmbiguous(userinput, suggestions);
@@ -202,8 +197,8 @@ public class CcTextField extends TextField {
 			var preceeding = userinput.getPreceeding().stream().collect(Collectors.joining(StringUtils.SPACE));
 			preceeding = preceeding.isBlank() ? StringUtils.EMPTY : preceeding + StringUtils.SPACE;
 			var commonPrefix = StringUtils.getCommonPrefix(suggestions.toArray(new String[0]));
-			textProperty().set(COMMAND_PREFIX_SPACED + preceeding + commonPrefix + userinput.getRest());
-			positionCaret((COMMAND_PREFIX_SPACED + preceeding + commonPrefix).length());
+			textProperty().set(COMMAND_PREFIX + preceeding + commonPrefix + userinput.getRest());
+			positionCaret((COMMAND_PREFIX + preceeding + commonPrefix).length());
 		} else {
 			eventManager.clear();
 		}
