@@ -167,8 +167,6 @@ public class CcTextField extends TextField {
 			textProperty()
 					.setValue(new StringBuilder(textProperty().getValue()).deleteCharAt(caretPosition).toString());
 			positionCaret(caretPosition);
-		} else if (textProperty().getValue().equals(COMMAND_PREFIX)) {
-			textProperty().setValue(StringUtils.EMPTY);
 		}
 	}
 
