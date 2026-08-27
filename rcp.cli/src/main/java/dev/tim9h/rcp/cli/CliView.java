@@ -27,6 +27,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandNode;
 import dev.tim9h.rcp.spi.Gravity;
 import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
@@ -79,11 +80,15 @@ public class CliView implements Plugin {
 		em.listen(CcEvent.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
 		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
 		em.listen(CcEvent.EVENT_CLI_ADD_PROPOSALS, data -> {
-			if (data instanceof String[] sData) {
-				Arrays.stream(sData).map(TreeNode::new).forEach(tfiInput::addCommand);
-			} else {
-				Arrays.stream(data).map(TreeNode.class::cast).forEach(tfiInput::addCommand);
-			}
+			Arrays.stream(data).forEach(t -> {
+				if (t instanceof CommandNode cn) {
+					tfiInput.addCommand(cn);
+				} else if (t instanceof TreeNode<?> tn) {
+					tfiInput.addCommand(tn.toCommandNode());
+				} else {
+					logger.warn(() -> "Received unexpected type for command proposal: " + t.getClass().getName());
+				}
+			});
 		});
 		em.listen(CcEvent.EVENT_CLI_RESPONSE_COPY, _ -> copyResponseToClipboard());
 	}
@@ -208,6 +213,19 @@ public class CliView implements Plugin {
 		properties.put(SETTING_SEARCH_URL, "https://www.google.com/search?q=%s");
 		properties.put(SETTING_SUGGEST_URL, "https://ac.duckduckgo.com/ac/?q=%s&type=json");
 		return properties;
+	}
+
+	@Override
+	public Optional<CommandNode> getCommands() {
+		var commandNode = new CommandNode("foo");
+		var childNodeNoArgs = new CommandNode("bar", false, arg -> {
+			System.out.println("Executing command 'bar' with null arguments");
+		});
+		var childNodeWithArgs = new CommandNode("bat", true, arg -> {
+			System.out.println("Executing command 'bat' with argument: " + arg);
+		});
+		commandNode.add(childNodeNoArgs, childNodeWithArgs);
+		return Optional.of(commandNode);
 	}
 
 }

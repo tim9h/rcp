@@ -221,6 +221,7 @@ public class PluginLoader {
 		};
 	}
 
+	@SuppressWarnings("deprecation")
 	public void initPlugin(Plugin plugin) {
 		plugin.init();
 		plugin.initBus(eventManager);
@@ -231,6 +232,7 @@ public class PluginLoader {
 			});
 		});
 		plugin.getModelessCommands().ifPresent(commandsService::add);
+		plugin.getCommands().ifPresent(commandsService::add);
 		plugin.getMenuItems().ifPresent(menuItems -> {
 			Collections.reverse(menuItems);
 			menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.label(), menuItem.action()));

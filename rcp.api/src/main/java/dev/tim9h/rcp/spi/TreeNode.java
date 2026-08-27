@@ -100,4 +100,14 @@ public class TreeNode<T> {
 		return getChildrenOfChild(node.get());
 	}
 
+	public CommandNode toCommandNode() {
+		var commandNode = new CommandNode((String) data);
+		children.forEach(child -> {
+			var c = child.toCommandNode();
+			c.setParent(commandNode);
+			commandNode.add(c);
+		});
+		return commandNode;
+	}
+
 }

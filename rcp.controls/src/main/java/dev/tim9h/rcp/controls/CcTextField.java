@@ -17,8 +17,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.StringNode;
-import dev.tim9h.rcp.spi.TreeNode;
+import dev.tim9h.rcp.spi.CommandNode;
 import javafx.event.Event;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
@@ -40,7 +39,7 @@ public class CcTextField extends TextField {
 
 	private String selectedText;
 
-	private TreeNode<String> commands;
+	private CommandNode commands;
 
 	@InjectLogger
 	private Logger logger;
@@ -194,12 +193,16 @@ public class CcTextField extends TextField {
 					settings.getCharWidth()));
 			var preceeding = userinput.getPreceeding().stream().collect(Collectors.joining(StringUtils.SPACE));
 			preceeding = preceeding.isBlank() ? StringUtils.EMPTY : preceeding + StringUtils.SPACE;
-			var commonPrefix = StringUtils.getCommonPrefix(suggestions.toArray(new String[0]));
+			var commonPrefix = StringUtils.getCommonPrefix(toLowerCase(suggestions));
 			textProperty().set(COMMAND_PREFIX + preceeding + commonPrefix + userinput.getRest());
 			positionCaret((COMMAND_PREFIX + preceeding + commonPrefix).length());
 		} else {
 			eventManager.clear();
 		}
+	}
+
+	private static String[] toLowerCase(List<String> list) {
+		return list.stream().map(String::toLowerCase).toArray(String[]::new);
 	}
 
 	private List<String> getSuggestions(UserInput input) {
@@ -213,7 +216,7 @@ public class CcTextField extends TextField {
 			}
 		}
 		return node != null
-				? node.stream().map(TreeNode<String>::get)
+				? node.stream().map(tree -> tree.getData())
 						.filter(n -> n.toLowerCase().startsWith(input.getQuery().toLowerCase())).toList()
 				: Collections.emptyList();
 	}
@@ -243,14 +246,14 @@ public class CcTextField extends TextField {
 		});
 	}
 
-	public TreeNode<String> getCommands() {
+	public CommandNode getCommands() {
 		if (commands == null) {
-			commands = new StringNode();
+			commands = new CommandNode();
 		}
 		return commands;
 	}
 
-	public void addCommand(TreeNode<String> command) {
+	public void addCommand(CommandNode command) {
 		getCommands().add(command);
 	}
 
