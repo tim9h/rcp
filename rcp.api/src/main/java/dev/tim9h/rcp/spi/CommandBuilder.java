@@ -16,7 +16,17 @@ public class CommandBuilder {
 	}
 
 	public CommandBuilder command(String name, Consumer<String> command) {
-		return command(name, false, command);
+		var node = new CommandNode(name);
+		node.setCommand(command);
+
+		if (root == null) {
+			root = node;
+		} else {
+			current().add(node);
+		}
+
+		stack.push(node);
+		return this;
 	}
 
 	public CommandBuilder command(String name, boolean hasArguments, Consumer<String> command) {
@@ -33,7 +43,8 @@ public class CommandBuilder {
 	}
 
 	public CommandBuilder arguments() {
-		return arguments(true);
+		current().setHasArguments(true);
+		return this;
 	}
 
 	public CommandBuilder arguments(boolean hasArguments) {
@@ -41,8 +52,14 @@ public class CommandBuilder {
 		return this;
 	}
 
-	public CommandBuilder action(Consumer<String> command) {
+	public CommandBuilder argumentAction(Consumer<String> command) {
+		current().setHasArguments(true);
 		current().setCommand(command);
+		return this;
+	}
+
+	public CommandBuilder action(Consumer<String> command) {
+		current().setArgumentCommand(command);
 		return this;
 	}
 
@@ -62,6 +79,11 @@ public class CommandBuilder {
 		validate(root);
 
 		return Optional.of(root);
+	}
+
+	public CommandNode getRoot() {
+		validate(root);
+		return root;
 	}
 
 	private void validate(CommandNode node) {
@@ -89,6 +111,16 @@ public class CommandBuilder {
 
 	public CommandBuilder child(String name, boolean hasArguments, Consumer<String> command) {
 		current().add(name, hasArguments, command);
+		return this;
+	}
+
+	public CommandBuilder child(String name) {
+		current().add(name);
+		return this;
+	}
+
+	public CommandBuilder children(String... names) {
+		current().add(names);
 		return this;
 	}
 

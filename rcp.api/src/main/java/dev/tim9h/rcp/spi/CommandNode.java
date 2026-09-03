@@ -18,6 +18,8 @@ public class CommandNode {
 
 	private Consumer<String> command;
 
+	private Consumer<String> argumentCommand;
+
 	private boolean hasArguments = false;
 
 	public CommandNode() {
@@ -91,16 +93,24 @@ public class CommandNode {
 		return this.data;
 	}
 
-	public Consumer<String> getCommand() {
-		return this.command;
-	}
-
 	public void setData(String data) {
 		this.data = data;
 	}
 
+	public Consumer<String> getCommand() {
+		return this.command;
+	}
+
 	public void setCommand(Consumer<String> command) {
 		this.command = command;
+	}
+
+	public Consumer<String> getArgumentCommand() {
+		return argumentCommand;
+	}
+
+	public void setArgumentCommand(Consumer<String> argumentCommand) {
+		this.argumentCommand = argumentCommand;
 	}
 
 	public boolean hasArguments() {
@@ -134,12 +144,6 @@ public class CommandNode {
 
 	public CommandNode get(String value) {
 		return stream().filter(child -> Strings.CI.equals(child.getData(), value)).findFirst().orElse(null);
-	}
-
-	public CommandNode get(CommandNode value) {
-		var optional = stream()
-				.filter(child -> child.getData().equals(value) && child.getCommand().equals(value.command)).findAny();
-		return optional.isPresent() ? optional.get() : null;
 	}
 
 	public List<CommandNode> getChildrenOfChild(String value) {
