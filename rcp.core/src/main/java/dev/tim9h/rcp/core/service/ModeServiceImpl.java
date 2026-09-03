@@ -201,7 +201,9 @@ public class ModeServiceImpl implements ModeService {
 
 	private boolean enableMode(String mode, boolean ephermeral) {
 		if (!isModeActive(mode) && !"".equals(mode)) {
-			logger.info(() -> String.format("Mode %s enabled", mode));
+			if (!"idle".equals(mode)) {
+				logger.info(() -> String.format("Mode %s enabled", mode));
+			}
 			if (!ephermeral) {
 				activeModes.add(mode);
 				settings.persist(SettingsConsts.MODES, activeModes);
@@ -221,7 +223,9 @@ public class ModeServiceImpl implements ModeService {
 			} else {
 				ephemeralModes.remove(mode);
 			}
-			logger.info(() -> String.format("Mode %s disabled", mode));
+			if (!"idle".equals(mode)) {
+				logger.info(() -> String.format("Mode %s disabled", mode));
+			}
 			eventManager.post(new CcEvent("MODE_" + mode.toUpperCase(), "off"));
 			return true;
 		}
