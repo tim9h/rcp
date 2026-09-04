@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up JDK 26
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '26'
         distribution: 'temurin'
@@ -34,7 +34,7 @@ jobs:
           ]
 
     # Runs on Pull Requests only (Build & Test)
-    - name: Build with Maven (PR)
+    - name: Build with Maven
       if: github.event_name == 'pull_request'
       run: mvn -B package --file pom.xml
       env:

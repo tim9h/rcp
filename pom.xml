@@ -142,4 +142,17 @@
 
 	</dependencyManagement>
 
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/tim9h/rcp</url>
+		</repository>
+		<snapshotRepository>
+			<id>github</id>
+			<name>GitHub Packages Snapshots</name>
+			<url>https://maven.pkg.github.com/tim9h/rcp</url>
+		</snapshotRepository>
+	</distributionManagement>
+
 </project>
