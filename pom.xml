@@ -7,7 +7,7 @@
 
 	<groupId>dev.tim9h</groupId>
 	<artifactId>rcp.parent</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0-SNAPSHOT</version>
 
 	<properties>
 		<java.version>26</java.version>
@@ -35,7 +35,7 @@
 
 	<repositories>
 		<repository>
-			<id>collections</id>
+			<id>gh-read-packages</id>
 			<name>GitHub Packages</name>
 			<url>https://maven.pkg.github.com/tim9h/collections</url>
 			<snapshots>

@@ -34,7 +34,7 @@ jobs:
           cache: maven
 
           mvn-server-credentials: |
-            collections:PACKAGES_READ_USERNAME:PACKAGES_READ_TOKEN
+            gh-read-packages:PACKAGES_READ_USERNAME:PACKAGES_READ_TOKEN
             github:GITHUB_ACTOR:GITHUB_TOKEN
 
       - name: Build and test
