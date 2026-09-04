@@ -28,12 +28,17 @@ jobs:
           distribution: 'temurin'
           cache: maven
           server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_PACKAGES_READ_TOKEN
 
       - name: Build and test
         run: mvn -B verify
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Publish to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: mvn -B deploy
         env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
