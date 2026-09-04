@@ -21,6 +21,7 @@ jobs:
     env:
       PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v5
@@ -31,9 +32,10 @@ jobs:
           java-version: '26'
           distribution: 'temurin'
           cache: maven
-          server-id: github
-          server-username: PACKAGES_READ_USERNAME
-          server-password: PACKAGES_READ_TOKEN
+
+          mvn-server-credentials: |
+            collections:PACKAGES_READ_USERNAME:PACKAGES_READ_TOKEN
+            github:GITHUB_ACTOR:GITHUB_TOKEN
 
       - name: Build and test
         run: mvn -B verify
@@ -41,5 +43,3 @@ jobs:
       - name: Publish to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: mvn -B deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

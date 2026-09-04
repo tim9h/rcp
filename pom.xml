@@ -35,7 +35,7 @@
 
 	<repositories>
 		<repository>
-			<id>github</id>
+			<id>collections</id>
 			<name>GitHub Packages</name>
 			<url>https://maven.pkg.github.com/tim9h/collections</url>
 			<snapshots>
