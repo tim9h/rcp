@@ -22,7 +22,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import dev.tim9h.rcp.spi.TreeNode;
+import dev.tim9h.rcp.spi.CommandBuilder;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -43,42 +43,52 @@ public class ThemeServiceImpl implements ThemeService {
 
 	private TrayManager trayManager;
 
+	private CommandsService commandsService;
+
 	@Inject
 	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
-			TrayManager trayManager) {
+			TrayManager trayManager, CommandsService commandsService) {
 		this.scene = scene;
 		this.settings = settings;
 		this.eventManager = eventManager;
 		this.modeService = modeService;
 		this.trayManager = trayManager;
+		this.commandsService = commandsService;
 
 		scene.setFill(Color.rgb(20, 20, 20, 0.01f));
 		var stylesheet = getClass().getResource("/css/core.css").toExternalForm();
 		scene.getStylesheets().add(stylesheet);
 		trayManager.applyStyle(stylesheet);
 
-		subscribeToThemeEvents();
+		registerThemeCommand();
 	}
 
-	@Override
-	public void subscribeToThemeEvents() {
-		eventManager.listen("theme", args -> {
+	public void registerThemeCommand() {
+		commandsService.add(new CommandBuilder().command("theme", _ -> {
+			var current = settings.getString(SettingsConsts.THEME);
+			eventManager.echo("Current theme", StringUtils.capitalize(current));
+		}).arguments().action(theme -> {
 			if (!modeService.isModeActive("alert")) {
-				var theme = StringUtils.join(args).toLowerCase();
-				eventManager.echo("Activating theme", StringUtils.capitalize(theme));
-				setTheme(theme, true);
+				var newTheme = setTheme(theme, true);
+				if (newTheme == null) {
+					eventManager.echo("Theme not found", StringUtils.capitalize(theme));
+				} else {
+					eventManager.echo("Activating theme", StringUtils.capitalize(newTheme));
+				}
 			} else {
 				eventManager.echo("Alert theme active");
 			}
-		});
+		}).children(getThemeNames()).getRoot());
 	}
 
 	@Override
-	public void setTheme(String theme, boolean persist) {
+	public String setTheme(String theme, boolean persist) {
+		if (theme == null || theme.isBlank()) {
+			return null;
+		}
 		var url = getClass().getResource(String.format("/css/theme_%s.css", theme.toLowerCase()));
 		if (url == null) {
-			var current = settings.getString(SettingsConsts.THEME);
-			eventManager.echo("Current theme", StringUtils.capitalize(current));
+			return null;
 		} else if (!scene.getStylesheets().contains(url.toExternalForm())) {
 			logger.info(() -> "Setting theme to " + theme);
 			var themeUrl = url.toExternalForm();
@@ -89,17 +99,7 @@ public class ThemeServiceImpl implements ThemeService {
 				settings.persist(SettingsConsts.THEME, theme);
 			}
 		}
-	}
-
-	@Override
-	public TreeNode<String> getThemeCommands() {
-		var themes = getThemeNames();
-		var node = new TreeNode<>("theme");
-		if (themes.length != 0) {
-			node.add(themes);
-		}
-		logger.debug(() -> "The following themes were found: " + node.getChildren());
-		return node;
+		return theme;
 	}
 
 	private List<String> getFileNames(String directory) {
