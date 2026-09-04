@@ -1,7 +1,7 @@
 */.settings
 */target/
 */.classpath
-*/.project
+.project
 *.css
 *.css.map
 /plugins/
