@@ -1,10 +1,14 @@
 name: Java CI with Maven
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+push:
+  branches:
+    - master
+    - develop
+pull_request:
+  branches:
+    - master
+    - develop
 
 permissions:
   contents: read
@@ -15,24 +19,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up JDK 26
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '26'
         distribution: 'temurin'
         cache: maven
         server-id: github
-        server-username: ${{ github.actor }}
-        server-password: ${{ secrets.READ_PACKAGES_PAT }}
 
-    # Runs on Pull Requests only (Build & Test)
-    - name: Build with Maven
-      if: github.event_name == 'pull_request'
-      run: mvn -B package --file pom.xml
+        - name: Build and test
+          run: mvn -B verify
 
-    # Runs on Push to master only (Build, Test & Deploy)
-    - name: Publish to GitHub Packages
-      if: github.event_name == 'push'
-      run: mvn -B deploy --file pom.xml -DskipTests=false
+        - name: Publish to GitHub Packages
+          if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+          run: mvn -B deploy
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
