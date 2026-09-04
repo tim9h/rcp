@@ -1,8 +1,6 @@
 package dev.tim9h.rcp.core.ui;
 
 import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.swing.KeyStroke;
 
@@ -28,12 +26,18 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
-import javafx.animation.Animation.Status;
 import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -85,7 +89,23 @@ public class UiApplication extends Application {
 
 	private double maxHeight;
 
+	private static final double COLLAPSED_HEIGHT = 1.0;
+
+	private static final Duration ANIMATION_DURATION = Duration.millis(100);
+
+	private final DoubleProperty animatedHeight = new SimpleDoubleProperty();
+
+	private Timeline heightAnimation;
+
+	private boolean expanded = false;
+
 	private static String[] argsGlobal;
+
+	private static final double WINDOW_VERTICAL_PADDING = 13.0;
+
+	private Provider hotkeyProvider;
+
+	private static final double HIDDEN_ROOT_OPACITY = 0.01;
 
 	public static void main(String[] args) {
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
@@ -116,13 +136,21 @@ public class UiApplication extends Application {
 		hiddenStage.initStyle(StageStyle.UTILITY);
 		hiddenStage.setOpacity(0);
 		stage = createStage(hiddenStage);
+
 		stage.setScene(scene);
 
 		themeService.setTheme(settings.getString(SettingsConsts.THEME), true);
 
 		hiddenStage.show();
 		stage.show();
-		maxHeight = cardContainer.getBoundsInParent().getHeight() + 13;
+
+		// Make sure JavaFX has applied CSS and calculated the layout
+		cardContainer.applyCss();
+		cardContainer.layout();
+
+		maxHeight = Math.ceil(cardContainer.prefHeight(-1)) + WINDOW_VERTICAL_PADDING;
+
+		initAnimation();
 
 		if (settings.getBoolean(SettingsConsts.BLUR_ENABLED).booleanValue() && WindowsUtils.isWindows()) {
 			// apply backdrop filter effect
@@ -135,32 +163,48 @@ public class UiApplication extends Application {
 	}
 
 	private Stage createStage(Stage hiddenStage) {
-		stage = new Stage();
-		stage.initOwner(hiddenStage);
-		stage.setX(calculateXposition());
-		stage.setY(0);
-		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
-		makeStageInvisible();
-		stage.setTitle(settings.getString(SettingsConsts.APPLICATION_TITLE));
-		stage.setAlwaysOnTop(true);
-		stage.setResizable(false);
-		stage.initStyle(StageStyle.TRANSPARENT);
+		var result = new Stage();
 
-		// show panel when clicking on top
-		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, _ -> {
-			if (stage.getHeight() < 20) { // height is greater than 1 with DPI scaling
-				toggleVisibility(true, false);
+		result.initOwner(hiddenStage);
+		result.setX(calculateXposition());
+		result.setY(0);
+		result.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
+		result.setHeight(COLLAPSED_HEIGHT);
+		result.setOpacity(0.01);
+		result.setTitle(settings.getString(SettingsConsts.APPLICATION_TITLE));
+		result.setAlwaysOnTop(true);
+		result.setResizable(false);
+		result.initStyle(StageStyle.TRANSPARENT);
+		result.addEventFilter(MouseEvent.MOUSE_PRESSED, _ -> {
+			if (!expanded) {
+				setExpanded(true, false);
 			}
 		});
-
-		// hide panel on focus loss
-		stage.focusedProperty().addListener((_, oldval, newval) -> {
-			if (Boolean.TRUE.equals(oldval) && Boolean.FALSE.equals(newval)) {
-				toggleVisibility(false, false);
+		result.focusedProperty().addListener((_, wasFocused, isFocused) -> {
+			if (wasFocused && !isFocused && expanded) {
+				setExpanded(false, false);
 			}
 		});
+		return result;
+	}
 
-		return stage;
+	private void initAnimation() {
+		animatedHeight.addListener((_, _, newValue) -> stage.setHeight(newValue.doubleValue()));
+	}
+
+	private void animateHeight(double targetHeight, Runnable onFinished) {
+		if (heightAnimation != null) {
+			heightAnimation.stop();
+		}
+		var currentHeight = stage.getHeight();
+		heightAnimation = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(animatedHeight, currentHeight)),
+				new KeyFrame(ANIMATION_DURATION, new KeyValue(animatedHeight, targetHeight, Interpolator.EASE_BOTH)));
+		heightAnimation.setOnFinished(_ -> {
+			if (onFinished != null) {
+				onFinished.run();
+			}
+		});
+		heightAnimation.play();
 	}
 
 	public void initNodes(VBox vbox) {
@@ -199,10 +243,10 @@ public class UiApplication extends Application {
 		scene.setRoot(cardContainer);
 
 		// hide panel when pressing ESC
-		scene.setOnKeyReleased(event -> { // keyPressed consumes event too late
+		scene.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
 			if (event.getCode() == KeyCode.ESCAPE) {
 				event.consume();
-				toggleVisibility(false, true);
+				setExpanded(false, true);
 			}
 		});
 		return cardContainer;
@@ -221,75 +265,73 @@ public class UiApplication extends Application {
 		}
 	}
 
-	private void toggleVisibility(boolean show, boolean keyBind) {
-		if (fade == null) {
-			if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
-				fade = new FadeTransition(Duration.millis(100), stage.getScene().getRoot());
-			}
-			stage.setOpacity(1.0f);
-		} else if (fade.getStatus() == Status.RUNNING) {
+	private void setExpanded(boolean expanded, boolean fromHotkey) {
+		if (this.expanded == expanded) {
+			return;
+		}
+		this.expanded = expanded;
+		if (expanded) {
+			show(fromHotkey);
+		} else {
+			hide(fromHotkey);
+		}
+	}
+
+	private void show(boolean fromHotkey) {
+		stage.setOpacity(1.0);
+		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
+
+		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			stage.setHeight(maxHeight);
+			stage.getScene().getRoot().setOpacity(1.0);
+			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
 			return;
 		}
 
-		if (show && stage.getHeight() < maxHeight) {
-			show();
+		if (fade == null) {
+			fade = new FadeTransition(ANIMATION_DURATION, stage.getScene().getRoot());
+		}
+
+		fade.stop();
+		fade.setFromValue(HIDDEN_ROOT_OPACITY);
+		fade.setToValue(1.0);
+		fade.play();
+
+		animateHeight(maxHeight, () -> {
+			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
 			stage.requestFocus();
-		} else {
-			hide();
-			if (keyBind) {
+		});
+	}
+
+	private void hide(boolean fromHotkey) {
+		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			makeStageInvisible();
+			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
+			if (fromHotkey) {
 				unfocusStage();
 			}
+			return;
 		}
-	}
-
-	private void show() {
-		if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
-			fade.setFromValue(0.0);
-			fade.setToValue(1.0);
-			fade.play();
-			stage.setHeight(maxHeight - 100.0f);
-			new Timer("showUiTimer").scheduleAtFixedRate(new TimerTask() {
-				@Override
-				public void run() {
-					if (stage.getHeight() < maxHeight) {
-						stage.setHeight(stage.getHeight() + 1);
-					} else {
-						cancel();
-					}
-				}
-			}, 0, 1);
-		} else {
-			stage.setHeight(maxHeight);
-			stage.setOpacity(1);
+		if (fade == null) {
+			fade = new FadeTransition(ANIMATION_DURATION, stage.getScene().getRoot());
 		}
-		eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
-	}
-
-	private void hide() {
-		if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
-			fade.setFromValue(1.0);
-			fade.setToValue(0.0);
-			fade.play();
-			new Timer("hideUiTimer").scheduleAtFixedRate(new TimerTask() {
-				@Override
-				public void run() {
-					if (stage.getHeight() > maxHeight - 100.0f) {
-						stage.setHeight(stage.getHeight() - 1);
-					} else {
-						cancel();
-						stage.setHeight(1);
-					}
-				}
-			}, 0, 1);
-		} else {
+		fade.stop();
+		fade.setFromValue(stage.getScene().getRoot().getOpacity());
+		fade.setToValue(HIDDEN_ROOT_OPACITY);
+		fade.play();
+		animateHeight(COLLAPSED_HEIGHT, () -> {
 			makeStageInvisible();
-		}
-		eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
+			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
+			if (fromHotkey) {
+				unfocusStage();
+			}
+		});
 	}
 
 	private void makeStageInvisible() {
-		stage.setHeight(1);
-		stage.setOpacity(0.01f);
+		stage.setHeight(COLLAPSED_HEIGHT);
+		stage.setOpacity(1.0);
+		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 	}
 
 	private void createTray() {
@@ -300,7 +342,7 @@ public class UiApplication extends Application {
 		tray.createMenuItem("Reload Settings", settings::loadProperties);
 		tray.createMenuItem("Open Settings", settings::openSettingsFile, true);
 		tray.createMenuItem("Exit", coreService::shutdown);
-		tray.createDoubleClickAction(() -> Platform.runLater(() -> toggleVisibility(true, false)));
+		tray.createDoubleClickAction(() -> Platform.runLater(() -> setExpanded(!expanded, false)));
 	}
 
 	private void initPluginUi(VBox vbox, Plugin plugin) {
@@ -314,16 +356,16 @@ public class UiApplication extends Application {
 	}
 
 	private void initGlobalHotkeys() {
-		// register hotkey to show/hide even if other window has focus
-		Provider.getCurrentProvider(false).register(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)),
-				_ -> Platform.runLater(() -> toggleVisibility(true, true)));
+		hotkeyProvider = Provider.getCurrentProvider(false);
+		hotkeyProvider.register(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)),
+				_ -> Platform.runLater(() -> setExpanded(!expanded, true)));
 	}
 
 	private void subscribeToUiEvents() {
 		eventManager.listen("reposition", _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
-			show();
+			setExpanded(true, false);
 			stage.requestFocus();
 		});
 	}
@@ -332,6 +374,21 @@ public class UiApplication extends Application {
 		stage.setX(calculateXposition());
 		stage.setY(0);
 		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
+	}
+
+	@Override
+	public void stop() throws Exception {
+		// unregister/shutdown hotkey provider here
+		// unregister EventManager listeners here
+		// stop animations
+		// remove tray resources if necessary
+		if (heightAnimation != null) {
+			heightAnimation.stop();
+		}
+		if (fade != null) {
+			fade.stop();
+		}
+		super.stop();
 	}
 
 }
