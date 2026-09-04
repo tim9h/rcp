@@ -215,17 +215,4 @@ public class CliView implements Plugin {
 		return properties;
 	}
 
-	@Override
-	public Optional<CommandNode> getCommands() {
-		var commandNode = new CommandNode("foo");
-		var childNodeNoArgs = new CommandNode("bar", false, arg -> {
-			System.out.println("Executing command 'bar' with null arguments");
-		});
-		var childNodeWithArgs = new CommandNode("bat", true, arg -> {
-			System.out.println("Executing command 'bat' with argument: " + arg);
-		});
-		commandNode.add(childNodeNoArgs, childNodeWithArgs);
-		return Optional.of(commandNode);
-	}
-
 }
