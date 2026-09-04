@@ -3,11 +3,11 @@
 
 	<groupId>dev.tim9h</groupId>
 	<artifactId>rcp.pluginarchetype</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<packaging>maven-archetype</packaging>
 	
 	<properties>
-        <revision>0.0.1-SNAPSHOT</revision>
+		<revision>1.0.0</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
