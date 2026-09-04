@@ -15,30 +15,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
 
     - name: Set up JDK 26
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v4
       with:
         java-version: '26'
         distribution: 'temurin'
         cache: maven
         server-id: github
-        server-username: tim9h
-        server-password-env-var: READ_PACKAGES_PAT
-        mvn-repositories: |
-          github:https://maven.pkg.github.com/tim9h/*:true
+        server-username: ${{ github.actor }}
+        server-password: ${{ secrets.READ_PACKAGES_PAT }}
 
-    # Runs on Pull Requests only
+    # Runs on Pull Requests only (Build & Test)
     - name: Build with Maven
       if: github.event_name == 'pull_request'
       run: mvn -B package --file pom.xml
-      env:
-        READ_PACKAGES_PAT: ${{ secrets.READ_PACKAGES_PAT }}
 
-    # Runs on Push to master only
+    # Runs on Push to master only (Build, Test & Deploy)
     - name: Publish to GitHub Packages
       if: github.event_name == 'push'
       run: mvn -B deploy --file pom.xml -DskipTests=false
-      env:
-        READ_PACKAGES_PAT: ${{ secrets.READ_PACKAGES_PAT }}
