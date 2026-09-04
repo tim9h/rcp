@@ -24,25 +24,21 @@ jobs:
         distribution: 'temurin'
         cache: maven
         server-id: github
-        repositories: |
-          [
-            {
-              "id": "github",
-              "url": "https://maven.pkg.github.com/tim9h/*",
-              "snapshots": true
-            }
-          ]
+        server-username: tim9h
+        server-password-env-var: READ_PACKAGES_PAT
+        mvn-repositories: |
+          github:https://maven.pkg.github.com/tim9h/*:true
 
-    # Runs on Pull Requests only (Build & Test)
+    # Runs on Pull Requests only
     - name: Build with Maven
       if: github.event_name == 'pull_request'
       run: mvn -B package --file pom.xml
       env:
-        GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+        READ_PACKAGES_PAT: ${{ secrets.READ_PACKAGES_PAT }}
 
-    # Runs on Push to master only (Build, Test & Deploy)
+    # Runs on Push to master only
     - name: Publish to GitHub Packages
       if: github.event_name == 'push'
       run: mvn -B deploy --file pom.xml -DskipTests=false
       env:
-        GITHUB_TOKEN: ${{ secrets.READ_PACKAGES_PAT }}
+        READ_PACKAGES_PAT: ${{ secrets.READ_PACKAGES_PAT }}
