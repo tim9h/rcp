@@ -19,7 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      GITHUB_PACKAGES_READ_TOKEN: ${{ secrets.GITHUB_PACKAGES_READ_TOKEN }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
 
     steps:
       - uses: actions/checkout@v5
@@ -31,7 +32,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
           server-id: github
-          server-username: tim9h
+          server-username: PACKAGES_READ_USERNAME
           server-password: PACKAGES_READ_TOKEN
 
       - name: Build and test
