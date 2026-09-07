@@ -26,11 +26,13 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
+import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
 
 @Singleton
 public class SettingsImpl implements Settings {
@@ -42,20 +44,24 @@ public class SettingsImpl implements Settings {
 
 	private Path propertiesPath;
 
-	@Inject
 	private EventManager eventManager;
+
+	private CommandsService commandsService;
 
 	private Map<String, Object> overwrites;
 
 	@Inject
-	public SettingsImpl(Injector injector) {
+	public SettingsImpl(Injector injector, EventManager eventManager, CommandsService commandsService) {
 		injector.injectMembers(this);
+		this.eventManager = eventManager;
+		this.commandsService = commandsService;
+
 		overwrites = new HashMap<>();
 		if (properties == null) {
 			loadProperties();
 		}
 		initDefaultSettings();
-		subscribeToSettingsEvents();
+		initSettingsCommands();
 	}
 
 	@Override
@@ -251,49 +257,47 @@ public class SettingsImpl implements Settings {
 		persistProperties();
 	}
 
-	public void handleSettingCommand(Object[] args) {
-		if (args == null) {
-			eventManager.echo("Missing setting key");
-		} else if (args.length == 1 && StringUtils.split((String) args[0], "=").length == 2) {
-			var split = StringUtils.split((String) args[0], "=");
-			persist(split[0], split[1]);
-			logger.info(() -> "Setting " + split[0] + " persisted");
-			eventManager.echo("Setting persisted");
-		} else if (args.length == 1) {
-			var key = StringUtils.join(args);
-			var val = getString(key);
-			eventManager.echo(key, StringUtils.defaultIfBlank(val, "Setting not found"));
-		} else if (args.length > 1) {
-			var key = (String) args[0];
-			var val = StringUtils.join(Arrays.copyOfRange(args, 1, args.length), StringUtils.SPACE);
-			persist(key, val);
-			logger.info(() -> "Setting " + key + " persisted");
-			eventManager.echo("Setting persisted");
-		}
-	}
-
-	@Override
-	public void handleSettingsCommand(Object[] args) {
-		var join = StringUtils.join(args);
-		if ("reload".equals(join)) {
-			loadProperties();
-			eventManager.echo("Settings reloaded");
-		} else if ("overwrites".equals(join)) {
-			var overwrites = getOverwrites().keySet();
-			if (!overwrites.isEmpty()) {
-				eventManager.echo("Overwriting",
-						StringUtils.abbreviate(StringUtils.join(overwrites, ", "), getCharWidth()));
-			} else {
-				eventManager.echo("No settings overwritten");
-			}
-		} else {
-			openSettingsFile();
-		}
-	}
-
-	private void subscribeToSettingsEvents() {
-		eventManager.listen("setting", this::handleSettingCommand);
-		eventManager.listen("settings", this::handleSettingsCommand);
+	private void initSettingsCommands() {
+		//@formatter:off
+		commandsService.add(new CommandBuilder()
+			.command("setting").argumentAction(arg -> {
+				if (arg == null) {
+					eventManager.echo("Missing setting key");
+					return;
+				}
+				var args = arg.split(" ");
+				
+				if (args.length == 1 && StringUtils.split((String) args[0], "=").length == 2) {
+					var split = StringUtils.split((String) args[0], "=");
+					persist(split[0], split[1]);
+					logger.info(() -> "Setting " + split[0] + " persisted");
+					eventManager.echo("Setting persisted", StringUtils.abbreviate(split[0] + "=" + split[1], getCharWidth()));
+				} else if (args.length == 1) {
+					var val = getString(arg);
+					eventManager.echo(arg, StringUtils.defaultIfBlank(val, "Setting not found"));
+				} else if (args.length > 1) {
+					var key = args[0];
+					var val = StringUtils.join(Arrays.copyOfRange(args, 1, args.length), StringUtils.SPACE);
+					persist(key, val);
+					logger.info(() -> "Setting " + key + " persisted");
+					eventManager.echo("Setting persisted", StringUtils.abbreviate(key + "=" + val, getCharWidth()));
+				}
+			})
+			.command("settings", _ -> openSettingsFile())
+				.child("reload", _ -> {
+					loadProperties();
+					eventManager.echo("Settings reloaded");
+				}).up()
+				.child("overwrites", _ -> {
+					var overwrites = getOverwrites().keySet();
+					if (!overwrites.isEmpty()) {
+						eventManager.echo("Overwriting",
+								StringUtils.abbreviate(StringUtils.join(overwrites, ", "), getCharWidth()));
+					} else {
+						eventManager.echo("No settings overwritten");
+					}
+				}).getRoot());
+		//@formatter:on
 	}
 
 }

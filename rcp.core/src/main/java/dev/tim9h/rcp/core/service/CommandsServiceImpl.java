@@ -39,10 +39,6 @@ public class CommandsServiceImpl implements CommandsService {
 	}
 
 	private void initDefaultCommands() {
-		var commandSettings = new CommandNode("settings");
-		commandSettings.add("overwrites", "reload");
-		root.add(commandSettings);
-
 		var commandReposition = new CommandNode("reposition");
 		root.add(commandReposition);
 	}
@@ -141,6 +137,10 @@ public class CommandsServiceImpl implements CommandsService {
 				// Plain command with no arguments.
 				if (current.getCommand() != null) {
 					current.getCommand().accept(null);
+					return;
+				}
+				if (current.getArgumentCommand() != null) {
+					current.getArgumentCommand().accept(null);
 					return;
 				}
 
