@@ -32,6 +32,7 @@ import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
 
 @Singleton
@@ -44,16 +45,12 @@ public class PluginLoader {
 
 	private EventManager eventManager;
 
-	@Inject
 	private Settings settings;
 
-	@Inject
 	private CommandsService commandsService;
 
-	@Inject
 	private ModeService modeService;
 
-	@Inject
 	private TrayManager tray;
 
 	private List<String> pluginBlacklist;
@@ -63,10 +60,15 @@ public class PluginLoader {
 	private List<Plugin> plugins;
 
 	@Inject
-	public PluginLoader(Injector injector, EventManager eventManager) {
+	public PluginLoader(Injector injector, EventManager eventManager, Settings settings,
+			CommandsService commandsService, ModeService modeService, TrayManager tray) {
 		this.injector = injector;
 		this.eventManager = eventManager;
-		subscribeEvents();
+		this.settings = settings;
+		this.commandsService = commandsService;
+		this.modeService = modeService;
+		this.tray = tray;
+		initPluginCommands();
 	}
 
 	public List<String> getPluginBlacklist() {
@@ -91,32 +93,32 @@ public class PluginLoader {
 		this.pluginWhitelist = pluginWhitelist;
 	}
 
-	private void subscribeEvents() {
-		eventManager.listen("plugindir", _ -> openPluginsDirectory());
-		eventManager.listen("plugins", this::handlePluginsCommand);
-	}
-
-	private void handlePluginsCommand(Object[] args) {
-		var join = StringUtils.join(args);
-		if ("whitelist".equals(join)) {
-			if (!getPluginWhitelist().isEmpty()) {
-				var list = getPluginWhitelist().stream().collect(Collectors.joining(", "));
-				eventManager.echo("Whitelisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
-			} else {
-				eventManager.echo("No plugins whitelisted");
-			}
-		} else if ("blacklist".equals(join)) {
-			if (!getPluginBlacklist().isEmpty()) {
-				var list = getPluginBlacklist().stream().collect(Collectors.joining(", "));
-				eventManager.echo("Blacklisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
-			} else {
-				eventManager.echo("No plugins blacklisted");
-			}
-		} else {
-			var pluginlist = getPlugins().stream().map(Plugin::getName).sorted().collect(Collectors.joining(", "));
-			logger.info(() -> "Active plugins: " + pluginlist);
-			eventManager.echo("Active plugins", StringUtils.abbreviate(pluginlist, settings.getCharWidth()));
-		}
+	public void initPluginCommands() {
+		//@formatter:off
+		commandsService.add(new CommandBuilder()
+			.command("plugins", _ -> {
+				var pluginlist = getPlugins().stream().map(Plugin::getName).sorted().collect(Collectors.joining(", "));
+				logger.info(() -> "Active plugins: " + pluginlist);
+				eventManager.echo("Active plugins", StringUtils.abbreviate(pluginlist, settings.getCharWidth()));
+			})
+			.child("whitelist", _ -> {
+				if (!getPluginWhitelist().isEmpty()) {
+					var list = getPluginWhitelist().stream().collect(Collectors.joining(", "));
+					eventManager.echo("Whitelisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
+				} else {
+					eventManager.echo("No plugins whitelisted");
+				}
+			}).up()
+			.child("blacklist", _ -> {
+				if (!getPluginBlacklist().isEmpty()) {
+					var list = getPluginBlacklist().stream().collect(Collectors.joining(", "));
+					eventManager.echo("Blacklisted plugins", StringUtils.abbreviate(list, settings.getCharWidth()));
+				} else {
+					eventManager.echo("No plugins blacklisted");
+				}
+			})
+			.command("plugindir", _ -> openPluginsDirectory()).getRoot());
+		//@formatter:on 
 	}
 
 	public void openPluginsDirectory() {

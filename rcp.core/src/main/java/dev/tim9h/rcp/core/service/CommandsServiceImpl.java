@@ -39,10 +39,6 @@ public class CommandsServiceImpl implements CommandsService {
 	}
 
 	private void initDefaultCommands() {
-		var commandPlugins = new CommandNode("plugins");
-		commandPlugins.add("whitelist", "blacklist");
-		root.add(commandPlugins);
-
 		var commandSettings = new CommandNode("settings");
 		commandSettings.add("overwrites", "reload");
 		root.add(commandSettings);
