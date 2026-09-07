@@ -67,7 +67,7 @@ public class ThemeServiceImpl implements ThemeService {
 		commandsService.add(new CommandBuilder().command("theme", _ -> {
 			var current = settings.getString(SettingsConsts.THEME);
 			eventManager.echo("Current theme", StringUtils.capitalize(current));
-		}).arguments().action(theme -> {
+		}).arguments().argumentAction(theme -> {
 			if (!modeService.isModeActive("alert")) {
 				var newTheme = setTheme(theme, true);
 				if (newTheme == null) {

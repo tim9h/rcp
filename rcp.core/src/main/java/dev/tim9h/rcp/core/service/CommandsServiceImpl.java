@@ -1,5 +1,6 @@
 package dev.tim9h.rcp.core.service;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,8 +39,6 @@ public class CommandsServiceImpl implements CommandsService {
 	}
 
 	private void initDefaultCommands() {
-		root.add("restart", "exit", "modes", "setting", "plugindir", "clear", "logs");
-
 		var commandPlugins = new CommandNode("plugins");
 		commandPlugins.add("whitelist", "blacklist");
 		root.add(commandPlugins);
@@ -86,24 +85,27 @@ public class CommandsServiceImpl implements CommandsService {
 		if (!node.getData().isBlank()) {
 			root.add(node);
 			listenAndRunCommands(node);
-		} else {
-			node.getChildren().forEach(c -> {
-				var existing = root.get(c.getData());
-				if (existing == null) {
-					root.add(c);
-					listenAndRunCommands(c);
-				} else {
-					existing.getChildren().addAll(c.getChildren());
-					if (existing.getCommand() == null) {
-						existing.setCommand(c.getCommand());
-					}
-					if (c.hasArguments()) {
-						existing.setHasArguments(true);
-					}
-				}
-			});
-			logger.debug(() -> "Added command: " + node);
+			return;
 		}
+		new ArrayList<>(node.getChildren()).forEach(c -> {
+			var existing = root.get(c.getData());
+			if (existing == null) {
+				root.add(c);
+				listenAndRunCommands(c);
+				return;
+			}
+			new ArrayList<>(c.getChildren()).forEach(existing::add);
+			if (existing.getCommand() == null) {
+				existing.setCommand(c.getCommand());
+			}
+			if (existing.getArgumentCommand() == null) {
+				existing.setArgumentCommand(c.getArgumentCommand());
+			}
+			if (c.hasArguments()) {
+				existing.setHasArguments(true);
+			}
+		});
+		logger.debug(() -> "Added command: " + node);
 	}
 
 	private void listenAndRunCommands() {

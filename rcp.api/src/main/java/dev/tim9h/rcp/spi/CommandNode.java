@@ -1,7 +1,10 @@
 package dev.tim9h.rcp.spi;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -41,7 +44,7 @@ public class CommandNode {
 	}
 
 	public List<CommandNode> getChildren() {
-		return children;
+		return Collections.unmodifiableList(children);
 	}
 
 	public void setParent(CommandNode parent) {
@@ -67,7 +70,10 @@ public class CommandNode {
 	}
 
 	public CommandNode add(CommandNode child) {
-		child.setParent(this);
+		if (child.parent != null) {
+			child.parent.children.remove(child);
+		}
+		child.parent = this;
 		this.children.add(child);
 		return child;
 	}
@@ -129,8 +135,11 @@ public class CommandNode {
 		return children.isEmpty();
 	}
 
-	public void removeParent() {
-		this.parent = null;
+	public void detach() {
+		if (parent != null) {
+			parent.children.remove(this);
+			parent = null;
+		}
 	}
 
 	@Override
@@ -147,16 +156,22 @@ public class CommandNode {
 	}
 
 	public List<CommandNode> getChildrenOfChild(String value) {
-		return stream().filter(child -> child.getData().equals(value)).flatMap(CommandNode::stream).toList();
+		return stream().filter(child -> Strings.CI.equals(child.getData(), value)).flatMap(CommandNode::stream)
+				.toList();
 	}
 
 	public List<CommandNode> getChildrenOfChild(String value, Consumer<String> command) {
-		return stream().filter(child -> child.getData().equals(value) && child.getCommand().equals(command))
+		return stream().filter(
+				child -> Strings.CI.equals(child.getData(), value) && Objects.equals(child.getCommand(), command))
 				.flatMap(CommandNode::stream).toList();
 	}
 
 	public List<CommandNode> getChildrenOfChild(CommandNode node) {
 		return getChildrenOfChild(node.getData(), node.getCommand());
+	}
+
+	public void addChildren(Collection<CommandNode> nodes) {
+		nodes.forEach(this::add);
 	}
 
 }

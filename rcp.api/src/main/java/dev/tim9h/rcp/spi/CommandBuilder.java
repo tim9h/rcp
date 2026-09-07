@@ -7,38 +7,44 @@ import java.util.function.Consumer;
 
 public class CommandBuilder {
 
-	private final Deque<CommandNode> stack = new ArrayDeque<>();
+	private final CommandNode root = new CommandNode();
 
-	private CommandNode root;
+	private final Deque<CommandNode> stack = new ArrayDeque<>();
 
 	public CommandBuilder command(String name) {
 		return command(name, false, null);
 	}
 
 	public CommandBuilder command(String name, Consumer<String> command) {
-		var node = new CommandNode(name);
-		node.setCommand(command);
-
-		if (root == null) {
-			root = node;
-		} else {
-			current().add(node);
-		}
-
-		stack.push(node);
-		return this;
+		return command(name, false, command);
 	}
 
 	public CommandBuilder command(String name, boolean hasArguments, Consumer<String> command) {
 		var node = new CommandNode(name, hasArguments, command);
-
-		if (root == null) {
-			root = node;
-		} else {
-			current().add(node);
-		}
-
+		root.add(node);
+		stack.clear();
 		stack.push(node);
+		return this;
+	}
+
+	public CommandBuilder child(String name) {
+		return child(name, false, null);
+	}
+
+	public CommandBuilder child(String name, Consumer<String> command) {
+		return child(name, false, command);
+	}
+
+	public CommandBuilder child(String name, boolean hasArguments, Consumer<String> command) {
+		var child = current().add(name, hasArguments, command);
+		stack.push(child);
+		return this;
+	}
+
+	public CommandBuilder children(String... names) {
+		for (var name : names) {
+			current().add(name);
+		}
 		return this;
 	}
 
@@ -47,24 +53,14 @@ public class CommandBuilder {
 		return this;
 	}
 
-	public CommandBuilder arguments(boolean hasArguments) {
-		current().setHasArguments(hasArguments);
-		return this;
-	}
-
 	public CommandBuilder argumentAction(Consumer<String> command) {
 		current().setHasArguments(true);
-		current().setCommand(command);
-		return this;
-	}
-
-	public CommandBuilder action(Consumer<String> command) {
 		current().setArgumentCommand(command);
 		return this;
 	}
 
 	public CommandBuilder up() {
-		if (!stack.isEmpty()) {
+		if (stack.size() > 1) {
 			stack.pop();
 		}
 
@@ -72,12 +68,10 @@ public class CommandBuilder {
 	}
 
 	public Optional<CommandNode> build() {
-		if (root == null) {
+		if (root.getChildren().isEmpty()) {
 			return Optional.empty();
 		}
-
 		validate(root);
-
 		return Optional.of(root);
 	}
 
@@ -86,42 +80,20 @@ public class CommandBuilder {
 		return root;
 	}
 
-	private void validate(CommandNode node) {
-		if (node.getData() == null || node.getData().isBlank()) {
-			throw new IllegalStateException("Command name must not be blank.");
-		}
-
-		for (CommandNode child : node.getChildren()) {
-			validate(child);
-		}
-	}
-
 	private CommandNode current() {
 		if (stack.isEmpty()) {
 			throw new IllegalStateException("No current command.");
 		}
-
 		return stack.peek();
 	}
 
-	public CommandBuilder child(String name, Consumer<String> command) {
-		current().add(name, command);
-		return this;
-	}
-
-	public CommandBuilder child(String name, boolean hasArguments, Consumer<String> command) {
-		current().add(name, hasArguments, command);
-		return this;
-	}
-
-	public CommandBuilder child(String name) {
-		current().add(name);
-		return this;
-	}
-
-	public CommandBuilder children(String... names) {
-		current().add(names);
-		return this;
+	private void validate(CommandNode node) {
+		if (!node.isRoot() && (node.getData() == null || node.getData().isBlank())) {
+			throw new IllegalStateException("Command name must not be blank.");
+		}
+		for (var child : node.getChildren()) {
+			validate(child);
+		}
 	}
 
 }
