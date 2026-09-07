@@ -57,19 +57,20 @@ public class CommandsServiceImpl implements CommandsService {
 	public void add(TreeNode<String> node) {
 		if (!node.get().isBlank()) {
 			root.add(node.toCommandNode());
-		} else {
-			node.getChildren().forEach(c -> {
-				if (root.getChildren().stream().filter(existing -> existing.getData().equals(c.get())).findAny()
-						.isEmpty()) {
-					root.add(c.toCommandNode());
-				} else {
-					var children = c.getChildren().stream().map(TreeNode::toCommandNode).toList();
-					root.getChildren().stream().filter(existing -> existing.getData().equals(c.get())).findFirst()
-							.ifPresent(existing -> existing.getChildren().addAll(children));
-				}
-			});
 			logger.debug(() -> "Added command: " + node);
+			return;
 		}
+		for (var child : node.getChildren()) {
+			var existing = root.get(child.get());
+			if (existing == null) {
+				root.add(child.toCommandNode());
+				continue;
+			}
+			for (var grandchild : child.getChildren()) {
+				existing.add(grandchild.toCommandNode());
+			}
+		}
+		logger.debug(() -> "Added command: " + node);
 	}
 
 	@Override

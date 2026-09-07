@@ -225,21 +225,25 @@ public class PluginLoader {
 
 	@SuppressWarnings("deprecation")
 	public void initPlugin(Plugin plugin) {
-		plugin.init();
-		plugin.initBus(eventManager);
-		plugin.getModes().ifPresent(modes -> {
-			modes.forEach(mode -> {
-				modeService.initMode(mode);
-				commandsService.add(mode.getCommandTree());
+		try {
+			plugin.init();
+			plugin.initBus(eventManager);
+			plugin.getModes().ifPresent(modes -> {
+				modes.forEach(mode -> {
+					modeService.initMode(mode);
+					commandsService.add(mode.getCommandTree());
+				});
 			});
-		});
-		plugin.getModelessCommands().ifPresent(commandsService::add);
-		plugin.getCommands().ifPresent(commandsService::add);
-		plugin.getMenuItems().ifPresent(menuItems -> {
-			Collections.reverse(menuItems);
-			menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.label(), menuItem.action()));
-		});
-		settings.addSettings(plugin.getSettingsContributions());
+			plugin.getModelessCommands().ifPresent(commandsService::add);
+			plugin.getCommands().ifPresent(commandsService::add);
+			plugin.getMenuItems().ifPresent(menuItems -> {
+				Collections.reverse(menuItems);
+				menuItems.forEach(menuItem -> tray.createMenuItem(menuItem.label(), menuItem.action()));
+			});
+			settings.addSettings(plugin.getSettingsContributions());
+		} catch (Exception e) {
+			logger.error(() -> "Unable to initialize plugin " + plugin.getName(), e);
+		}
 	}
 
 	public List<Plugin> getPlugins() {
