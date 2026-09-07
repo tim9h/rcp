@@ -27,6 +27,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
 import javafx.application.Platform;
 
@@ -36,21 +37,25 @@ public class CoreService {
 	@InjectLogger
 	private Logger logger;
 
-	@Inject
 	private Settings settings;
 
-	@Inject
 	private PluginLoader pluginLoader;
 
-	@Inject
 	private TrayManager tray;
 
 	private EventManager eventManager;
 
+	private CommandsService commandsService;
+
 	@Inject
-	public CoreService(EventManager eventManager) {
+	public CoreService(Settings settings, PluginLoader pluginLoader, TrayManager tray, EventManager eventManager,
+			CommandsService commandsService) {
+		this.settings = settings;
+		this.pluginLoader = pluginLoader;
+		this.tray = tray;
 		this.eventManager = eventManager;
-		subscribeToDefaultEvents();
+		this.commandsService = commandsService;
+		initCoreCommands();
 	}
 
 	public void parseArgs(String[] args) throws ParseException {
@@ -146,11 +151,14 @@ public class CoreService {
 		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
 	}
 
-	private void subscribeToDefaultEvents() {
-		eventManager.listen("exit", _ -> shutdown());
-		eventManager.listen("exitimmediately", _ -> prepareShutdown());
-		eventManager.listen("restart", _ -> restartApplication());
-		eventManager.listen("logs", _ -> openLogFile());
+	private void initCoreCommands() {
+		//@formatter:off
+		commandsService.add(new CommandBuilder()
+				.command("exit", _ -> shutdown())
+				.command("exitimmediately", _ -> prepareShutdown())
+				.command("restart", _ -> restartApplication())
+				.command("logs", _ -> openLogFile()).getRoot());
+		//@formatter:on
 	}
 
 }
