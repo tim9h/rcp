@@ -91,7 +91,7 @@ public class UiApplication extends Application {
 
 	private static final double COLLAPSED_HEIGHT = 1.0;
 
-	private static final Duration ANIMATION_DURATION = Duration.millis(100);
+	private static final Duration ANIMATION_DURATION = Duration.millis(150);
 
 	private final DoubleProperty animatedHeight = new SimpleDoubleProperty();
 
