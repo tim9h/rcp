@@ -48,4 +48,6 @@ public interface Settings {
 
 	public void openSettingsFile();
 
+	public String getAppTitle();
+
 }

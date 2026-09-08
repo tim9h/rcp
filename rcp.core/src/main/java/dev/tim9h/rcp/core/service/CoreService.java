@@ -117,11 +117,11 @@ public class CoreService {
 			} else {
 				logger.warn(() -> "Unable to restart application: Not in jar mode");
 				eventManager.echo("Unable to restart: Not in jar mode");
-				eventManager.showToast("Unable to restart: Not in jar mode");
+				eventManager.showToast(settings.getAppTitle(), "Unable to restart: Not in jar mode");
 			}
 		} catch (IOException | URISyntaxException e) {
 			logger.error(() -> "Unable to restart application", e);
-			eventManager.showToast("Unable to restart: " + e.getMessage());
+			eventManager.showToast(settings.getAppTitle(), "Unable to restart: " + e.getMessage());
 		}
 	}
 

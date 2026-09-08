@@ -34,13 +34,7 @@ public class CommandsServiceImpl implements CommandsService {
 	@Inject
 	public CommandsServiceImpl(Injector injector) {
 		injector.injectMembers(this);
-		initDefaultCommands();
 		listenAndRunCommands();
-	}
-
-	private void initDefaultCommands() {
-		var commandReposition = new CommandNode("reposition");
-		root.add(commandReposition);
 	}
 
 	@Override

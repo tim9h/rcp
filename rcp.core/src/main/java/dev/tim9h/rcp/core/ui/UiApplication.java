@@ -13,6 +13,7 @@ import com.kieferlam.javafxblur.Blur;
 import com.tulskiy.keymaster.common.Provider;
 
 import dev.tim9h.rcp.core.plugin.PluginLoader;
+import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
 import dev.tim9h.rcp.core.service.ThemeService;
@@ -24,6 +25,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
 import javafx.animation.FadeTransition;
@@ -87,6 +89,9 @@ public class UiApplication extends Application {
 	@Inject
 	private CoreService coreService;
 
+	@Inject
+	private CommandsService commandsService;
+
 	private double maxHeight;
 
 	private static final double COLLAPSED_HEIGHT = 1.0;
@@ -128,6 +133,7 @@ public class UiApplication extends Application {
 
 		coreService.parseArgs(argsGlobal);
 
+		initUiCommands();
 		var cardContainer = initScene();
 		createTray();
 		initGlobalHotkeys();
@@ -362,12 +368,15 @@ public class UiApplication extends Application {
 	}
 
 	private void subscribeToUiEvents() {
-		eventManager.listen("reposition", _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
 		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
 			setExpanded(true, false);
 			stage.requestFocus();
 		});
+	}
+
+	private void initUiCommands() {
+		commandsService.add(new CommandBuilder().command("reposition", _ -> reposition()).getRoot());
 	}
 
 	private void reposition() {

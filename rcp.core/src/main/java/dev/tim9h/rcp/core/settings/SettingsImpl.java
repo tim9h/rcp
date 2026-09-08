@@ -300,4 +300,9 @@ public class SettingsImpl implements Settings {
 		//@formatter:on
 	}
 
+	@Override
+	public String getAppTitle() {
+		return getString("core.ui.title", "RCP");
+	}
+
 }
