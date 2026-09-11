@@ -142,6 +142,44 @@
 
 	</dependencyManagement>
 
+	<build>
+		<pluginManagement>
+			<plugins>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.16.0</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>3.6.2</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+
+				<plugin>
+					<groupId>io.github.cleydyr</groupId>
+					<artifactId>dart-sass-maven-plugin</artifactId>
+					<version>1.5.0</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.openjfx</groupId>
+					<artifactId>javafx-maven-plugin</artifactId>
+					<version>0.0.8</version>
+				</plugin>
+
+			</plugins>
+		</pluginManagement>
+	</build>
+
 	<distributionManagement>
 		<repository>
 			<id>github</id>

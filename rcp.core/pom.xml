@@ -85,26 +85,26 @@
 
 		<plugins>
 
-			<plugin>
+		<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version>
 			</plugin>
 
 			<plugin>
-				<groupId>nl.geodienstencentrum.maven</groupId>
-				<artifactId>sass-maven-plugin</artifactId>
-				<version>3.7.1</version>
+				<groupId>io.github.cleydyr</groupId>
+				<artifactId>dart-sass-maven-plugin</artifactId>
 				<configuration>
-					<sassSourceDirectory>${basedir}/src/main/resources/sass</sassSourceDirectory>
-					<destination>${basedir}/src/main/resources/css</destination>
+					<version>1.83.0</version>
+					<inputFolder>${basedir}/src/main/resources/sass</inputFolder>
+					<outputFolder>${basedir}/src/main/resources/css</outputFolder>
 				</configuration>
 				<executions>
 					<execution>
-						<goals>
-							<goal>update-stylesheets</goal>
-						</goals>
+						<id>generate-css-using-sass</id>
 						<phase>generate-resources</phase>
+						<goals>
+							<goal>compile-sass</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -112,7 +112,6 @@
 			<plugin>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-maven-plugin</artifactId>
-				<version>0.0.8</version>
 				<configuration>
 					<mainClass>dev.tim9h.rcp.core.UiApplication</mainClass>
 				</configuration>
@@ -121,7 +120,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.5.0</version>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
 					<filters>
