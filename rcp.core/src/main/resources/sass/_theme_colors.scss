@@ -1,139 +1,153 @@
-.root {
-	-fx-background-color: $background-color;
-	-fx-border-color: $border-color;
-}
+@mixin apply-theme(
+	$accent-color,
+	$accent-darker,
+	$text-color,
+	$text-color-secondary,
+	$text-color-input,
+	$text-background-input,
+	$background-color,
+	$background-color-opaque,
+	$border-color,
+	$card-border-color,
+	$card-background-color
+) {
+	.root {
+		-fx-background-color: $background-color;
+		-fx-border-color: $border-color;
+	}
 
-.ccCard {
-	-fx-background-color: $card-background-color;
-	-fx-border-color: $card-border-color;
-	
-	&.accent-cccard {
-		-fx-background-color: $card-border-color 
-	}
-	
-	.accent-label {
-		-fx-text-fill: $accent-color !important;
-	}
-	
-	.label {
-		-fx-text-fill: $text-color;
+	.ccCard {
+		-fx-background-color: $card-background-color;
+		-fx-border-color: $card-border-color;
 		
-		&.secondary {
-			-fx-text-fill: $text-color-secondary
+		&.accent-cccard {
+			-fx-background-color: $card-border-color 
 		}
 		
-		&.accent {
-			-fx-text-fill: $accent-color;
-		}
-	}
-	
-	.hyperlink {
-		-fx-text-fill: $text-color;
-		
-		&:hover {
-		    -fx-border-color: $accent-color; 
+		.accent-label {
+			-fx-text-fill: $accent-color !important;
 		}
 		
-		&:pressed {
-			-fx-text-fill: $text-color-secondary;
-			-fx-border-color: $accent-darker;
+		.label {
+			-fx-text-fill: $text-color;
+			
+			&.secondary {
+				-fx-text-fill: $text-color-secondary
+			}
+			
+			&.accent {
+				-fx-text-fill: $accent-color;
+			}
 		}
 		
-		&.accent-label {
+		.hyperlink {
+			-fx-text-fill: $text-color;
+			
+			&:hover {
+			    -fx-border-color: $accent-color; 
+			}
+			
 			&:pressed {
-				-fx-text-fill: $accent-darker !important;
+				-fx-text-fill: $text-color-secondary;
 				-fx-border-color: $accent-darker;
 			}
+			
+			&.accent-label {
+				&:pressed {
+					-fx-text-fill: $accent-darker !important;
+					-fx-border-color: $accent-darker;
+				}
+			}
 		}
 	}
-}
 
-.plugin-cli {
-	.label {
-		&.response-label {
- 			-fx-text-fill: $text-color;
- 			
- 			&.structure {
+	.plugin-cli {
+		.label {
+			&.response-label {
+	 			-fx-text-fill: $text-color;
+	 			
+	 			&.structure {
+					-fx-text-fill: $text-color-secondary;
+				}
+			}
+			
+			&.interpretation-label {
 				-fx-text-fill: $text-color-secondary;
+			}		
+		}
+		
+		.text {
+			&.response-label {
+	 			-fx-fill: $text-color;
+	 			
+				&.secondary {
+					-fx-fill: $text-color-secondary
+				}
+				
+				&.accent {
+					-fx-fill: $accent-color;
+				}
+			}
+			
+			&.interpretation-label {
+				-fx-fill: $text-color-secondary;
+				
+				&.primary {
+					-fx-fill: $text-color; 
+				}
+				
+				&.accent {
+					-fx-fill: $accent-color;
+				}
 			}
 		}
 		
-		&.interpretation-label {
-			-fx-text-fill: $text-color-secondary;
-		}		
-	}
-	
-	.text {
-		&.response-label {
- 			-fx-fill: $text-color;
- 			
-			&.secondary {
-				-fx-fill: $text-color-secondary
+		.text-field {
+			&.cli-input {
+				-fx-background-color: $text-background-input;
+				-fx-text-fill: $text-color-input;
 			}
-			
-			&.accent {
-				-fx-fill: $accent-color;
+			&.highlight {
+				-fx-text-fill: $accent-color;
+			}
+			&.history {
+				-fx-text-fill: $text-color-secondary !important;
 			}
 		}
+	}
+
+
+	.button {
+		-fx-text-fill: $accent-color;
 		
-		&.interpretation-label {
-			-fx-fill: $text-color-secondary;
-			
-			&.primary {
-				-fx-fill: $text-color; 
-			}
-			
-			&.accent {
-				-fx-fill: $accent-color;
-			}
-		}
-	}
-	
-	.text-field {
-		&.cli-input {
-			-fx-background-color: $text-background-input;
-			-fx-text-fill: $text-color-input;
-		}
-		&.highlight {
-			-fx-text-fill: $accent-color;
-		}
-		&.history {
-			-fx-text-fill: $text-color-secondary !important;
-		}
-	}
-}
-
-
-.button {
-	-fx-text-fill: $accent-color;
-	
-	&:hover, &:focused {
-		-fx-border-color: $accent-color;
-	}
-	
-	&:pressed {
-		-fx-border-color: $accent-darker;
-	}
-}
-
-.traymenu {
-	-fx-background-color: $background-color-opaque !important; 
-	-fx-border-color: $border-color !important;
-	
-	>.button, .label {
-		-fx-text-fill: $text-color;
-	}
-	
-	>.button {
 		&:hover, &:focused {
-		    -fx-background-color: $card-background-color;
+			-fx-border-color: $accent-color;
 		}
+		
 		&:pressed {
-			-fx-background-color: $card-border-color !important;
+			-fx-border-color: $accent-darker;
 		}
 	}
-	
-	.separator .line{
-		-fx-border-color: $border-color;
+
+	.traymenu {
+		-fx-background-color: $background-color-opaque !important; 
+		-fx-border-color: $border-color !important;
+		
+		>.button, .label {
+			-fx-text-fill: $text-color;
+		}
+		
+		>.button {
+			&:hover, &:focused {
+			    -fx-background-color: $card-background-color;
+			}
+			&:pressed {
+				-fx-background-color: $card-border-color !important;
+			}
+		}
+		
+		.separator .line{
+			-fx-border-color: $border-color;
+		}
 	}
 }

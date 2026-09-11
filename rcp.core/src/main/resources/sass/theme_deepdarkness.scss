@@ -10,4 +10,18 @@ $border-color: rgba(0, 158, 173, 0.5);
 $card-border-color: rgba(0, 158, 173, 0.2);
 $card-background-color: rgba(0, 0, 0, 0.7);
 
-@import 'theme_colors'
+@use 'theme_colors' as *;
+
+@include apply-theme(
+	$accent-color,
+	$accent-darker,
+	$text-color,
+	$text-color-secondary,
+	$text-color-input,
+	$text-background-input,
+	$background-color,
+	$background-color-opaque,
+	$border-color,
+	$card-border-color,
+	$card-background-color
+);
