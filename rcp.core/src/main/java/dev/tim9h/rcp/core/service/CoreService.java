@@ -65,7 +65,7 @@ public class CoreService {
 		optionBlacklist.setArgs(Option.UNLIMITED_VALUES);
 		options.addOption(optionBlacklist);
 
-		var optionWhitelist = new Option("w", "blacklist", true, "Only activate specific plugins");
+		var optionWhitelist = new Option("w", "whitelist", true, "Only activate specific plugins");
 		optionWhitelist.setArgs(Option.UNLIMITED_VALUES);
 		options.addOption(optionWhitelist);
 
