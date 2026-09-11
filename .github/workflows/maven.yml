@@ -11,7 +11,7 @@ on:
       - develop
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -41,6 +41,34 @@ jobs:
         if: github.event_name == 'pull_request'
         run: mvn -B verify
 
-      - name: Build, test and publish
+      - name: Build, test and publish Maven package
         if: github.event_name == 'push'
         run: mvn -B deploy
+
+      - name: Get Maven version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        id: version
+        run: |
+          VERSION=$(mvn -B help:evaluate \
+            -Dexpression=project.version \
+            -q \
+            -DforceStdout)
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Maven version: $VERSION"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          JAR="rcp.core/target/rcp.core-${VERSION}.jar"
+
+          test -f "$JAR" || {
+            echo "JAR not found: $JAR"
+            exit 1
+          }
+
+          gh release create "v${VERSION}" \
+            "$JAR" \
+            --title "v${VERSION}" \
+            --generate-notes
