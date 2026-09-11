@@ -29,6 +29,7 @@ module rcp.core {
 	requires org.apache.logging.log4j.core;
 	requires org.apache.commons.cli;
 	requires transitive rcp.controls;
+	requires java.net.http;
 
 	opens dev.tim9h.rcp.core.ui;
 	opens dev.tim9h.rcp.core.service;
