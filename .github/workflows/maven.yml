@@ -38,8 +38,9 @@ jobs:
             github:GITHUB_ACTOR:GITHUB_TOKEN
 
       - name: Build and test
+        if: github.event_name == 'pull_request'
         run: mvn -B verify
 
-      - name: Publish to GitHub Packages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop')
+      - name: Build, test and publish
+        if: github.event_name == 'push'
         run: mvn -B deploy
