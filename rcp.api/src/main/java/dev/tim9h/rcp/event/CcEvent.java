@@ -15,8 +15,6 @@ public record CcEvent(String name, Object... payload) {
 
 	public static final String EVENT_CLOSING = "CC_CLOSING";
 
-	public static final String EVENT_CLOSING_FINISHED = "CC_CLOSING_FINISHED";
-
 	public static final String EVENT_SETTINGS_CHANGED = "CC_SETTINGS_CHANGED";
 
 	public static final String EVENT_RESTARTING = "CC_RESTARTING";
@@ -34,7 +32,7 @@ public record CcEvent(String name, Object... payload) {
 	public static final String EVENT_TTS = "TTS";
 
 	public static final String EVENT_SAY = "TTS.SAY";
-	
+
 	public static final String EVENT_THEME_CHANGED = "THEME_CHANGED";
 
 	public CcEvent(String name) {

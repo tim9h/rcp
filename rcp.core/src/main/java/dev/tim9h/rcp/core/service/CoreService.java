@@ -29,7 +29,9 @@ import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.util.Duration;
 
 @Singleton
 public class CoreService {
@@ -129,18 +131,9 @@ public class CoreService {
 		logger.debug(() -> "Shutting down");
 		eventManager.echo("kthxbye.");
 		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
-		CompletableFuture.runAsync(() -> {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				logger.error(() -> "Error while shutdown", e);
-				Thread.currentThread().interrupt();
-			}
-			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
-			tray.removeTrayIcon();
-			Platform.exit();
-			Platform.runLater(() -> System.exit(0));
-		});
+		var delay = new PauseTransition(Duration.seconds(1));
+		delay.setOnFinished(_ -> prepareShutdown());
+		delay.play();
 	}
 
 	public void prepareShutdown() {
@@ -148,7 +141,9 @@ public class CoreService {
 		CompletableFuture.runAsync(() -> {
 			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
-		}).thenRun(() -> eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING_FINISHED)));
+			Platform.exit();
+			System.exit(0);
+		});
 	}
 
 	private void initCoreCommands() {
