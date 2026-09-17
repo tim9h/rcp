@@ -101,7 +101,11 @@ public class UiApplication extends Application {
 
 	private final DoubleProperty animatedHeight = new SimpleDoubleProperty();
 
+	private final DoubleProperty animatedY = new SimpleDoubleProperty();
+
 	private Timeline heightAnimation;
+
+	private Timeline positionAnimation;
 
 	private boolean expanded = false;
 
@@ -210,6 +214,7 @@ public class UiApplication extends Application {
 				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 			}
 		});
+		animatedY.addListener((_, _, newValue) -> stage.setY(newValue.doubleValue()));
 	}
 
 	private void animateHeight(double targetHeight, Runnable onFinished) {
@@ -225,6 +230,30 @@ public class UiApplication extends Application {
 			}
 		});
 		heightAnimation.play();
+	}
+
+	private void animatePosition(double targetY) {
+		if (positionAnimation != null) {
+			positionAnimation.stop();
+		}
+		var currentY = stage.getY();
+		positionAnimation = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(animatedY, currentY)),
+				new KeyFrame(ANIMATION_DURATION, new KeyValue(animatedY, targetY, Interpolator.EASE_BOTH)));
+		positionAnimation.play();
+	}
+
+	private void stopAnimations() {
+		if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			if (heightAnimation != null) {
+				heightAnimation.stop();
+			}
+			if (positionAnimation != null) {
+				positionAnimation.stop();
+			}
+			if (fade != null) {
+				fade.stop();
+			}
+		}
 	}
 
 	public void initNodes(VBox vbox) {
@@ -314,17 +343,21 @@ public class UiApplication extends Application {
 	}
 
 	private void show(boolean fromHotkey) {
+		stopAnimations();
 		stage.setX(calculateXposition());
-		stage.setY(calculateScreenTop() + TOP_MARGIN);
+
+		var screenTop = calculateScreenTop();
+		var expandedY = screenTop + TOP_MARGIN;
 
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
-		nativeCornersEnabled = true;
+
 		if (blurEnabled) {
 			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 		}
 
 		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			stage.setY(expandedY);
 			stage.setHeight(maxHeight);
 			stage.getScene().getRoot().setOpacity(1.0);
 
@@ -333,6 +366,7 @@ public class UiApplication extends Application {
 			}
 
 			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
+			stage.requestFocus();
 			return;
 		}
 
@@ -345,6 +379,8 @@ public class UiApplication extends Application {
 		fade.setToValue(1.0);
 		fade.play();
 
+		animatePosition(expandedY);
+
 		animateHeight(maxHeight, () -> {
 			if (blurEnabled) {
 				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
@@ -355,8 +391,13 @@ public class UiApplication extends Application {
 	}
 
 	private void hide(boolean fromHotkey) {
+		stopAnimations();
+		var screenTop = calculateScreenTop();
+
 		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			stage.setY(screenTop);
 			makeStageInvisible();
+
 			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 			if (fromHotkey) {
 				unfocusStage();
@@ -370,8 +411,10 @@ public class UiApplication extends Application {
 		fade.setFromValue(stage.getScene().getRoot().getOpacity());
 		fade.setToValue(HIDDEN_ROOT_OPACITY);
 		fade.play();
+
+		animatePosition(screenTop);
+
 		animateHeight(COLLAPSED_HEIGHT, () -> {
-			nativeCornersEnabled = false;
 			if (blurEnabled) {
 				WindowsBackdrop.clearRoundedCorners(stage);
 			}
@@ -384,6 +427,7 @@ public class UiApplication extends Application {
 	}
 
 	private void makeStageInvisible() {
+		nativeCornersEnabled = false;
 		if (blurEnabled) {
 			WindowsBackdrop.clearRoundedCorners(stage);
 		}
@@ -453,16 +497,16 @@ public class UiApplication extends Application {
 
 	@Override
 	public void stop() throws Exception {
-		// unregister/shutdown hotkey provider here
-		// unregister EventManager listeners here
-		// stop animations
-		// remove tray resources if necessary
 		if (heightAnimation != null) {
 			heightAnimation.stop();
+		}
+		if (positionAnimation != null) {
+			positionAnimation.stop();
 		}
 		if (fade != null) {
 			fade.stop();
 		}
+		hotkeyProvider.unregister(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)));
 		super.stop();
 	}
 
