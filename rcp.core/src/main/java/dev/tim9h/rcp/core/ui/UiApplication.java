@@ -4,14 +4,15 @@ import java.io.IOException;
 
 import javax.swing.KeyStroke;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.kieferlam.javafxblur.Blur;
 import com.tulskiy.keymaster.common.Provider;
 
+import dev.tim9h.javafxblur2.WindowsBackdrop;
 import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
@@ -100,7 +101,11 @@ public class UiApplication extends Application {
 
 	private final DoubleProperty animatedHeight = new SimpleDoubleProperty();
 
+	private final DoubleProperty animatedY = new SimpleDoubleProperty();
+
 	private Timeline heightAnimation;
+
+	private Timeline positionAnimation;
 
 	private boolean expanded = false;
 
@@ -111,6 +116,14 @@ public class UiApplication extends Application {
 	private Provider hotkeyProvider;
 
 	private static final double HIDDEN_ROOT_OPACITY = 0.01;
+
+	private static final int APPLICATION_CORNERS = 16;
+
+	private static final double TOP_MARGIN = 10.0;
+
+	private boolean nativeCornersEnabled;
+
+	private boolean blurEnabled;
 
 	public static void main(String[] args) {
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
@@ -145,10 +158,11 @@ public class UiApplication extends Application {
 
 		stage.setScene(scene);
 
-		themeService.setTheme(settings.getString(SettingsConsts.THEME), true);
-
 		hiddenStage.show();
 		stage.show();
+
+		blurEnabled = settings.getBoolean(SettingsConsts.BLUR_ENABLED).booleanValue() && WindowsUtils.isWindows();
+		themeService.setTheme(settings.getString(SettingsConsts.THEME), true);
 
 		// Make sure JavaFX has applied CSS and calculated the layout
 		cardContainer.applyCss();
@@ -158,10 +172,8 @@ public class UiApplication extends Application {
 
 		initAnimation();
 
-		if (settings.getBoolean(SettingsConsts.BLUR_ENABLED).booleanValue() && WindowsUtils.isWindows()) {
-			// apply backdrop filter effect
-			Blur.loadBlurLibrary();
-			Blur.applyBlur(stage, Blur.BLUR_BEHIND);
+		if (blurEnabled) {
+			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 		}
 		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> coreService.shutdown());
 
@@ -173,7 +185,7 @@ public class UiApplication extends Application {
 
 		result.initOwner(hiddenStage);
 		result.setX(calculateXposition());
-		result.setY(0);
+		result.setY(calculateScreenTop());
 		result.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
 		result.setHeight(COLLAPSED_HEIGHT);
 		result.setOpacity(0.01);
@@ -195,7 +207,14 @@ public class UiApplication extends Application {
 	}
 
 	private void initAnimation() {
-		animatedHeight.addListener((_, _, newValue) -> stage.setHeight(newValue.doubleValue()));
+		animatedHeight.addListener((_, _, newValue) -> {
+			var height = newValue.doubleValue();
+			stage.setHeight(height);
+			if (nativeCornersEnabled && blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
+		});
+		animatedY.addListener((_, _, newValue) -> stage.setY(newValue.doubleValue()));
 	}
 
 	private void animateHeight(double targetHeight, Runnable onFinished) {
@@ -211,6 +230,30 @@ public class UiApplication extends Application {
 			}
 		});
 		heightAnimation.play();
+	}
+
+	private void animatePosition(double targetY) {
+		if (positionAnimation != null) {
+			positionAnimation.stop();
+		}
+		var currentY = stage.getY();
+		positionAnimation = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(animatedY, currentY)),
+				new KeyFrame(ANIMATION_DURATION, new KeyValue(animatedY, targetY, Interpolator.EASE_BOTH)));
+		positionAnimation.play();
+	}
+
+	private void stopAnimations() {
+		if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			if (heightAnimation != null) {
+				heightAnimation.stop();
+			}
+			if (positionAnimation != null) {
+				positionAnimation.stop();
+			}
+			if (fade != null) {
+				fade.stop();
+			}
+		}
 	}
 
 	public void initNodes(VBox vbox) {
@@ -240,6 +283,22 @@ public class UiApplication extends Application {
 		}
 		return (screen.getBounds().getMinX() + screen.getBounds().getWidth() / 2)
 				- settings.getDouble(SettingsConsts.WIDTH).doubleValue() / 2;
+	}
+
+	private double calculateScreenTop() {
+		Screen screen = null;
+		var index = 0;
+		for (var s : Screen.getScreens()) {
+			if (index == settings.getInt(SettingsConsts.MONITOR).intValue()) {
+				screen = s;
+				break;
+			}
+			index++;
+		}
+		if (screen == null) {
+			screen = Screen.getPrimary();
+		}
+		return screen.getBounds().getMinY();
 	}
 
 	private Pane initScene() {
@@ -284,13 +343,30 @@ public class UiApplication extends Application {
 	}
 
 	private void show(boolean fromHotkey) {
+		stopAnimations();
+		stage.setX(calculateXposition());
+
+		var screenTop = calculateScreenTop();
+		var expandedY = screenTop + TOP_MARGIN;
+
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 
+		if (blurEnabled) {
+			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+		}
+
 		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			stage.setY(expandedY);
 			stage.setHeight(maxHeight);
 			stage.getScene().getRoot().setOpacity(1.0);
+
+			if (blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
+
 			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
+			stage.requestFocus();
 			return;
 		}
 
@@ -303,15 +379,25 @@ public class UiApplication extends Application {
 		fade.setToValue(1.0);
 		fade.play();
 
+		animatePosition(expandedY);
+
 		animateHeight(maxHeight, () -> {
+			if (blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
 			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
 			stage.requestFocus();
 		});
 	}
 
 	private void hide(boolean fromHotkey) {
+		stopAnimations();
+		var screenTop = calculateScreenTop();
+
 		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+			stage.setY(screenTop);
 			makeStageInvisible();
+
 			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 			if (fromHotkey) {
 				unfocusStage();
@@ -325,7 +411,13 @@ public class UiApplication extends Application {
 		fade.setFromValue(stage.getScene().getRoot().getOpacity());
 		fade.setToValue(HIDDEN_ROOT_OPACITY);
 		fade.play();
+
+		animatePosition(screenTop);
+
 		animateHeight(COLLAPSED_HEIGHT, () -> {
+			if (blurEnabled) {
+				WindowsBackdrop.clearRoundedCorners(stage);
+			}
 			makeStageInvisible();
 			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 			if (fromHotkey) {
@@ -335,7 +427,14 @@ public class UiApplication extends Application {
 	}
 
 	private void makeStageInvisible() {
+		nativeCornersEnabled = false;
+		if (blurEnabled) {
+			WindowsBackdrop.clearRoundedCorners(stage);
+		}
 		stage.setHeight(COLLAPSED_HEIGHT);
+		stage.setX(calculateXposition());
+		stage.setY(calculateScreenTop());
+
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 	}
@@ -373,6 +472,13 @@ public class UiApplication extends Application {
 			setExpanded(true, false);
 			stage.requestFocus();
 		});
+		eventManager.listen(CcEvent.EVENT_THEME_MODE_CHANGED, mode -> {
+			var s = StringUtils.join(mode);
+			if (blurEnabled) {
+				logger.info(() -> "Switching backdrop tint to " + s);
+				WindowsBackdrop.apply(stage, "dark".equals(s) ? WindowsBackdrop.DARK_TINT : WindowsBackdrop.LIGHT_TINT);
+			}
+		});
 	}
 
 	private void initUiCommands() {
@@ -381,22 +487,26 @@ public class UiApplication extends Application {
 
 	private void reposition() {
 		stage.setX(calculateXposition());
-		stage.setY(0);
+		var y = calculateScreenTop();
+		if (expanded) {
+			y += TOP_MARGIN;
+		}
+		stage.setY(y);
 		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
 	}
 
 	@Override
 	public void stop() throws Exception {
-		// unregister/shutdown hotkey provider here
-		// unregister EventManager listeners here
-		// stop animations
-		// remove tray resources if necessary
 		if (heightAnimation != null) {
 			heightAnimation.stop();
+		}
+		if (positionAnimation != null) {
+			positionAnimation.stop();
 		}
 		if (fade != null) {
 			fade.stop();
 		}
+		hotkeyProvider.unregister(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)));
 		super.stop();
 	}
 

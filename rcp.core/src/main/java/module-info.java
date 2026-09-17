@@ -20,7 +20,7 @@ module rcp.core {
 	requires transitive java.desktop;
 	requires javafx.base;
 	requires javafx.swing;
-	requires javafxblur;
+	requires dev.tim9h.javafxblur2;
 	requires jkeymaster;
 	requires org.apache.commons.lang3;
 	requires org.apache.logging.log4j;
