@@ -115,6 +115,8 @@ public class UiApplication extends Application {
 
 	private static final int APPLICATION_CORNERS = 16;
 
+	private static final double TOP_MARGIN = 10.0;
+
 	private boolean nativeCornersEnabled;
 
 	private boolean blurEnabled;
@@ -179,7 +181,7 @@ public class UiApplication extends Application {
 
 		result.initOwner(hiddenStage);
 		result.setX(calculateXposition());
-		result.setY(0);
+		result.setY(calculateScreenTop());
 		result.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
 		result.setHeight(COLLAPSED_HEIGHT);
 		result.setOpacity(0.01);
@@ -254,6 +256,22 @@ public class UiApplication extends Application {
 				- settings.getDouble(SettingsConsts.WIDTH).doubleValue() / 2;
 	}
 
+	private double calculateScreenTop() {
+		Screen screen = null;
+		var index = 0;
+		for (var s : Screen.getScreens()) {
+			if (index == settings.getInt(SettingsConsts.MONITOR).intValue()) {
+				screen = s;
+				break;
+			}
+			index++;
+		}
+		if (screen == null) {
+			screen = Screen.getPrimary();
+		}
+		return screen.getBounds().getMinY();
+	}
+
 	private Pane initScene() {
 		var cardContainer = new VBox();
 		cardContainer.getStyleClass().add("card-container");
@@ -296,6 +314,9 @@ public class UiApplication extends Application {
 	}
 
 	private void show(boolean fromHotkey) {
+		stage.setX(calculateXposition());
+		stage.setY(calculateScreenTop() + TOP_MARGIN);
+
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 		nativeCornersEnabled = true;
@@ -367,6 +388,9 @@ public class UiApplication extends Application {
 			WindowsBackdrop.clearRoundedCorners(stage);
 		}
 		stage.setHeight(COLLAPSED_HEIGHT);
+		stage.setX(calculateXposition());
+		stage.setY(calculateScreenTop());
+
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 	}
@@ -419,7 +443,11 @@ public class UiApplication extends Application {
 
 	private void reposition() {
 		stage.setX(calculateXposition());
-		stage.setY(0);
+		var y = calculateScreenTop();
+		if (expanded) {
+			y += TOP_MARGIN;
+		}
+		stage.setY(y);
 		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
 	}
 
