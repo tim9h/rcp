@@ -4,14 +4,15 @@ import java.io.IOException;
 
 import javax.swing.KeyStroke;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.kieferlam.javafxblur.Blur;
 import com.tulskiy.keymaster.common.Provider;
 
+import dev.tim9h.javafxblur2.WindowsBackdrop;
 import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
@@ -112,6 +113,12 @@ public class UiApplication extends Application {
 
 	private static final double HIDDEN_ROOT_OPACITY = 0.01;
 
+	private static final int APPLICATION_CORNERS = 16;
+
+	private boolean nativeCornersEnabled;
+
+	private boolean blurEnabled;
+
 	public static void main(String[] args) {
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
 		argsGlobal = args;
@@ -145,10 +152,11 @@ public class UiApplication extends Application {
 
 		stage.setScene(scene);
 
-		themeService.setTheme(settings.getString(SettingsConsts.THEME), true);
-
 		hiddenStage.show();
 		stage.show();
+
+		blurEnabled = settings.getBoolean(SettingsConsts.BLUR_ENABLED).booleanValue() && WindowsUtils.isWindows();
+		themeService.setTheme(settings.getString(SettingsConsts.THEME), true);
 
 		// Make sure JavaFX has applied CSS and calculated the layout
 		cardContainer.applyCss();
@@ -158,10 +166,8 @@ public class UiApplication extends Application {
 
 		initAnimation();
 
-		if (settings.getBoolean(SettingsConsts.BLUR_ENABLED).booleanValue() && WindowsUtils.isWindows()) {
-			// apply backdrop filter effect
-			Blur.loadBlurLibrary();
-			Blur.applyBlur(stage, Blur.BLUR_BEHIND);
+		if (blurEnabled) {
+			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 		}
 		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> coreService.shutdown());
 
@@ -195,7 +201,13 @@ public class UiApplication extends Application {
 	}
 
 	private void initAnimation() {
-		animatedHeight.addListener((_, _, newValue) -> stage.setHeight(newValue.doubleValue()));
+		animatedHeight.addListener((_, _, newValue) -> {
+			var height = newValue.doubleValue();
+			stage.setHeight(height);
+			if (nativeCornersEnabled && blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
+		});
 	}
 
 	private void animateHeight(double targetHeight, Runnable onFinished) {
@@ -286,10 +298,19 @@ public class UiApplication extends Application {
 	private void show(boolean fromHotkey) {
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
+		nativeCornersEnabled = true;
+		if (blurEnabled) {
+			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+		}
 
 		if (!settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
 			stage.setHeight(maxHeight);
 			stage.getScene().getRoot().setOpacity(1.0);
+
+			if (blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
+
 			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
 			return;
 		}
@@ -304,6 +325,9 @@ public class UiApplication extends Application {
 		fade.play();
 
 		animateHeight(maxHeight, () -> {
+			if (blurEnabled) {
+				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
+			}
 			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
 			stage.requestFocus();
 		});
@@ -326,6 +350,10 @@ public class UiApplication extends Application {
 		fade.setToValue(HIDDEN_ROOT_OPACITY);
 		fade.play();
 		animateHeight(COLLAPSED_HEIGHT, () -> {
+			nativeCornersEnabled = false;
+			if (blurEnabled) {
+				WindowsBackdrop.clearRoundedCorners(stage);
+			}
 			makeStageInvisible();
 			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
 			if (fromHotkey) {
@@ -335,6 +363,9 @@ public class UiApplication extends Application {
 	}
 
 	private void makeStageInvisible() {
+		if (blurEnabled) {
+			WindowsBackdrop.clearRoundedCorners(stage);
+		}
 		stage.setHeight(COLLAPSED_HEIGHT);
 		stage.setOpacity(1.0);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
@@ -372,6 +403,13 @@ public class UiApplication extends Application {
 		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
 			setExpanded(true, false);
 			stage.requestFocus();
+		});
+		eventManager.listen(CcEvent.EVENT_THEME_MODE_CHANGED, mode -> {
+			var s = StringUtils.join(mode);
+			if (blurEnabled) {
+				logger.info(() -> "Switching backdrop tint to " + s);
+				WindowsBackdrop.apply(stage, "dark".equals(s) ? WindowsBackdrop.DARK_TINT : WindowsBackdrop.LIGHT_TINT);
+			}
 		});
 	}
 

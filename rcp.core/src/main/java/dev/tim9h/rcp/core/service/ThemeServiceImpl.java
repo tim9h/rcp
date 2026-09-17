@@ -45,6 +45,8 @@ public class ThemeServiceImpl implements ThemeService {
 
 	private CommandsService commandsService;
 
+	private Boolean darkTheme;
+
 	@Inject
 	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
 			TrayManager trayManager, CommandsService commandsService) {
@@ -98,8 +100,31 @@ public class ThemeServiceImpl implements ThemeService {
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
 			}
+			updateWindowsBackdropEffects(theme);
 		}
 		return theme;
+	}
+
+	private void updateWindowsBackdropEffects(String theme) {
+		var darkThemeNew = isDarkTheme(theme);
+		if (darkTheme == null) {
+			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, darkThemeNew ? "dark" : "light");
+			darkTheme = darkThemeNew;
+			return;
+		}
+		if (darkTheme && !darkThemeNew) {
+			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, "light");
+		} else if (!darkTheme && darkThemeNew) {
+			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, "dark");
+		}
+		darkTheme = darkThemeNew;
+	}
+
+	private static boolean isDarkTheme(String theme) {
+		return switch (theme) {
+		case "Hoth", "Laurelin", "Telperion" -> false;
+		default -> true;
+		};
 	}
 
 	private List<String> getFileNames(String directory) {
