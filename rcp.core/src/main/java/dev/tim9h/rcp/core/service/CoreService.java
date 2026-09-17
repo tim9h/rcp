@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -48,6 +49,8 @@ public class CoreService {
 	private EventManager eventManager;
 
 	private CommandsService commandsService;
+
+	private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
 	@Inject
 	public CoreService(Settings settings, PluginLoader pluginLoader, TrayManager tray, EventManager eventManager,
@@ -128,9 +131,14 @@ public class CoreService {
 	}
 
 	public void shutdown() {
+		if (!shuttingDown.compareAndSet(false, true)) {
+			return;
+		}
+
 		logger.debug(() -> "Shutting down");
 		eventManager.echo("kthxbye.");
 		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
+
 		var delay = new PauseTransition(Duration.seconds(1));
 		delay.setOnFinished(_ -> prepareShutdown());
 		delay.play();
@@ -141,8 +149,7 @@ public class CoreService {
 		CompletableFuture.runAsync(() -> {
 			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
-			Platform.exit();
-			System.exit(0);
+			Platform.runLater(Platform::exit);
 		});
 	}
 

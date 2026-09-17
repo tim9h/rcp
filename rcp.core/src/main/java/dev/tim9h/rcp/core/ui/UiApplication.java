@@ -175,7 +175,10 @@ public class UiApplication extends Application {
 		if (blurEnabled) {
 			WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 		}
-		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> coreService.shutdown());
+		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
+			event.consume();
+			coreService.shutdown();
+		});
 
 		modeService.initDefaultModes();
 	}
@@ -506,8 +509,13 @@ public class UiApplication extends Application {
 		if (fade != null) {
 			fade.stop();
 		}
-		hotkeyProvider.unregister(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)));
+		nativeCornersEnabled = false;
+		if (hotkeyProvider != null) {
+			hotkeyProvider.reset();
+			hotkeyProvider.stop();
+		}
 		super.stop();
+		System.exit(0);
 	}
 
 }
