@@ -1,5 +1,8 @@
 package dev.tim9h.rcp.controls.tray;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+
 public class MenuItemData {
 
 	public final String label;
@@ -8,7 +11,7 @@ public class MenuItemData {
 
 	public final boolean checkable;
 
-	public final boolean checked;
+	private final BooleanProperty checkedProperty;
 
 	public MenuItemData(String label, Runnable action) {
 		this(label, action, false, false);
@@ -18,7 +21,19 @@ public class MenuItemData {
 		this.label = label;
 		this.action = action;
 		this.checkable = checkable;
-		this.checked = checked;
+		this.checkedProperty = new SimpleBooleanProperty(checked);
+	}
+
+	public boolean isChecked() {
+		return checkedProperty.get();
+	}
+
+	public void setChecked(boolean checked) {
+		checkedProperty.set(checked);
+	}
+
+	public BooleanProperty checkedProperty() {
+		return checkedProperty;
 	}
 
 }

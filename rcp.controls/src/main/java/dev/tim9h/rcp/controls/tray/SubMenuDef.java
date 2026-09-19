@@ -11,16 +11,19 @@ class SubMenuDef {
 
 	final Node parentNode;
 
+	final String label;
+
 	final List<MenuItemData> items;
 
 	Popup submenuPopup;
 
 	VBox submenuPane;
-	
+
 	PauseTransition hideTimer;
 
-	SubMenuDef(Node parentNode, List<MenuItemData> items) {
+	SubMenuDef(Node parentNode, String label, List<MenuItemData> items) {
 		this.parentNode = parentNode;
+		this.label = label;
 		this.items = items;
 	}
 

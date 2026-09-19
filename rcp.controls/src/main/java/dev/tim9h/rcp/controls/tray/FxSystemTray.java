@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.stream.Collectors;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +22,7 @@ import dev.tim9h.rcp.settings.Settings;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -211,7 +212,7 @@ public class FxSystemTray {
 			// Sync hover with keyboard focus
 			submenuButton.setOnMouseEntered(_ -> submenuButton.requestFocus());
 			menuPane.getChildren().add(submenuButton);
-			var def = new SubMenuDef(submenuButton, items);
+			var def = new SubMenuDef(submenuButton, label, items);
 			subMenus.add(def);
 		});
 	}
@@ -292,8 +293,9 @@ public class FxSystemTray {
 
 				for (var item : def.items) {
 					var hbox = new HBox();
-					var checkLabel = new Label(item.checked ? "🔘" : "");
+					var checkLabel = new Label();
 					checkLabel.setPrefWidth(16);
+					checkLabel.textProperty().bind(Bindings.when(item.checkedProperty()).then("🔘").otherwise(""));
 					var spacer = new Label(" ");
 					var itemLabel = new Label(item.label);
 					hbox.getChildren().addAll(checkLabel, spacer, itemLabel);
@@ -304,11 +306,7 @@ public class FxSystemTray {
 					btn.setMaxWidth(Double.MAX_VALUE);
 					btn.setOnAction(_ -> {
 						if (item.checkable) {
-							var updatedItems = def.items.stream().map(
-									i -> new MenuItemData(i.label, i.action, i.checkable, i.label.equals(item.label)))
-									.collect(Collectors.toList());
-							def.items.clear();
-							def.items.addAll(updatedItems);
+							def.items.forEach(i -> i.setChecked(i.label.equals(item.label)));
 							def.submenuPopup.hide();
 							def.submenuPopup = null;
 							def.submenuPane = null;
@@ -542,7 +540,7 @@ public class FxSystemTray {
 
 	private void navigate(VBox pane, int direction) {
 		var buttons = pane.getChildren().stream().filter(n -> n instanceof Button && !n.isDisabled())
-				.map(n -> (Button) n).collect(Collectors.toList());
+				.map(n -> (Button) n).toList();
 
 		if (buttons.isEmpty())
 			return;
@@ -563,4 +561,10 @@ public class FxSystemTray {
 			buttons.get(nextIndex).requestFocus();
 		}
 	}
+
+	public List<MenuItemData> getSubmenu(String subMenuLabel) {
+		return subMenus.stream().filter(subMenu -> Strings.CI.equals(subMenu.label, subMenuLabel))
+				.map(subMenu -> subMenu.items).findFirst().orElseGet(List::of);
+	}
+
 }
