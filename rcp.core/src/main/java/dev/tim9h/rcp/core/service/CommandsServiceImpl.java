@@ -72,6 +72,7 @@ public class CommandsServiceImpl implements CommandsService {
 		if (!node.getData().isBlank()) {
 			root.add(node);
 			listenAndRunCommands(node);
+			logger.debug(() -> "Added command: " + node);
 			return;
 		}
 		new ArrayList<>(node.getChildren()).forEach(c -> {
@@ -79,6 +80,7 @@ public class CommandsServiceImpl implements CommandsService {
 			if (existing == null) {
 				root.add(c);
 				listenAndRunCommands(c);
+				logger.debug(() -> "Added command: " + c);
 				return;
 			}
 			new ArrayList<>(c.getChildren()).forEach(existing::add);
@@ -91,8 +93,8 @@ public class CommandsServiceImpl implements CommandsService {
 			if (c.hasArguments()) {
 				existing.setHasArguments(true);
 			}
+			logger.debug(() -> "Merged command: " + existing);
 		});
-		logger.debug(() -> "Added command: " + node);
 	}
 
 	private void listenAndRunCommands() {
