@@ -76,6 +76,7 @@ public class ThemeServiceImpl implements ThemeService {
 					eventManager.echo("Theme not found", StringUtils.capitalize(theme));
 				} else {
 					eventManager.echo("Activating theme", StringUtils.capitalize(newTheme));
+					trayManager.setSelection("Theme", theme);
 				}
 			} else {
 				eventManager.echo("Alert theme active");

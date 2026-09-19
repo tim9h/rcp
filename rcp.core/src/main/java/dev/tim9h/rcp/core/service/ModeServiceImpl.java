@@ -15,6 +15,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.settings.SettingsConsts;
+import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.core.windows.IdleChangeListener;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.CcEvent;
@@ -47,6 +48,9 @@ public class ModeServiceImpl implements ModeService {
 
 	@Inject
 	private WindowsUtils windowsUtils;
+
+	@Inject
+	private TrayManager trayManager;
 
 	@Inject
 	public ModeServiceImpl(Injector injector) {
@@ -88,7 +92,9 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
-				themeService.setTheme("lethan", false);
+				var alertTheme = "lethan";
+				themeService.setTheme(alertTheme, false);
+				trayManager.setSelection("Theme", alertTheme);
 				eventManager.echo("ALARM!", "Alert mode activated");
 
 				if (alert == null) {
@@ -102,7 +108,9 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onDisable() {
-				themeService.setTheme(settings.getString(SettingsConsts.THEME), false);
+				var theme = settings.getString(SettingsConsts.THEME);
+				themeService.setTheme(theme, false);
+				trayManager.setSelection("Theme", theme);
 				eventManager.echo(StringUtils.EMPTY, "Alert mode deactivated");
 				Platform.runLater(alert::stop);
 			}

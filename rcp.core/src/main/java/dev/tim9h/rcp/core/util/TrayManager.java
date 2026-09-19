@@ -3,6 +3,7 @@ package dev.tim9h.rcp.core.util;
 import java.awt.Toolkit;
 import java.util.List;
 
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
@@ -93,6 +94,11 @@ public class TrayManager {
 
 	public void applyTheme(String themeUrl) {
 		systemTray.applyTheme(themeUrl);
+	}
+
+	public void setSelection(String subMenuLabel, String submenuEntryLabel) {
+		systemTray.getSubmenu(subMenuLabel)
+				.forEach(entry -> entry.setChecked(Strings.CI.equals(entry.label, submenuEntryLabel)));
 	}
 
 }
