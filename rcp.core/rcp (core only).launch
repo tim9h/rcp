@@ -30,5 +30,5 @@
     <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-s core.ui.stage.blur=true"/>
     <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="rcp.core"/>
     <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
-    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-XX:+UseShenandoahGC -Xmx2g -Xms32m -Dlogpath=D:\misc\dev\logs &#13;&#10;--enable-native-access=com.sun.jna &#13;&#10;--enable-native-access=javafx.graphics &#13;&#10;--enable-native-access=ALL-UNNAMED&#13;&#10;--enable-native-access=dev.tim9h.javafxblur2"/>
+    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-XX:+UseShenandoahGC -Xmx2g -Xms32m -Dlogpath=D:\misc\dev\logs &#13;&#10;--enable-native-access=com.sun.jna &#13;&#10;--enable-native-access=javafx.graphics &#13;&#10;--enable-native-access=ALL-UNNAMED&#13;&#10;--enable-native-access=dev.tim9h.javafxblur2 &#13;&#10;--enable-native-access=javafx.media"/>
 </launchConfiguration>

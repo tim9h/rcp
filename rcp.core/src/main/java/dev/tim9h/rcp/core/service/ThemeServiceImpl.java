@@ -70,16 +70,14 @@ public class ThemeServiceImpl implements ThemeService {
 			var current = settings.getString(SettingsConsts.THEME);
 			eventManager.echo("Current theme", StringUtils.capitalize(current));
 		}).arguments().argumentAction(theme -> {
-			if (!modeService.isModeActive("alert")) {
-				var newTheme = setTheme(theme, true);
-				if (newTheme == null) {
-					eventManager.echo("Theme not found", StringUtils.capitalize(theme));
-				} else {
-					eventManager.echo("Activating theme", StringUtils.capitalize(newTheme));
-					trayManager.setSelection("Theme", theme);
-				}
+			var newTheme = setTheme(theme, true);
+			if (newTheme == null) {
+				eventManager.echo("Theme not found", StringUtils.capitalize(theme));
+			} else if ("alert".equals(newTheme)) {
+				return;
 			} else {
-				eventManager.echo("Alert theme active");
+				eventManager.echo("Activating theme", StringUtils.capitalize(newTheme));
+				trayManager.setSelection("Theme", theme);
 			}
 		}).children(getThemeNames()).getRoot());
 	}
@@ -92,16 +90,21 @@ public class ThemeServiceImpl implements ThemeService {
 		var url = getClass().getResource(String.format("/css/theme_%s.css", theme.toLowerCase()));
 		if (url == null) {
 			return null;
-		} else if (!scene.getStylesheets().contains(url.toExternalForm())) {
-			logger.info(() -> "Setting theme to " + theme);
-			var themeUrl = url.toExternalForm();
-			scene.getStylesheets().add(themeUrl);
-			scene.getStylesheets().removeIf(style -> style.contains("/css/theme_") && !themeUrl.equals(style));
-			trayManager.applyTheme(themeUrl);
+		} else {
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
 			}
-			updateWindowsBackdropEffects(theme);
+			if (modeService.isModeActive("alert") && persist) {
+				return theme;
+			}
+			if (!scene.getStylesheets().contains(url.toExternalForm())) {
+				logger.info(() -> "Setting theme to " + theme);
+				var themeUrl = url.toExternalForm();
+				scene.getStylesheets().add(themeUrl);
+				scene.getStylesheets().removeIf(style -> style.contains("/css/theme_") && !themeUrl.equals(style));
+				trayManager.applyTheme(themeUrl);
+				updateWindowsBackdropEffects(theme);
+			}
 		}
 		return theme;
 	}

@@ -15,7 +15,6 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.settings.SettingsConsts;
-import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.core.windows.IdleChangeListener;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.CcEvent;
@@ -50,9 +49,6 @@ public class ModeServiceImpl implements ModeService {
 	private WindowsUtils windowsUtils;
 
 	@Inject
-	private TrayManager trayManager;
-
-	@Inject
 	public ModeServiceImpl(Injector injector) {
 		injector.injectMembers(this);
 		activeModes = new HashSet<>(settings.getStringSet(SettingsConsts.MODES));
@@ -85,6 +81,8 @@ public class ModeServiceImpl implements ModeService {
 
 			private MediaPlayer alert;
 
+			private static final String theme = "lethan";
+
 			@Override
 			public String getName() {
 				return "alert";
@@ -92,15 +90,13 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
-				var alertTheme = "lethan";
-				themeService.setTheme(alertTheme, false);
-				trayManager.setSelection("Theme", alertTheme);
-				eventManager.echo("ALARM!", "Alert mode activated");
+				themeService.setTheme(theme, false);
+				eventManager.echo("ALERT", "Alert mode activated");
 
 				if (alert == null) {
 					var source = getClass().getResource("/media/imperial_alert.mp3").toExternalForm();
 					alert = new MediaPlayer(new Media(source));
-					alert.setCycleCount(120);
+					alert.setCycleCount(MediaPlayer.INDEFINITE);
 					alert.setVolume(0.2);
 				}
 				Platform.runLater(alert::play);
@@ -110,7 +106,6 @@ public class ModeServiceImpl implements ModeService {
 			public void onDisable() {
 				var theme = settings.getString(SettingsConsts.THEME);
 				themeService.setTheme(theme, false);
-				trayManager.setSelection("Theme", theme);
 				eventManager.echo(StringUtils.EMPTY, "Alert mode deactivated");
 				Platform.runLater(alert::stop);
 			}
