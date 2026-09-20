@@ -2,8 +2,6 @@ package dev.tim9h.rcp.core.util;
 
 import java.util.Comparator;
 
-import org.apache.commons.lang3.math.NumberUtils;
-
 import dev.tim9h.rcp.spi.Plugin;
 
 public class PluginNodeSorter implements Comparator<Object> {

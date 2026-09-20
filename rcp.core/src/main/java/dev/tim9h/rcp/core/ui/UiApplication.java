@@ -5,11 +5,11 @@ import java.io.IOException;
 import javax.swing.KeyStroke;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.tulskiy.keymaster.common.Provider;
 
 import dev.tim9h.javafxblur2.WindowsBackdrop;
@@ -69,8 +69,6 @@ public class UiApplication extends Application {
 
 	@Inject
 	private TrayManager tray;
-
-	private Injector injector;
 
 	@Inject
 	private Settings settings;
@@ -133,13 +131,10 @@ public class UiApplication extends Application {
 
 	@Override
 	public void start(Stage hiddenStage) throws Exception {
-		injector = Guice.createInjector(new BasicModule());
-
 		try {
-			injector.injectMembers(this);
+			Guice.createInjector(new BasicModule()).injectMembers(this);
 		} catch (Exception e) {
-			System.err.println("Unable to inject members: " + e.getMessage());
-			e.printStackTrace();
+			LogManager.getLogger(UiApplication.class).error(() -> "Unable to inject members", e);
 			Platform.exit();
 			return;
 		}
@@ -339,13 +334,13 @@ public class UiApplication extends Application {
 		}
 		this.expanded = expanded;
 		if (expanded) {
-			show(fromHotkey);
+			show();
 		} else {
 			hide(fromHotkey);
 		}
 	}
 
-	private void show(boolean fromHotkey) {
+	private void show() {
 		stopAnimations();
 		stage.setX(calculateXposition());
 

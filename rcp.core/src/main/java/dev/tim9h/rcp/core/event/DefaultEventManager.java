@@ -1,6 +1,8 @@
 package dev.tim9h.rcp.core.event;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +35,27 @@ public class DefaultEventManager implements EventManager {
 	public record ResponseHandler(CountDownLatch latch, Object[] payload) {
 		public ResponseHandler(CountDownLatch latch) {
 			this(latch, null);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) {
+				return true;
+			}
+			if (!(o instanceof ResponseHandler(CountDownLatch otherLatch, Object[] otherPayload))) {
+				return false;
+			}
+			return Objects.equals(latch, otherLatch) && Arrays.deepEquals(payload, otherPayload);
+		}
+
+		@Override
+		public int hashCode() {
+			return 31 * Objects.hashCode(latch) + Arrays.deepHashCode(payload);
+		}
+
+		@Override
+		public String toString() {
+			return "ResponseHandler[latch=" + latch + ", payload=" + Arrays.deepToString(payload) + "]";
 		}
 	}
 
@@ -166,13 +189,13 @@ public class DefaultEventManager implements EventManager {
 				// Timeout occurred
 				responseHandlers.remove(correlationId);
 				logger.warn(() -> "Timeout waiting for response with correlation ID: " + correlationId);
-				return null;
+				return new Object[0];
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			responseHandlers.remove(correlationId);
 			logger.error(() -> "Interrupted while waiting for response with correlation ID: " + correlationId, e);
-			return null;
+			return new Object[0];
 		}
 	}
 

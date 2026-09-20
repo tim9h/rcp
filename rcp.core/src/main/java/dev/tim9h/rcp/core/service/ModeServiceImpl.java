@@ -81,7 +81,7 @@ public class ModeServiceImpl implements ModeService {
 
 			private MediaPlayer alert;
 
-			private static final String theme = "lethan";
+			private static final String THEME = "lethan";
 
 			@Override
 			public String getName() {
@@ -90,7 +90,7 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
-				themeService.setTheme(theme, false);
+				themeService.setTheme(THEME, false);
 				eventManager.echo("ALERT", "Alert mode activated");
 
 				if (alert == null) {
@@ -104,8 +104,8 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onDisable() {
-				var theme = settings.getString(SettingsConsts.THEME);
-				themeService.setTheme(theme, false);
+				var selectedTheme = settings.getString(SettingsConsts.THEME);
+				themeService.setTheme(selectedTheme, false);
 				eventManager.echo(StringUtils.EMPTY, "Alert mode deactivated");
 				Platform.runLater(alert::stop);
 			}

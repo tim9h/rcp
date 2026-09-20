@@ -228,12 +228,10 @@ public class PluginLoader {
 		try {
 			plugin.init();
 			plugin.initBus(eventManager);
-			plugin.getModes().ifPresent(modes -> {
-				modes.forEach(mode -> {
-					modeService.initMode(mode);
-					commandsService.add(mode.getCommandTree());
-				});
-			});
+			plugin.getModes().ifPresent(modes -> modes.forEach(mode -> {
+				modeService.initMode(mode);
+				commandsService.add(mode.getCommandTree());
+			}));
 			plugin.getModelessCommands().ifPresent(commandsService::add);
 			plugin.getCommands().ifPresent(commandsService::add);
 			plugin.getMenuItems().ifPresent(menuItems -> {

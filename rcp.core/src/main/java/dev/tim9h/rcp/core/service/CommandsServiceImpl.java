@@ -21,6 +21,8 @@ import dev.tim9h.rcp.spi.TreeNode;
 @Singleton
 public class CommandsServiceImpl implements CommandsService {
 
+	private static final String ADDED_COMMAND = "Added command: ";
+
 	@InjectLogger
 	private Logger logger;
 
@@ -51,7 +53,7 @@ public class CommandsServiceImpl implements CommandsService {
 	public void add(TreeNode<String> node) {
 		if (!node.get().isBlank()) {
 			root.add(node.toCommandNode());
-			logger.debug(() -> "Added command: " + node);
+			logger.debug(() -> ADDED_COMMAND + node);
 			return;
 		}
 		for (var child : node.getChildren()) {
@@ -64,7 +66,7 @@ public class CommandsServiceImpl implements CommandsService {
 				existing.add(grandchild.toCommandNode());
 			}
 		}
-		logger.debug(() -> "Added command: " + node);
+		logger.debug(() -> ADDED_COMMAND + node);
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class CommandsServiceImpl implements CommandsService {
 		if (!node.getData().isBlank()) {
 			root.add(node);
 			listenAndRunCommands(node);
-			logger.debug(() -> "Added command: " + node);
+			logger.debug(() -> ADDED_COMMAND + node);
 			return;
 		}
 		new ArrayList<>(node.getChildren()).forEach(c -> {
@@ -80,7 +82,7 @@ public class CommandsServiceImpl implements CommandsService {
 			if (existing == null) {
 				root.add(c);
 				listenAndRunCommands(c);
-				logger.debug(() -> "Added command: " + c);
+				logger.debug(() -> ADDED_COMMAND + c);
 				return;
 			}
 			new ArrayList<>(c.getChildren()).forEach(existing::add);

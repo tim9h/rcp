@@ -108,7 +108,7 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void addSettings(Map<String, String> settings) {
-		settings.entrySet().stream().forEach(set -> {
+		settings.entrySet().forEach(set -> {
 			if (!overwrites.containsKey(set.getKey())) {
 				logger.debug(() -> String.format("Setting loaded: %s", set.getKey()));
 			}
@@ -267,8 +267,8 @@ public class SettingsImpl implements Settings {
 				}
 				var args = arg.split(" ");
 				
-				if (args.length == 1 && StringUtils.split((String) args[0], "=").length == 2) {
-					var split = StringUtils.split((String) args[0], "=");
+				if (args.length == 1 && StringUtils.split(args[0], "=").length == 2) {
+					var split = StringUtils.split(args[0], "=");
 					persist(split[0], split[1]);
 					logger.info(() -> "Setting " + split[0] + " persisted");
 					eventManager.echo("Setting persisted", StringUtils.abbreviate(split[0] + "=" + split[1], getCharWidth()));
@@ -289,10 +289,10 @@ public class SettingsImpl implements Settings {
 					eventManager.echo("Settings reloaded");
 				}).up()
 				.child("overwrites", _ -> {
-					var overwrites = getOverwrites().keySet();
-					if (!overwrites.isEmpty()) {
+					var overwritesNames = getOverwrites().keySet();
+					if (!overwritesNames.isEmpty()) {
 						eventManager.echo("Overwriting",
-								StringUtils.abbreviate(StringUtils.join(overwrites, ", "), getCharWidth()));
+								StringUtils.abbreviate(StringUtils.join(overwritesNames, ", "), getCharWidth()));
 					} else {
 						eventManager.echo("No settings overwritten");
 					}

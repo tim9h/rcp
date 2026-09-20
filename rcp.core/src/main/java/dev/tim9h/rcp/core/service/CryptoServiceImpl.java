@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Random;
 
 import org.apache.logging.log4j.Logger;
 
@@ -19,10 +20,14 @@ public class CryptoServiceImpl implements CryptoService {
 	@InjectLogger
 	private Logger logger;
 
+	private Random random;
+
 	@Override
 	public String gernateApiKey() {
 		var bytes = new byte[32];
-		var random = new SecureRandom();
+		if (random == null) {
+			random = new SecureRandom();
+		}
 		random.nextBytes(bytes);
 		return Base64.getEncoder().encodeToString(bytes);
 	}
@@ -41,14 +46,13 @@ public class CryptoServiceImpl implements CryptoService {
 		}
 		return null;
 	}
-	
 
 	@Override
 	public boolean hashMatches(String providedPassword, String storedHash) {
 		if (providedPassword == null || storedHash == null) {
 			return false;
 		}
-		return hashSha256(providedPassword).equals(storedHash); 
+		return hashSha256(providedPassword).equals(storedHash);
 	}
 
 }

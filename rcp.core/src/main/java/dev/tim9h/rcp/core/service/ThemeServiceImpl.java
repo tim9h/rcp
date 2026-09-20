@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -182,8 +181,7 @@ public class ThemeServiceImpl implements ThemeService {
 				.map(theme -> new MenuItemData(StringUtils.capitalize(theme), () -> Platform.runLater(() -> {
 					setTheme(theme, true);
 					eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
-				}), true, settings.getString(SettingsConsts.THEME).equalsIgnoreCase(theme)))
-				.collect(Collectors.toList());
+				}), true, settings.getString(SettingsConsts.THEME).equalsIgnoreCase(theme))).toList();
 		trayManager.createSubMenu("Theme", items, true);
 	}
 
