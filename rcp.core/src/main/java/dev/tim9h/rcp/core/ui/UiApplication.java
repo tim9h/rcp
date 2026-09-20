@@ -123,6 +123,8 @@ public class UiApplication extends Application {
 
 	private boolean blurEnabled;
 
+	private static final double HIDDEN_STAGE_OPACITY = 0.2; // any lower value makes the stage unclickable
+
 	public static void main(String[] args) {
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
 		argsGlobal = args;
@@ -433,7 +435,7 @@ public class UiApplication extends Application {
 		stage.setX(calculateXposition());
 		stage.setY(calculateScreenTop());
 
-		stage.setOpacity(1.0);
+		stage.setOpacity(HIDDEN_STAGE_OPACITY);
 		stage.getScene().getRoot().setOpacity(HIDDEN_ROOT_OPACITY);
 	}
 
