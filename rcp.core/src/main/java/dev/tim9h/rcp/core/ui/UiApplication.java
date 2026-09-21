@@ -174,7 +174,7 @@ public class UiApplication extends Application {
 		}
 		scene.getWindow().addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, event -> {
 			event.consume();
-			coreService.shutdown();
+			coreService.cleanUp().thenRun(coreService::exitApplication);
 		});
 
 		modeService.initDefaultModes();
@@ -446,7 +446,7 @@ public class UiApplication extends Application {
 		tray.createMenuItem("Restart Application", coreService::restartApplication, true);
 		tray.createMenuItem("Reload Settings", settings::loadProperties);
 		tray.createMenuItem("Open Settings", settings::openSettingsFile, true);
-		tray.createMenuItem("Exit", coreService::shutdown);
+		tray.createMenuItem("Exit", () -> coreService.cleanUp().thenRun(coreService::exitApplication));
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> setExpanded(!expanded, false)));
 	}
 

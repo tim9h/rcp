@@ -118,7 +118,7 @@ public class CoreService {
 			if (Strings.CS.endsWith(sourcepath, ".jar")) {
 				new ProcessBuilder(javaBin, "-jar", sourcepath).start();
 				eventManager.post(new CcEvent(CcEvent.EVENT_RESTARTING));
-				shutdown();
+				shutdownWithFeedback();
 			} else {
 				logger.warn(() -> "Unable to restart application: Not in jar mode");
 				eventManager.echo("Unable to restart: Not in jar mode");
@@ -130,34 +130,37 @@ public class CoreService {
 		}
 	}
 
-	public void shutdown() {
+	public void shutdownWithFeedback() {
 		if (!shuttingDown.compareAndSet(false, true)) {
 			return;
 		}
-
-		logger.debug(() -> "Shutting down");
 		eventManager.echo("kthxbye.");
-		eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
-
-		var delay = new PauseTransition(Duration.seconds(1));
-		delay.setOnFinished(_ -> prepareShutdown());
+		var delay = new PauseTransition(Duration.seconds(3));
+		delay.setOnFinished(_ -> cleanUp().thenRun(this::exitApplication));
 		delay.play();
 	}
 
-	public void prepareShutdown() {
-		logger.debug(() -> "Shutting down immediately");
-		CompletableFuture.runAsync(() -> {
+	public CompletableFuture<Void> cleanUp() {
+		return CompletableFuture.runAsync(() -> {
+			eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
+			logger.debug(() -> "Shutting down plugins");
 			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
-			Platform.runLater(Platform::exit);
+			logger.debug(() -> "Plugin shutdown complete");
+			eventManager.post(CcEvent.EVENT_CLOSING_FINISHED);
 		});
+	}
+
+	public void exitApplication() {
+		Platform.runLater(Platform::exit);
 	}
 
 	private void initCoreCommands() {
 		//@formatter:off
 		commandsService.add(new CommandBuilder()
-				.command("exit", _ -> shutdown())
-				.command("exitimmediately", _ -> prepareShutdown())
+				.command("exit", _ -> shutdownWithFeedback())
+					.child("cleanup", _ -> cleanUp()).up()
+					.child("force", _ -> exitApplication())
 				.command("restart", _ -> restartApplication())
 				.command("logs", _ -> openLogFile()).getRoot());
 		//@formatter:on
