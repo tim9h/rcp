@@ -459,6 +459,7 @@ public class UiApplication extends Application {
 			logger.info(() -> "Plugin UI loaded: " + plugin.getName());
 		} catch (IOException e) {
 			logger.error(() -> "Unable to initialize plugin UI for " + plugin.getName(), e);
+			eventManager.post(CcEvent.EVENT_ALERT);
 		}
 	}
 

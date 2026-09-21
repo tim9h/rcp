@@ -196,6 +196,7 @@ public class CliView implements Plugin {
 				Desktop.getDesktop().browse(new URI(url));
 			} catch (IOException | URISyntaxException e) {
 				logger.warn(() -> "Unable to open browser", e);
+				eventManager.post(CcEvent.EVENT_ALERT);
 			}
 		}
 

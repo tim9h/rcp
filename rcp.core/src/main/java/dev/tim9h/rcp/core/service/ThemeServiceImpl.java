@@ -150,6 +150,7 @@ public class ThemeServiceImpl implements ThemeService {
 				}
 			} catch (URISyntaxException e) {
 				logger.error(() -> "Unable to getFilenames for directory " + directory + " in IDE mode", e);
+				eventManager.post(CcEvent.EVENT_ALERT);
 			}
 		}
 		return filenames;
@@ -170,6 +171,7 @@ public class ThemeServiceImpl implements ThemeService {
 			}
 		} catch (IOException e) {
 			logger.error(() -> "Unable to get file names for directory " + directory + " in Jar mode", e);
+			eventManager.post(CcEvent.EVENT_ALERT);
 		}
 		return filenames;
 	}

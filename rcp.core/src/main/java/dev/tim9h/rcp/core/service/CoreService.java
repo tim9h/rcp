@@ -105,6 +105,7 @@ public class CoreService {
 						Desktop.getDesktop().open(new File(fileName));
 					} catch (IOException e) {
 						logger.error(() -> "Unable to open log file", e);
+						eventManager.post(CcEvent.EVENT_ALERT);
 					}
 				});
 	}
@@ -126,6 +127,7 @@ public class CoreService {
 			}
 		} catch (IOException | URISyntaxException e) {
 			logger.error(() -> "Unable to restart application", e);
+			eventManager.post(CcEvent.EVENT_ALERT);
 			eventManager.showToast(settings.getAppTitle(), "Unable to restart: " + e.getMessage());
 		}
 	}

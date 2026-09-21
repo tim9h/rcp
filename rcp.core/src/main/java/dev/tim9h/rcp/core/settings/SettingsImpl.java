@@ -75,6 +75,7 @@ public class SettingsImpl implements Settings {
 				Files.createFile(propertiesPath);
 			} catch (IOException e) {
 				logger.error(() -> "Unable to create properties file: " + e.getMessage());
+				eventManager.post(CcEvent.EVENT_ALERT);
 			}
 		}
 
@@ -82,6 +83,7 @@ public class SettingsImpl implements Settings {
 			properties.load(inputStream);
 		} catch (IOException e) {
 			logger.error(() -> "Unable to load properties: " + e.getMessage());
+			eventManager.post(CcEvent.EVENT_ALERT);
 		}
 	}
 
@@ -93,6 +95,7 @@ public class SettingsImpl implements Settings {
 			eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
 		} catch (IOException e) {
 			logger.error(() -> "Unable to persist properties in " + propertiesPath.toString() + ": " + e.getMessage());
+			eventManager.post(CcEvent.EVENT_ALERT);
 		}
 	}
 
