@@ -39,6 +39,8 @@ public record CcEvent(String name, Object... payload) {
 
 	public static final String EVENT_THEME_MODE_CHANGED = "THEME_MODE_CHANGED";
 
+	public static final String EVENT_ALERT = "alert";
+
 	public CcEvent(String name) {
 		this(name, (Object[]) null);
 	}

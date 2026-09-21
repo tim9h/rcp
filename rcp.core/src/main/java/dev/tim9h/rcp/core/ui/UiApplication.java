@@ -141,6 +141,8 @@ public class UiApplication extends Application {
 			return;
 		}
 
+		registerExceptionHandler();
+
 		coreService.parseArgs(argsGlobal);
 
 		initUiCommands();
@@ -513,6 +515,13 @@ public class UiApplication extends Application {
 		}
 		super.stop();
 		System.exit(0);
+	}
+
+	private void registerExceptionHandler() {
+		Thread.currentThread().setUncaughtExceptionHandler((_, exception) -> {
+			logger.error(() -> "Unhandled JavaFX exception", exception);
+			eventManager.post(CcEvent.EVENT_ALERT);
+		});
 	}
 
 }
