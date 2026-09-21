@@ -135,7 +135,7 @@ public class CoreService {
 			return;
 		}
 		eventManager.echo("kthxbye.");
-		var delay = new PauseTransition(Duration.seconds(3));
+		var delay = new PauseTransition(Duration.seconds(1));
 		delay.setOnFinished(_ -> cleanUp().thenRun(this::exitApplication));
 		delay.play();
 	}
@@ -146,12 +146,13 @@ public class CoreService {
 			logger.debug(() -> "Shutting down plugins");
 			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
 			tray.removeTrayIcon();
-			logger.debug(() -> "Plugin shutdown complete");
+			logger.debug(() -> "Plugin cleanup complete");
 			eventManager.post(CcEvent.EVENT_CLOSING_FINISHED);
 		});
 	}
 
 	public void exitApplication() {
+		logger.debug(() -> "Shutting down application");
 		Platform.runLater(Platform::exit);
 	}
 
