@@ -13,7 +13,11 @@ public interface EventManager {
 
 	public void post(String eventName, String payload);
 
-	public void listen(String name, Consumer<Object[]> action);
+	public void listen(String eventName, Consumer<Object[]> action);
+
+	public void unsubscribe(String eventName);
+
+	public void unsubscribe(String eventName, Object subscriber);
 
 	public void echo(String response);
 

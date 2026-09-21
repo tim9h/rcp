@@ -1,6 +1,7 @@
 package dev.tim9h.rcp.core.event;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Singleton;
 
@@ -28,6 +31,8 @@ public class DefaultEventManager implements EventManager {
 	private Logger logger;
 
 	private EventBus bus;
+
+	private Multimap<String, Object> subscriptions;
 
 	// For request/response correlation
 	private final ConcurrentHashMap<String, ResponseHandler> responseHandlers = new ConcurrentHashMap<>();
@@ -61,6 +66,7 @@ public class DefaultEventManager implements EventManager {
 
 	public DefaultEventManager() {
 		bus = new EventBus("rcp");
+		subscriptions = HashMultimap.create();
 		listen("clear", _ -> clear());
 	}
 
@@ -80,12 +86,14 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
-	public void listen(String name, Consumer<Object[]> action) {
-		bus.register((EventListener) event -> {
-			if (Strings.CI.equals(event.name(), name)) {
+	public void listen(String eventName, Consumer<Object[]> action) {
+		var subscription = (EventListener) event -> {
+			if (Strings.CI.equals(event.name(), eventName)) {
 				action.accept(event.payload());
 			}
-		});
+		};
+		subscriptions.put(eventName, subscription);
+		bus.register(subscription);
 	}
 
 	@Override
@@ -209,6 +217,30 @@ public class DefaultEventManager implements EventManager {
 			handler.latch().countDown();
 		} else {
 			logger.debug(() -> "No pending request for correlation ID: " + correlationId);
+		}
+	}
+
+	@Override
+	public void unsubscribe(String eventName) {
+		Collection<Object> subscriptionsForEvent = subscriptions.get(eventName);
+		if (subscriptionsForEvent.isEmpty()) {
+			logger.warn(() -> "Unable to unsubscribe from " + eventName + ": Topic not found");
+		} else if (subscriptionsForEvent.size() > 1) {
+			logger.warn(() -> "Unable to unsubscribe from " + eventName + ": Listener not unique");
+		} else if (subscriptionsForEvent.size() == 1) {
+			var element = subscriptionsForEvent.iterator().next();
+			bus.unregister(element);
+			subscriptions.removeAll(eventName);
+			logger.debug(() -> "Unsubscribed from event " + eventName);
+		}
+	}
+
+	@Override
+	public void unsubscribe(String eventName, Object subscriber) {
+		if (subscriber != null && subscriptions.containsEntry(eventName, subscriber)) {
+			bus.unregister(subscriber);
+			subscriptions.remove(eventName, subscriber);
+			logger.debug(() -> "Unsubscribed from event " + eventName);
 		}
 	}
 
