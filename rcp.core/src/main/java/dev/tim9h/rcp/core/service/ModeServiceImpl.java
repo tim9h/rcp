@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +20,7 @@ import dev.tim9h.rcp.event.CcEvent;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Mode;
 import javafx.application.Platform;
 import javafx.scene.media.Media;
@@ -49,6 +49,9 @@ public class ModeServiceImpl implements ModeService {
 	private WindowsUtils windowsUtils;
 
 	@Inject
+	private CommandsService commandsService;
+
+	@Inject
 	public ModeServiceImpl(Injector injector) {
 		injector.injectMembers(this);
 		activeModes = new HashSet<>(settings.getStringSet(SettingsConsts.MODES));
@@ -57,14 +60,16 @@ public class ModeServiceImpl implements ModeService {
 	}
 
 	private void listenToEvents() {
-		eventManager.listen("modes", _ -> CompletableFuture.runAsync(() -> {
-			if (activeModes.isEmpty() && ephemeralModes.isEmpty()) {
-				eventManager.echo("No modes active");
-			} else {
-				eventManager.echo("Active modes",
-						StringUtils.join(Iterables.concat(activeModes, ephemeralModes), ", "));
-			}
-		}));
+		//@formatter:off
+		commandsService.add(new CommandBuilder()
+			.command("modes", _ -> {
+				if (activeModes.isEmpty() && ephemeralModes.isEmpty()) {
+					eventManager.echo("No modes active");
+				} else {
+					eventManager.echo("Active modes", StringUtils.join(Iterables.concat(activeModes, ephemeralModes), ", "));
+				}
+			}).getRoot());
+		//@formatter:on
 	}
 
 	@Override
