@@ -29,7 +29,6 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
-import dev.tim9h.rcp.spi.Plugin;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.util.Duration;
@@ -138,24 +137,43 @@ public class CoreService {
 		}
 		eventManager.echo("kthxbye.");
 		var delay = new PauseTransition(Duration.seconds(1));
-		delay.setOnFinished(_ -> cleanUp().thenRun(this::exitApplication));
+		delay.setOnFinished(_ -> cleanUp().whenComplete((_, error) -> {
+			if (error != null) {
+				logger.error(() -> "Shutdown cleanup failed", error);
+			}
+			exitApplication();
+		}));
 		delay.play();
 	}
 
 	public CompletableFuture<Void> cleanUp() {
 		return CompletableFuture.runAsync(() -> {
-			eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
-			logger.debug(() -> "Shutting down plugins");
-			pluginLoader.getPlugins().forEach(Plugin::onShutdown);
-			tray.removeTrayIcon();
-			logger.debug(() -> "Plugin cleanup complete");
-			eventManager.post(CcEvent.EVENT_CLOSING_FINISHED);
+			try {
+				logger.debug(() -> "Starting shutdown cleanup");
+				eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
+				logger.debug(() -> "Shutting down plugins");
+				pluginLoader.getPlugins().forEach(plugin -> {
+					try {
+						plugin.onShutdown();
+					} catch (Exception error) {
+						logger.error(() -> "Plugin shutdown failed for " + plugin.getName(), error);
+					}
+				});
+				tray.removeTrayIcon();
+				eventManager.post(CcEvent.EVENT_CLOSING_FINISHED);
+				logger.debug(() -> "Plugin cleanup complete");
+			} catch (Exception error) {
+				logger.error(() -> "Shutdown cleanup failed", error);
+				throw error;
+			}
 		});
 	}
 
 	public void exitApplication() {
-		logger.debug(() -> "Shutting down application");
-		Platform.runLater(Platform::exit);
+		Platform.runLater(() -> {
+			logger.debug(() -> "Exiting platform");
+			Platform.exit();
+		});
 	}
 
 	private void initCoreCommands() {

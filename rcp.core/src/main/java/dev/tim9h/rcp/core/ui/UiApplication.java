@@ -1,6 +1,7 @@
 package dev.tim9h.rcp.core.ui;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 import javax.swing.KeyStroke;
 
@@ -448,7 +449,7 @@ public class UiApplication extends Application {
 		tray.createMenuItem("Restart Application", coreService::restartApplication, true);
 		tray.createMenuItem("Reload Settings", settings::loadProperties);
 		tray.createMenuItem("Open Settings", settings::openSettingsFile, true);
-		tray.createMenuItem("Exit", () -> coreService.cleanUp().thenRun(coreService::exitApplication));
+		tray.createMenuItem("Exit", coreService::shutdownWithFeedback);
 		tray.createDoubleClickAction(() -> Platform.runLater(() -> setExpanded(!expanded, false)));
 	}
 
@@ -500,6 +501,7 @@ public class UiApplication extends Application {
 
 	@Override
 	public void stop() throws Exception {
+		logger.debug(() -> "Stopping JavaFX application");
 		if (heightAnimation != null) {
 			heightAnimation.stop();
 		}
@@ -510,12 +512,23 @@ public class UiApplication extends Application {
 			fade.stop();
 		}
 		nativeCornersEnabled = false;
-		if (hotkeyProvider != null) {
-			hotkeyProvider.reset();
-			hotkeyProvider.stop();
-		}
-		super.stop();
-		System.exit(0);
+
+		CompletableFuture.runAsync(() -> {
+			if (hotkeyProvider != null) {
+				hotkeyProvider.reset();
+				hotkeyProvider.stop();
+			}
+		}).whenComplete((_, error) -> {
+			if (error != null) {
+				logger.error(() -> "Unable to clean up hotkey", error);
+			}
+			try {
+				super.stop();
+			} catch (Exception e) {
+				logger.error(() -> "Unable to stop JavaFX application", e);
+			}
+			System.exit(0);
+		});
 	}
 
 	private void registerExceptionHandler() {

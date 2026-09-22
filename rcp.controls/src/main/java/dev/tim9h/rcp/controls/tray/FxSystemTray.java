@@ -178,8 +178,8 @@ public class FxSystemTray {
 			btn.setAlignment(Pos.BASELINE_LEFT);
 			btn.setMaxWidth(Double.MAX_VALUE);
 			btn.setOnAction(_ -> {
-				action.run();
 				closeAllMenus();
+				action.run();
 			});
 			// Sync hover with keyboard focus
 			btn.setOnMouseEntered(_ -> btn.requestFocus());
