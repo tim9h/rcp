@@ -3,6 +3,8 @@ module rcp.cli {
 	exports dev.tim9h.rcp.cli;
 	exports dev.tim9h.rcp.cli.query;
 
+	provides dev.tim9h.rcp.spi.Plugin with dev.tim9h.rcp.cli.CliView;
+
 	requires transitive rcp.api;
 	requires com.google.gson;
 	requires transitive com.google.guice;
@@ -15,5 +17,6 @@ module rcp.cli {
 	requires org.apache.commons.lang3;
 	requires org.apache.commons.text;
 	requires org.apache.logging.log4j;
-	requires java.base;
+
+	opens dev.tim9h.rcp.cli to com.google.guice;
 }

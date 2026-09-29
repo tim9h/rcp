@@ -1,12 +1,9 @@
 package dev.tim9h.rcp.core.plugin;
 
 import java.awt.Desktop;
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.lang.module.ModuleFinder;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,10 +12,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
@@ -59,6 +54,8 @@ public class PluginLoader {
 	private List<String> pluginWhitelist;
 
 	private List<Plugin> plugins;
+
+	private ModuleLayer pluginLayer;
 
 	@Inject
 	public PluginLoader(Injector injector, EventManager eventManager, Settings settings,
@@ -123,7 +120,7 @@ public class PluginLoader {
 	}
 
 	public void openPluginsDirectory() {
-		var jarDirectory = getJarDirectory();
+		var jarDirectory = getPluginDirectory();
 		if (jarDirectory != null) {
 			try {
 				var pluginDirectory = Path.of(jarDirectory + "/plugins");
@@ -139,68 +136,84 @@ public class PluginLoader {
 		}
 	}
 
-	private String getJarDirectory() {
+	private Path getPluginDirectory() {
 		try {
-			var sourcepath = getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
-			if (Strings.CS.endsWith(sourcepath, ".jar")) {
-				return new File(sourcepath).getParentFile().getPath();
-			} else {
-				return null;
-			}
+			var location = PluginLoader.class.getProtectionDomain().getCodeSource().getLocation();
+
+			var codeSource = Path.of(location.toURI());
+
+			return codeSource.resolveSibling("plugins");
+
 		} catch (URISyntaxException e) {
-			logger.error(() -> "Unable to detect source location", e);
-			eventManager.post(CcEvent.EVENT_ALERT);
-			return null;
+			throw new IllegalStateException("Unable to determine plugin directory", e);
 		}
 	}
 
 	public List<Plugin> loadPlugins() {
 		if (plugins == null) {
 			plugins = new ArrayList<>();
+
 			createServiceLoader().forEach(plugins::add);
+
 			plugins = plugins.stream().filter(filterCards()).sorted(new PluginNodeSorter()).toList();
+
 			plugins.forEach(plugin -> {
 				logger.info(() -> "Injecting " + plugin.getName());
-				injector.injectMembers(plugin);
-				initPlugin(plugin);
+
+				try {
+					injector.injectMembers(plugin);
+					logger.debug(() -> "Injected " + plugin.getName());
+
+					initPlugin(plugin);
+					logger.debug(() -> "Initialized " + plugin.getName());
+				} catch (Throwable e) {
+					logger.error(() -> "Failed initializing plugin " + plugin.getName(), e);
+					throw e;
+				}
 			});
+
 			commandsService.propagateCommands();
 		}
+
 		return plugins;
 	}
 
 	private ServiceLoader<Plugin> createServiceLoader() {
-		var jarDirectory = getJarDirectory();
-		if (jarDirectory != null) {
-			var pluginDirectory = Path.of(jarDirectory + "/plugins");
-			logger.debug(() -> "Initializing service loader - jar mode");
-			if (Files.exists(pluginDirectory)) {
-				logger.debug(() -> "PLugins directory found: " + pluginDirectory);
-				try (Stream<URL> urls = Files.list(pluginDirectory).filter(Files::isRegularFile)
-						.filter(path -> path.toString().toLowerCase().endsWith(".jar")).map(this::toURL)) {
-					var urlArray = urls.toArray(URL[]::new);
-					logger.debug(() -> urlArray.length + " jars found");
-					var ucl = new URLClassLoader(urlArray);
-					return ServiceLoader.load(Plugin.class, ucl);
-				} catch (IOException e) {
-					logger.error(() -> "Unable to load plugin jars", e);
-					eventManager.post(CcEvent.EVENT_ALERT);
-				}
-			} else {
-				logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
-			}
+		var pluginDirectory = getPluginDirectory();
+
+		logger.debug(() -> "Initializing plugin module loader: " + pluginDirectory.toAbsolutePath());
+
+		if (!Files.isDirectory(pluginDirectory)) {
+			logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toAbsolutePath());
+
+			return ServiceLoader.load(Plugin.class);
 		}
-		logger.debug(() -> "Initializing service loader - non-jar-mode");
-		return ServiceLoader.load(Plugin.class);
+
+		return createModuleServiceLoader(pluginDirectory);
 	}
 
-	private URL toURL(Path path) {
-		try {
-			return path.toUri().toURL();
-		} catch (MalformedURLException _) {
-			logger.error(() -> "Unable to create ULR for path " + path);
-			return null;
+	private ServiceLoader<Plugin> createModuleServiceLoader(Path pluginDirectory) {
+
+		var parentLayer = ModuleLayer.boot();
+
+		var finder = ModuleFinder.of(pluginDirectory);
+
+		var moduleNames = finder.findAll().stream().map(ref -> ref.descriptor().name()).collect(Collectors.toSet());
+
+		logger.debug(() -> "Plugin modules found: " + moduleNames);
+
+		if (moduleNames.isEmpty()) {
+			return ServiceLoader.load(Plugin.class);
 		}
+
+		var configuration = parentLayer.configuration().resolve(finder, ModuleFinder.of(), moduleNames);
+
+		pluginLayer = parentLayer.defineModulesWithManyLoaders(configuration, ClassLoader.getSystemClassLoader());
+//				.layer();
+
+		logger.debug(() -> "Plugin layer modules: " + pluginLayer.modules());
+
+		return ServiceLoader.load(pluginLayer, Plugin.class);
 	}
 
 	private Predicate<Plugin> filterCards() {
