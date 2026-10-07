@@ -2,6 +2,13 @@
 
 <Configuration status="WARN">
 
+	<Filters>
+		<RegexFilter
+			regex="^Unsupported JavaFX configuration: classes were loaded from 'unnamed module @[^']+'$"
+			onMatch="DENY"
+			onMismatch="NEUTRAL" />
+	</Filters>
+
 	<Appenders>
 		<Console name="ConsoleAppender" target="SYSTEM_OUT">
 			<PatternLayout pattern="%highlight{%d{ABSOLUTE} %-5p %c{1}:} %m%n" disableAnsi="false"/>
