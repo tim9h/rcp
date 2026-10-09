@@ -6,7 +6,7 @@ The application can be extended with plugins. Plugins are JAR files that are dis
 
 ## Requirements
 
-- Java 26
+- Java 27
 - Windows (currently the supported platform)
 
 ## Command-line arguments
