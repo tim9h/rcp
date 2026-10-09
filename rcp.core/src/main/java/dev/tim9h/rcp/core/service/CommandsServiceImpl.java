@@ -11,7 +11,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.util.EventHelper;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.spi.CommandNode;
@@ -41,7 +41,7 @@ public class CommandsServiceImpl implements CommandsService {
 
 	@Override
 	public void propagateCommands() {
-		eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, root.getChildren().toArray()));
+		eventManager.post(new Event(Event.EVENT_CLI_ADD_PROPOSALS, root.getChildren().toArray()));
 	}
 
 	@Override
@@ -100,11 +100,7 @@ public class CommandsServiceImpl implements CommandsService {
 	}
 
 	private void listenAndRunCommands() {
-		root.getChildren().forEach(node -> {
-			if (node.getCommand() != null || node.hasArguments()) {
-				listenAndRunCommands(node);
-			}
-		});
+		root.getChildren().forEach(this::listenAndRunCommands);
 	}
 
 	private void listenAndRunCommands(CommandNode node) {
@@ -114,7 +110,7 @@ public class CommandsServiceImpl implements CommandsService {
 		if (!listenedCommands.add(node.getData().toLowerCase())) {
 			return;
 		}
-		eventManager.listen(node.getData(), payload -> execute(node, payload));
+		eventManager.listenCommand(node.getData(), payload -> execute(node, payload));
 	}
 
 	private void execute(CommandNode node, Object[] payload) {

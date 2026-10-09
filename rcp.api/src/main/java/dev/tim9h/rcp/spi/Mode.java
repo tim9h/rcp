@@ -1,5 +1,7 @@
 package dev.tim9h.rcp.spi;
 
+import java.util.Optional;
+
 public interface Mode {
 
 	public String getName();
@@ -7,10 +9,6 @@ public interface Mode {
 	public void onEnable();
 
 	public void onDisable();
-
-	public default void onCommand(String command, String... args) {
-		//
-	}
 
 	public default void onInit() {
 		//
@@ -20,10 +18,8 @@ public interface Mode {
 		return true;
 	}
 
-	public default TreeNode<String> getCommandTree() {
-		var node = new TreeNode<>(getName());
-		node.add("off");
-		return node;
+	public default Optional<CommandNode> getModeCommands() {
+		return Optional.empty();
 	}
 
 }

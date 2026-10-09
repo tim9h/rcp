@@ -63,16 +63,16 @@ public class CommandBuilder {
 		if (stack.size() > 1) {
 			stack.pop();
 		}
-
 		return this;
 	}
 
 	public Optional<CommandNode> build() {
-		if (root.getChildren().isEmpty()) {
-			return Optional.empty();
+		if (stack.isEmpty()) {
+			throw new IllegalStateException("No command has been defined.");
 		}
-		validate(root);
-		return Optional.of(root);
+		var rootCommand = stack.getLast();
+		validate(rootCommand);
+		return Optional.of(rootCommand);
 	}
 
 	public CommandNode getRoot() {
@@ -94,6 +94,19 @@ public class CommandBuilder {
 		for (var child : node.getChildren()) {
 			validate(child);
 		}
+	}
+
+	public CommandBuilder mode(String name, Consumer<String> enableAction) {
+		return command(name, enableAction);
+	}
+
+	public CommandNode getCommand(String name) {
+		var node = root.get(name);
+		if (node == null) {
+			throw new IllegalStateException("Command not found: " + name);
+		}
+		validate(node);
+		return node;
 	}
 
 }

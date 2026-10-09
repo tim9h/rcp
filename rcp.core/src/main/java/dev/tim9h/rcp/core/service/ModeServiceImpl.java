@@ -16,11 +16,12 @@ import com.google.inject.Singleton;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.windows.IdleChangeListener;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
+import dev.tim9h.rcp.spi.CommandNode;
 import dev.tim9h.rcp.spi.Mode;
 import javafx.application.Platform;
 import javafx.scene.media.Media;
@@ -75,10 +76,8 @@ public class ModeServiceImpl implements ModeService {
 	@Override
 	public void initDefaultModes() {
 		var modes = Arrays.asList(createAlertMode(), createDndMode(), createAfkMode());
-		modes.forEach(mode -> {
-			initMode(mode);
-			eventManager.post(new CcEvent(CcEvent.EVENT_CLI_ADD_PROPOSALS, mode.getCommandTree()));
-		});
+
+		modes.forEach(this::initMode);
 	}
 
 	private Mode createAlertMode() {
@@ -128,8 +127,8 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
-				eventManager.post(new CcEvent("logiled", "off"));
-				eventManager.post(new CcEvent("stop"));
+				eventManager.post(new Event("logiled", "off"));
+				eventManager.post(new Event("stop"));
 				eventManager.echo("DND enabled");
 			}
 
@@ -218,7 +217,7 @@ public class ModeServiceImpl implements ModeService {
 			} else {
 				ephemeralModes.add(mode);
 			}
-			eventManager.post(new CcEvent("MODE_" + mode.toUpperCase(), "on"));
+			eventManager.post(new Event("MODE_" + mode.toUpperCase(), "on"));
 			return true;
 		}
 		return false;
@@ -234,7 +233,7 @@ public class ModeServiceImpl implements ModeService {
 			if (!"idle".equals(mode)) {
 				logger.info(() -> String.format("Mode %s disabled", mode));
 			}
-			eventManager.post(new CcEvent("MODE_" + mode.toUpperCase(), "off"));
+			eventManager.post(new Event("MODE_" + mode.toUpperCase(), "off"));
 			return true;
 		}
 		return false;
@@ -244,18 +243,52 @@ public class ModeServiceImpl implements ModeService {
 	public void initMode(Mode mode) {
 		if (isModeActive(mode.getName())) {
 			mode.onEnable();
-			eventManager.post(new CcEvent(mode.getName()));
+			eventManager.post(new Event(mode.getName()));
 		}
-		eventManager.listen(mode.getName(), args -> {
-			if (args == null) {
-				activateMode(mode);
-			} else if ("off".equals(args[0])) {
-				disableMode(mode);
-			} else {
-				executeModeCommand(mode, args);
-			}
-		});
+		commandsService.add(createModeCommand(mode));
 		mode.onInit();
+	}
+
+	private CommandNode createModeCommand(Mode mode) {
+		var modeCommand = mode.getModeCommands().orElseGet(() -> new CommandNode(mode.getName()));
+		modeCommand.setCommand(_ -> activateMode(mode));
+		if (modeCommand.get("off") == null) {
+			modeCommand.add(new CommandNode("off", false, _ -> disableMode(mode)));
+		}
+		prepareModeCommands(mode, modeCommand);
+		return modeCommand;
+	}
+
+	private void prepareModeCommands(Mode mode, CommandNode node) {
+		for (var child : node.getChildren()) {
+			if ("off".equalsIgnoreCase(child.getData())) {
+				continue;
+			}
+			wrapCommands(mode, child);
+		}
+	}
+
+	private void wrapCommands(Mode mode, CommandNode node) {
+		var command = node.getCommand();
+		if (command != null) {
+			node.setCommand(arg -> executeModeCommand(mode, () -> command.accept(arg)));
+		}
+		var argumentCommand = node.getArgumentCommand();
+		if (argumentCommand != null) {
+			node.setArgumentCommand(arg -> executeModeCommand(mode, () -> argumentCommand.accept(arg)));
+		}
+		for (var child : node.getChildren()) {
+			if (!"off".equalsIgnoreCase(child.getData())) {
+				wrapCommands(mode, child);
+			}
+		}
+	}
+
+	private void executeModeCommand(Mode mode, Runnable command) {
+		if (!mode.requiresInitialization()) {
+			enableMode(mode.getName());
+		}
+		command.run();
 	}
 
 	private void activateMode(Mode mode) {
@@ -271,18 +304,6 @@ public class ModeServiceImpl implements ModeService {
 			mode.onDisable();
 		} else {
 			eventManager.echo(String.format("Not in %s mode", mode.getName()));
-		}
-	}
-
-	private void executeModeCommand(Mode mode, Object[] args) {
-		if (!mode.requiresInitialization()) {
-			enableMode(mode.getName());
-		}
-		if (args.length > 1) {
-			var commandParams = args.length > 1 ? (String[]) Arrays.copyOfRange(args, 1, args.length) : new String[] {};
-			mode.onCommand((String) args[0], commandParams);
-		} else {
-			mode.onCommand((String) args[0]);
 		}
 	}
 

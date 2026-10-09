@@ -23,8 +23,9 @@ import com.google.inject.Inject;
 import dev.tim9h.rcp.cli.query.InputConverter;
 import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.CcTextField;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
+import dev.tim9h.rcp.event.EventType;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandNode;
@@ -77,20 +78,19 @@ public class CliView implements Plugin {
 	@Override
 	public void initBus(EventManager em) {
 		Plugin.super.initBus(em);
-		em.listen(CcEvent.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
-		em.listen(CcEvent.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
-		em.listen(CcEvent.EVENT_CLI_ADD_PROPOSALS, data -> {
+		em.listen(Event.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
+		em.listen(Event.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
+		em.listen(Event.EVENT_CLI_ADD_PROPOSALS, data -> {
 			Arrays.stream(data).forEach(t -> {
-				if (t instanceof CommandNode cn) {
-					tfiInput.addCommand(cn);
-				} else if (t instanceof TreeNode<?> tn) {
-					tfiInput.addCommand(tn.toCommandNode());
-				} else {
+				switch (t) {
+				case CommandNode cn -> tfiInput.addCommand(cn);
+				case TreeNode<?> tn -> tfiInput.addCommand(tn.toCommandNode());
+				default ->
 					logger.warn(() -> "Received unexpected type for command proposal: " + t.getClass().getName());
 				}
 			});
 		});
-		em.listen(CcEvent.EVENT_CLI_RESPONSE_COPY, _ -> copyResponseToClipboard());
+		em.listen(Event.EVENT_CLI_RESPONSE_COPY, _ -> copyResponseToClipboard());
 	}
 
 	private void copyResponseToClipboard() {
@@ -176,12 +176,8 @@ public class CliView implements Plugin {
 	private void submitInput(String query) {
 		if (query.startsWith(CcTextField.COMMAND_PREFIX)) {
 			var split = query.substring(1).trim().split(" ");
-			if (split.length == 1) {
-				eventManager.post(new CcEvent(split[0]));
-			} else {
-				Object[] payload = Arrays.copyOfRange(split, 1, split.length);
-				eventManager.post(new CcEvent(split[0], payload));
-			}
+			Object[] payload = Arrays.copyOfRange(split, 1, split.length);
+			eventManager.post(new Event(split[0], EventType.COMMAND, payload));
 		} else {
 			openWebSearch(query);
 		}
@@ -196,10 +192,9 @@ public class CliView implements Plugin {
 				Desktop.getDesktop().browse(new URI(url));
 			} catch (IOException | URISyntaxException e) {
 				logger.warn(() -> "Unable to open browser", e);
-				eventManager.post(CcEvent.EVENT_ALERT);
+				eventManager.post(Event.EVENT_ALERT);
 			}
 		}
-
 	}
 
 	@Override
