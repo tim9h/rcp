@@ -2,9 +2,6 @@ package dev.tim9h.rcp.controls;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -12,13 +9,13 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
-import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.shape.Rectangle;
@@ -44,7 +41,7 @@ public class AnimatedLabel extends FlowPane {
 	private Settings settings;
 
 	private Duration fadeDuration;
-	
+
 	private Duration typeInterval;
 
 	private List<String> animationStyles;
@@ -55,13 +52,11 @@ public class AnimatedLabel extends FlowPane {
 
 	private Timeline timeline;
 
-	private AtomicInteger charIndex = new AtomicInteger(0);
-
-	private Timer timer;
-
 	private TextFlow textFlow;
 
 	private Rectangle clip;
+
+	private PauseTransition hideDelay;
 
 	@InjectLogger
 	private Logger logger;
@@ -69,7 +64,7 @@ public class AnimatedLabel extends FlowPane {
 	@Inject
 	public AnimatedLabel(Settings settings, EventManager eventManager) {
 		this.settings = settings;
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> clearSettingsCache());
+		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> clearSettingsCache());
 
 		fadeIn = new FadeTransition(getAnimationDuration(), this);
 		fadeIn.setFromValue(0.0);
@@ -80,7 +75,8 @@ public class AnimatedLabel extends FlowPane {
 		fadeOut.setFromValue(1.0);
 		fadeOut.setToValue(0.0);
 
-		timer = new Timer("labelHidingTimer");
+		hideDelay = new PauseTransition();
+		hideDelay.setOnFinished(_ -> hideText());
 
 		textFlow = new TextFlow();
 		textFlow.setTextAlignment(TextAlignment.CENTER);
@@ -113,19 +109,19 @@ public class AnimatedLabel extends FlowPane {
 		if (fadeDuration == null) {
 			try {
 				fadeDuration = Duration.millis(settings.getDouble(SETTING_FADE_ANIMATION_DURATION).doubleValue());
-			} catch (NullPointerException e) {
+			} catch (NullPointerException _) {
 				settings.addSetting(SETTING_FADE_ANIMATION_DURATION, "500");
 				return getAnimationDuration();
 			}
 		}
 		return fadeDuration;
 	}
-	
+
 	private Duration getTypeInterval() {
 		if (typeInterval == null) {
 			try {
 				typeInterval = Duration.millis(settings.getDouble(SETTING_TYPE_ANIMATION_INTERVAL).doubleValue());
-			} catch (NullPointerException e) {
+			} catch (NullPointerException _) {
 				settings.addSetting(SETTING_TYPE_ANIMATION_INTERVAL, "10");
 				return getTypeInterval();
 			}
@@ -146,48 +142,71 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showText(String text) {
-		if (!getText().equals(text)) {
-			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
-				if (getAnimationStyles().contains(ANIMATION_FADE)) {
-					logger.debug(() -> "Animation Fade for text: " + text);
-					fadeIn.play();
-				}
-				if (getAnimationStyles().contains(ANIMATION_TYPING)) {
-					logger.debug(() -> "Animation Type for text: " + text);
-					typeText(text);
-				}
-				if (getAnimationStyles().isEmpty()) {
-					logger.debug(() -> "No supported animation for text: " + text);
-					setText(text);
-				}
-			}
-			logger.debug(() -> "Animations disabled for text: " + text);
+		if (getText().equals(text)) {
+			return;
+		}
+
+		// Cancel any pending hide and an existing fade-out.
+		hideDelay.stop();
+		fadeOut.stop();
+
+		if (!settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
+			timeline.stop();
+			setOpacity(1);
+			setText(text);
+			return;
+		}
+
+		var styles = getAnimationStyles();
+
+		if (styles.contains(ANIMATION_FADE) && getOpacity() < 1) {
+			fadeIn.playFromStart();
+		}
+
+		if (styles.contains(ANIMATION_TYPING)) {
+			typeText(text);
+		} else {
+			timeline.stop();
 			setText(text);
 		}
 	}
 
 	private void typeText(String text) {
-		if (!getAnimationStyles().contains(ANIMATION_FADE)) {
-			setOpacity(1);
-		}
 		timeline.stop();
-		if (Animation.Status.STOPPED.equals(timeline.getStatus())) {
-			timeline.getKeyFrames().clear();
-			var stringbuilder = new StringBuilder();
-			charIndex.set(0);
-			timeline.getKeyFrames().add(new KeyFrame(getTypeInterval(), _ -> {
-				if (charIndex.get() < text.length()) {
-					stringbuilder.append(text.charAt(charIndex.get()));
-					setText(stringbuilder.toString());
-					charIndex.incrementAndGet();
-				}
-			}));
-			timeline.setCycleCount(text.length());
-			timeline.play();
-		} else {
-			logger.warn(() -> "Unable to animate text: " + text + " because timeline is not stopped");
+		timeline.getKeyFrames().clear();
+
+		var visibleText = new StringBuilder(getText());
+		var animationLength = Math.max(visibleText.length(), text.length());
+
+		if (animationLength == 0) {
+			setText(StringUtils.EMPTY);
+			return;
 		}
 
+		int[] index = { 0 };
+
+		timeline.getKeyFrames().add(new KeyFrame(getTypeInterval(), _ -> {
+			var i = index[0];
+
+			if (i < text.length()) {
+				// Replace existing characters or append new ones.
+				if (i < visibleText.length()) {
+					visibleText.setCharAt(i, text.charAt(i));
+				} else {
+					visibleText.append(text.charAt(i));
+				}
+			} else if (visibleText.length() > text.length()) {
+				// Remove leftover characters one at a time.
+				visibleText.deleteCharAt(visibleText.length() - 1);
+			}
+
+			setText(visibleText.toString());
+			index[0]++;
+		}));
+
+		timeline.setCycleCount(animationLength);
+		timeline.setOnFinished(_ -> setText(text));
+		timeline.playFromStart();
 	}
 
 	public void showText(List<Text> texts) {
@@ -243,49 +262,32 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showFadingText(int decaytime, String text) {
-		logger.debug(() -> "Showing fading text: " + text + " for " + decaytime + "ms with timer " + timer);
-		logger.debug(() -> "Trying to cancel timer " + timer);
-		timer.cancel();
-		var purge = timer.purge();
-		logger.debug(() -> "Purged " + purge + " tasks for timer " + timer);
+		hideDelay.stop();
+
 		showText(text);
-		timer = new Timer(this.getClass().getTypeName() + "HidingTimer");
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				hideText();
-			}
-		}, decaytime);
+
+		hideDelay.setDuration(Duration.millis(decaytime));
+		hideDelay.playFromStart();
 	}
 
 	public void showFadingText(int decaytime, Text... texts) {
-		logger.debug(() -> "Showing fading texts: " + texts + " for " + decaytime + "ms with timer " + timer);
-		logger.debug(() -> "Trying to cancel timer " + timer);
-		timer.cancel();
-		var purge = timer.purge();
-		logger.debug(() -> "Purged " + purge + " tasks for timer " + timer);
-		showText(texts);
-		timer = new Timer(this.getClass().getTypeName() + "HidingTimer");
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				hideText();
-			}
-		}, decaytime);
+		var text = Arrays.stream(texts).map(Text::getText).collect(Collectors.joining());
+		showFadingText(decaytime, text);
 	}
 
 	public void hideText() {
-		logger.debug(() -> "Hiding text " + getText());
-		if (!getText().isBlank()) {
-			if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
-				logger.debug(() -> "Fading out text " + getText());
-				fadeOut.play();
-				fadeOut.setOnFinished(_ -> setText(StringUtils.EMPTY));
-			} else {
-				setText(StringUtils.EMPTY);
-			}
+		if (getText().isBlank()) {
+			return;
+		}
+
+		timeline.stop();
+		fadeIn.stop();
+
+		if (settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
+			fadeOut.setOnFinished(_ -> setText(StringUtils.EMPTY));
+			fadeOut.playFromStart();
 		} else {
-			logger.debug(() -> "Not hiding text, because it is already empty");
+			setText(StringUtils.EMPTY);
 		}
 	}
 
