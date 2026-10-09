@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import javafx.scene.Node;
 
@@ -39,9 +39,9 @@ public interface Plugin {
 	}
 
 	public default void initBus(EventManager eventManager) {
-		eventManager.listen(CcEvent.EVENT_SHOWN, _ -> onShown());
-		eventManager.listen(CcEvent.EVENT_HIDDEN, _ -> onHidden());
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> onSettingsChanged());
+		eventManager.listen(Event.EVENT_SHOWN, _ -> onShown());
+		eventManager.listen(Event.EVENT_HIDDEN, _ -> onHidden());
+		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> onSettingsChanged());
 	}
 
 	public default void onShown() {

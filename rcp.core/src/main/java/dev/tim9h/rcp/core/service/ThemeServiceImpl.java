@@ -17,7 +17,7 @@ import com.google.inject.Singleton;
 import dev.tim9h.rcp.controls.tray.MenuItemData;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.TrayManager;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
@@ -111,14 +111,14 @@ public class ThemeServiceImpl implements ThemeService {
 	private void updateWindowsBackdropEffects(String theme) {
 		var darkThemeNew = isDarkTheme(theme);
 		if (darkTheme == null) {
-			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, darkThemeNew ? "dark" : "light");
+			eventManager.post(Event.EVENT_THEME_MODE_CHANGED, darkThemeNew ? "dark" : "light");
 			darkTheme = darkThemeNew;
 			return;
 		}
 		if (darkTheme && !darkThemeNew) {
-			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, "light");
+			eventManager.post(Event.EVENT_THEME_MODE_CHANGED, "light");
 		} else if (!darkTheme && darkThemeNew) {
-			eventManager.post(CcEvent.EVENT_THEME_MODE_CHANGED, "dark");
+			eventManager.post(Event.EVENT_THEME_MODE_CHANGED, "dark");
 		}
 		darkTheme = darkThemeNew;
 	}
@@ -150,7 +150,7 @@ public class ThemeServiceImpl implements ThemeService {
 				}
 			} catch (URISyntaxException e) {
 				logger.error(() -> "Unable to getFilenames for directory " + directory + " in IDE mode", e);
-				eventManager.post(CcEvent.EVENT_ALERT);
+				eventManager.post(Event.EVENT_ALERT);
 			}
 		}
 		return filenames;
@@ -171,7 +171,7 @@ public class ThemeServiceImpl implements ThemeService {
 			}
 		} catch (IOException e) {
 			logger.error(() -> "Unable to get file names for directory " + directory + " in Jar mode", e);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		}
 		return filenames;
 	}
@@ -182,7 +182,7 @@ public class ThemeServiceImpl implements ThemeService {
 		var items = Arrays.stream(themes)
 				.map(theme -> new MenuItemData(StringUtils.capitalize(theme), () -> Platform.runLater(() -> {
 					setTheme(theme, true);
-					eventManager.post(CcEvent.EVENT_THEME_CHANGED, theme);
+					eventManager.post(Event.EVENT_THEME_CHANGED, theme);
 				}), true, settings.getString(SettingsConsts.THEME).equalsIgnoreCase(theme))).toList();
 		trayManager.createSubMenu("Theme", items, true);
 	}

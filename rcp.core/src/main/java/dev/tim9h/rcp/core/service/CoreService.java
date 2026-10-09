@@ -24,7 +24,7 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.util.TrayManager;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
@@ -104,7 +104,7 @@ public class CoreService {
 						Desktop.getDesktop().open(new File(fileName));
 					} catch (IOException e) {
 						logger.error(() -> "Unable to open log file", e);
-						eventManager.post(CcEvent.EVENT_ALERT);
+						eventManager.post(Event.EVENT_ALERT);
 					}
 				});
 	}
@@ -117,7 +117,7 @@ public class CoreService {
 					.toString();
 			if (Strings.CS.endsWith(sourcepath, ".jar")) {
 				new ProcessBuilder(javaBin, "-jar", sourcepath).start();
-				eventManager.post(new CcEvent(CcEvent.EVENT_RESTARTING));
+				eventManager.post(new Event(Event.EVENT_RESTARTING));
 				shutdownWithFeedback();
 			} else {
 				logger.warn(() -> "Unable to restart application: Not in jar mode");
@@ -126,7 +126,7 @@ public class CoreService {
 			}
 		} catch (IOException | URISyntaxException e) {
 			logger.error(() -> "Unable to restart application", e);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 			eventManager.showToast(settings.getAppTitle(), "Unable to restart: " + e.getMessage());
 		}
 	}
@@ -150,7 +150,7 @@ public class CoreService {
 		return CompletableFuture.runAsync(() -> {
 			try {
 				logger.debug(() -> "Starting shutdown cleanup");
-				eventManager.post(new CcEvent(CcEvent.EVENT_CLOSING));
+				eventManager.post(new Event(Event.EVENT_CLOSING));
 				logger.debug(() -> "Shutting down plugins");
 				pluginLoader.getPlugins().forEach(plugin -> {
 					try {
@@ -160,7 +160,7 @@ public class CoreService {
 					}
 				});
 				tray.removeTrayIcon();
-				eventManager.post(CcEvent.EVENT_CLOSING_FINISHED);
+				eventManager.post(Event.EVENT_CLOSING_FINISHED);
 				logger.debug(() -> "Plugin cleanup complete");
 			} catch (Exception error) {
 				logger.error(() -> "Shutdown cleanup failed", error);

@@ -13,12 +13,11 @@ import com.google.inject.Injector;
 
 import dev.tim9h.collections.LimitedIterableStack;
 import dev.tim9h.rcp.controls.utils.UserInput;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandNode;
-import javafx.event.Event;
 import javafx.scene.control.IndexRange;
 import javafx.scene.control.TextField;
 import javafx.scene.input.ContextMenuEvent;
@@ -103,12 +102,12 @@ public class CcTextField extends TextField {
 	}
 
 	private void disableContextMenu() {
-		addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, Event::consume);
+		addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, javafx.event.Event::consume);
 	}
 
 	private void handleKeyPressed(KeyEvent event) {
 		if (event.getCode() == KeyCode.ENTER && event.isShiftDown()) {
-			eventManager.post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE_COPY));
+			eventManager.post(new Event(Event.EVENT_CLI_RESPONSE_COPY));
 		} else if (event.getCode() == KeyCode.ENTER && submitAction != null) {
 			logger.debug(() -> "submitting");
 			inputHistory.push(textProperty().getValue());
@@ -216,7 +215,7 @@ public class CcTextField extends TextField {
 			}
 		}
 		return node != null
-				? node.stream().map(tree -> tree.getData())
+				? node.stream().map(CommandNode::getData)
 						.filter(n -> n.toLowerCase().startsWith(input.getQuery().toLowerCase())).toList()
 				: Collections.emptyList();
 	}

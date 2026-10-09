@@ -29,7 +29,7 @@ import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.ModeService;
 import dev.tim9h.rcp.core.util.PluginNodeSorter;
 import dev.tim9h.rcp.core.util.TrayManager;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
@@ -149,7 +149,7 @@ public class PluginLoader {
 			}
 		} catch (URISyntaxException e) {
 			logger.error(() -> "Unable to detect source location", e);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 			return null;
 		}
 	}
@@ -184,7 +184,7 @@ public class PluginLoader {
 					return ServiceLoader.load(Plugin.class, ucl);
 				} catch (IOException e) {
 					logger.error(() -> "Unable to load plugin jars", e);
-					eventManager.post(CcEvent.EVENT_ALERT);
+					eventManager.post(Event.EVENT_ALERT);
 				}
 			} else {
 				logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
@@ -231,10 +231,7 @@ public class PluginLoader {
 		try {
 			plugin.init();
 			plugin.initBus(eventManager);
-			plugin.getModes().ifPresent(modes -> modes.forEach(mode -> {
-				modeService.initMode(mode);
-				commandsService.add(mode.getCommandTree());
-			}));
+			plugin.getModes().ifPresent(modes -> modes.forEach(modeService::initMode));
 			plugin.getModelessCommands().ifPresent(commandsService::add);
 			plugin.getCommands().ifPresent(commandsService::add);
 			plugin.getMenuItems().ifPresent(menuItems -> {
@@ -244,7 +241,7 @@ public class PluginLoader {
 			settings.addSettings(plugin.getSettingsContributions());
 		} catch (Exception e) {
 			logger.error(() -> "Unable to initialize plugin " + plugin.getName(), e);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 

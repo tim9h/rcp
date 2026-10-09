@@ -23,7 +23,7 @@ import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.BasicModule;
 import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
@@ -368,7 +368,7 @@ public class UiApplication extends Application {
 				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 			}
 
-			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
+			eventManager.post(new Event(Event.EVENT_SHOWN));
 			stage.requestFocus();
 			return;
 		}
@@ -388,7 +388,7 @@ public class UiApplication extends Application {
 			if (blurEnabled) {
 				WindowsBackdrop.roundCorners(stage, APPLICATION_CORNERS);
 			}
-			eventManager.post(new CcEvent(CcEvent.EVENT_SHOWN));
+			eventManager.post(new Event(Event.EVENT_SHOWN));
 			stage.requestFocus();
 		});
 	}
@@ -401,7 +401,7 @@ public class UiApplication extends Application {
 			stage.setY(screenTop);
 			makeStageInvisible();
 
-			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
+			eventManager.post(new Event(Event.EVENT_HIDDEN));
 			if (fromHotkey) {
 				unfocusStage();
 			}
@@ -422,7 +422,7 @@ public class UiApplication extends Application {
 				WindowsBackdrop.clearRoundedCorners(stage);
 			}
 			makeStageInvisible();
-			eventManager.post(new CcEvent(CcEvent.EVENT_HIDDEN));
+			eventManager.post(new Event(Event.EVENT_HIDDEN));
 			if (fromHotkey) {
 				unfocusStage();
 			}
@@ -460,7 +460,7 @@ public class UiApplication extends Application {
 			logger.info(() -> "Plugin UI loaded: " + plugin.getName());
 		} catch (IOException e) {
 			logger.error(() -> "Unable to initialize plugin UI for " + plugin.getName(), e);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 
@@ -471,12 +471,12 @@ public class UiApplication extends Application {
 	}
 
 	private void subscribeToUiEvents() {
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> reposition());
-		eventManager.listen(CcEvent.EVENT_THEME_CHANGED, _ -> {
+		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> reposition());
+		eventManager.listen(Event.EVENT_THEME_CHANGED, _ -> {
 			setExpanded(true, false);
 			stage.requestFocus();
 		});
-		eventManager.listen(CcEvent.EVENT_THEME_MODE_CHANGED, mode -> {
+		eventManager.listen(Event.EVENT_THEME_MODE_CHANGED, mode -> {
 			var s = StringUtils.join(mode);
 			if (blurEnabled) {
 				logger.info(() -> "Switching backdrop tint to " + s);
@@ -534,7 +534,7 @@ public class UiApplication extends Application {
 	private void registerExceptionHandler() {
 		Thread.currentThread().setUncaughtExceptionHandler((_, exception) -> {
 			logger.error(() -> "Unhandled JavaFX exception", exception);
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		});
 	}
 

@@ -14,7 +14,7 @@ import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.CcTextField;
 import dev.tim9h.rcp.controls.utils.DelayedRunner;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.application.Platform;
@@ -41,7 +41,7 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	private void initBus() {
-		eventManager.listen(CcEvent.EVENT_SETTINGS_CHANGED, _ -> initSettings());
+		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> initSettings());
 	}
 
 	private void initSettings() {

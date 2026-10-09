@@ -18,8 +18,9 @@ import com.google.common.collect.Multimap;
 import com.google.common.eventbus.EventBus;
 import com.google.inject.Singleton;
 
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
+import dev.tim9h.rcp.event.EventType;
 import dev.tim9h.rcp.logging.InjectLogger;
 import javafx.application.Platform;
 import javafx.scene.text.Text;
@@ -71,18 +72,23 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
-	public void post(CcEvent event) {
+	public void post(Event event) {
 		bus.post(event);
 	}
 
 	@Override
 	public void post(String eventName) {
-		post(new CcEvent(eventName));
+		post(new Event(eventName));
 	}
 
 	@Override
 	public void post(String eventName, String payload) {
-		post(new CcEvent(eventName, payload));
+		post(new Event(eventName, payload));
+	}
+
+	@Override
+	public void postCommand(String commandName, Object... payload) {
+		post(new Event(commandName, EventType.COMMAND, payload));
 	}
 
 	@Override
@@ -97,8 +103,19 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
+	public void listenCommand(String commandName, Consumer<Object[]> action) {
+		var subscription = (EventListener) event -> {
+			if (event.type() == EventType.COMMAND && Strings.CI.equals(event.name(), commandName)) {
+				action.accept(event.payload());
+			}
+		};
+		subscriptions.put("COMMAND:" + commandName, subscription);
+		bus.register(subscription);
+	}
+
+	@Override
 	public void echo(String message) {
-		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, StringUtils.EMPTY, message));
+		post(new Event(Event.EVENT_CLI_RESPONSE, StringUtils.EMPTY, message));
 	}
 
 	@Override
@@ -108,7 +125,7 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void echo(String details, String response) {
-		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, details, response));
+		post(new Event(Event.EVENT_CLI_RESPONSE, details, response));
 	}
 
 	@Override
@@ -118,12 +135,12 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void echo(List<Text> details, List<Text> response) {
-		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, details, response));
+		post(new Event(Event.EVENT_CLI_RESPONSE, details, response));
 	}
 
 	@Override
 	public void clear() {
-		post(new CcEvent(CcEvent.EVENT_CLI_RESPONSE, StringUtils.EMPTY, StringUtils.EMPTY));
+		post(new Event(Event.EVENT_CLI_RESPONSE, StringUtils.EMPTY, StringUtils.EMPTY));
 	}
 
 	@Override
@@ -143,7 +160,7 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void showToast(String title, String message) {
-		showToast(title, message);
+		post(new Event(Event.EVENT_TOAST, title, message));
 	}
 
 	@Override
@@ -153,7 +170,7 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void textToSpeech(String text) {
-		post(new CcEvent(CcEvent.EVENT_TTS, text));
+		post(new Event(Event.EVENT_TTS, text));
 	}
 
 	@Override
@@ -163,7 +180,7 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void say(String text) {
-		post(new CcEvent(CcEvent.EVENT_SAY, text));
+		post(new Event(Event.EVENT_SAY, text));
 
 	}
 
@@ -179,7 +196,7 @@ public class DefaultEventManager implements EventManager {
 		if (payload != null) {
 			System.arraycopy(payload, 0, eventPayload, 1, payload.length);
 		}
-		post(new CcEvent(eventName, eventPayload));
+		post(new Event(eventName, eventPayload));
 	}
 
 	@Override
@@ -203,7 +220,7 @@ public class DefaultEventManager implements EventManager {
 			Thread.currentThread().interrupt();
 			responseHandlers.remove(correlationId);
 			logger.error(() -> "Interrupted while waiting for response with correlation ID: " + correlationId, e);
-			post(CcEvent.EVENT_ALERT);
+			post(Event.EVENT_ALERT);
 			return new Object[0];
 		}
 	}

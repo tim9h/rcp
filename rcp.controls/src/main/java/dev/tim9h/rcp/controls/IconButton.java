@@ -2,7 +2,7 @@ package dev.tim9h.rcp.controls;
 
 import com.google.inject.Inject;
 
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -37,7 +37,7 @@ public class IconButton extends StackPane {
 
 	public void setOnAction(EventHandler<ActionEvent> value) {
 		button.setOnAction(value);
-		button.setOnMouseReleased(_ -> eventManager.post(new CcEvent(CcEvent.EVENT_CLI_REQUEST_FOCUS)));
+		button.setOnMouseReleased(_ -> eventManager.post(new Event(Event.EVENT_CLI_REQUEST_FOCUS)));
 	}
 
 	public void bindLabel(ObservableValue<String> label) {

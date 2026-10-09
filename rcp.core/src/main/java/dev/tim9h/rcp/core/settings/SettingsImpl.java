@@ -28,7 +28,7 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
-import dev.tim9h.rcp.event.CcEvent;
+import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
@@ -75,7 +75,7 @@ public class SettingsImpl implements Settings {
 				Files.createFile(propertiesPath);
 			} catch (IOException e) {
 				logger.error(() -> "Unable to create properties file: " + e.getMessage());
-				eventManager.post(CcEvent.EVENT_ALERT);
+				eventManager.post(Event.EVENT_ALERT);
 			}
 		}
 
@@ -83,7 +83,7 @@ public class SettingsImpl implements Settings {
 			properties.load(inputStream);
 		} catch (IOException e) {
 			logger.error(() -> "Unable to load properties: " + e.getMessage());
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 
@@ -92,10 +92,10 @@ public class SettingsImpl implements Settings {
 		logger.debug(() -> "Updating persisted properties");
 		try (OutputStream outputStream = Files.newOutputStream(propertiesPath)) {
 			properties.store(outputStream, null);
-			eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
+			eventManager.post(new Event(Event.EVENT_SETTINGS_CHANGED));
 		} catch (IOException e) {
 			logger.error(() -> "Unable to persist properties in " + propertiesPath.toString() + ": " + e.getMessage());
-			eventManager.post(CcEvent.EVENT_ALERT);
+			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 
@@ -226,7 +226,7 @@ public class SettingsImpl implements Settings {
 					new ProcessBuilder("cmd", "/c", "start", "/wait", "notepad", getSettingsFile().getAbsolutePath())
 							.start().waitFor();
 					loadProperties();
-					eventManager.post(new CcEvent(CcEvent.EVENT_SETTINGS_CHANGED));
+					eventManager.post(new Event(Event.EVENT_SETTINGS_CHANGED));
 				} catch (InterruptedException | IOException e) {
 					logger.warn(() -> "Unable to open settings file", e);
 					Thread.currentThread().interrupt();

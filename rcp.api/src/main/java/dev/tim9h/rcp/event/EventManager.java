@@ -7,47 +7,51 @@ import javafx.scene.text.Text;
 
 public interface EventManager {
 
-	public void post(CcEvent event);
+	void post(Event event);
 
-	public void post(String eventName);
+	void post(String eventName);
 
-	public void post(String eventName, String payload);
+	void postCommand(String commandName, Object... payload);
 
-	public void listen(String eventName, Consumer<Object[]> action);
+	void post(String eventName, String payload);
 
-	public void unsubscribe(String eventName);
+	void listen(String eventName, Consumer<Object[]> action);
 
-	public void unsubscribe(String eventName, Object subscriber);
+	void listenCommand(String commandName, Consumer<Object[]> action);
 
-	public void echo(String response);
+	void unsubscribe(String eventName);
 
-	public void echo(String details, String response);
+	void unsubscribe(String eventName, Object subscriber);
 
-	public void echoAsync(String response);
+	void echo(String response);
 
-	public void echoAsync(String details, String response);
+	void echo(String details, String response);
 
-	public void echo(List<Text> details, List<Text> response);
+	void echoAsync(String response);
 
-	public void clear();
+	void echoAsync(String details, String response);
 
-	public void clearAsync();
+	void echo(List<Text> details, List<Text> response);
 
-	public void showWaitingIndicator();
+	void clear();
 
-	public void showWaitingIndicatorAsync();
+	void clearAsync();
 
-	public void showToast(String title, String message);
+	void showWaitingIndicator();
 
-	public void showToastAsync(String title, String message);
+	void showWaitingIndicatorAsync();
 
-	public void textToSpeech(String text);
+	void showToast(String title, String message);
 
-	public void textToSpeechAsync(String text);
+	void showToastAsync(String title, String message);
 
-	public void say(String text);
+	void textToSpeech(String text);
 
-	public void sayAsync(String text);
+	void textToSpeechAsync(String text);
+
+	void say(String text);
+
+	void sayAsync(String text);
 
 	/**
 	 * Post a request event with correlation ID for request/response pattern
@@ -56,7 +60,7 @@ public interface EventManager {
 	 * @param correlationId unique ID to correlate requests and responses
 	 * @param payload       optional payload
 	 */
-	public void postRequest(String eventName, String correlationId, Object... payload);
+	void postRequest(String eventName, String correlationId, Object... payload);
 
 	/**
 	 * Listen for a response event with the given correlation ID (blocks with
@@ -75,6 +79,6 @@ public interface EventManager {
 	 * @param correlationId unique ID to correlate requests and responses
 	 * @param payload       response payload
 	 */
-	public void postResponse(String correlationId, Object... payload);
+	void postResponse(String correlationId, Object... payload);
 
 }
