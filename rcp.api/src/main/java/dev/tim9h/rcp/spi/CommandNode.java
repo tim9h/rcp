@@ -89,8 +89,7 @@ public class CommandNode {
 
 	public CommandNode add(CommandNode... nodes) {
 		for (var node : nodes) {
-			node.setParent(this);
-			this.children.add(node);
+			add(node);
 		}
 		return this;
 	}
@@ -144,7 +143,7 @@ public class CommandNode {
 
 	@Override
 	public String toString() {
-		return (String) data + (children.isEmpty() ? StringUtils.EMPTY : (StringUtils.SPACE + children));
+		return data + (children.isEmpty() ? StringUtils.EMPTY : (StringUtils.SPACE + children));
 	}
 
 	public Stream<CommandNode> stream() {

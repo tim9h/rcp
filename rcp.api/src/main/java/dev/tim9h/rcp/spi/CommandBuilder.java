@@ -67,12 +67,12 @@ public class CommandBuilder {
 	}
 
 	public Optional<CommandNode> build() {
-		if (stack.isEmpty()) {
-			throw new IllegalStateException("No command has been defined.");
+		if (root.getChildren().isEmpty()) {
+			return Optional.empty();
 		}
-		var rootCommand = stack.getLast();
-		validate(rootCommand);
-		return Optional.of(rootCommand);
+
+		validate(root);
+		return Optional.of(root);
 	}
 
 	public CommandNode getRoot() {
