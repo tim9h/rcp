@@ -81,6 +81,7 @@ public class CliView implements Plugin {
 		em.listen(Event.EVENT_CLI_RESPONSE, args -> Platform.runLater(() -> showDetailedResponse(args)));
 		em.listen(Event.EVENT_CLI_REQUEST_FOCUS, _ -> tfiInput.requestFocus());
 		em.listen(Event.EVENT_CLI_ADD_PROPOSALS, data -> {
+			logger.debug(() -> "Adding command proposals: " + Arrays.toString(data));
 			Arrays.stream(data).forEach(t -> {
 				switch (t) {
 				case CommandNode cn -> tfiInput.addCommand(cn);
