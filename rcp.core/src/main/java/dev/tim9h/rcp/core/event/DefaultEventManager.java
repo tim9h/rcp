@@ -20,7 +20,6 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
-import dev.tim9h.rcp.event.EventType;
 import dev.tim9h.rcp.logging.InjectLogger;
 import javafx.application.Platform;
 import javafx.scene.text.Text;
@@ -87,11 +86,6 @@ public class DefaultEventManager implements EventManager {
 	}
 
 	@Override
-	public void postCommand(String commandName, Object... payload) {
-		post(new Event(commandName, EventType.COMMAND, payload));
-	}
-
-	@Override
 	public void listen(String eventName, Consumer<Object[]> action) {
 		var subscription = (EventListener) event -> {
 			if (Strings.CI.equals(event.name(), eventName)) {
@@ -99,17 +93,6 @@ public class DefaultEventManager implements EventManager {
 			}
 		};
 		subscriptions.put(eventName, subscription);
-		bus.register(subscription);
-	}
-
-	@Override
-	public void listenCommand(String commandName, Consumer<Object[]> action) {
-		var subscription = (EventListener) event -> {
-			if (event.type() == EventType.COMMAND && Strings.CI.equals(event.name(), commandName)) {
-				action.accept(event.payload());
-			}
-		};
-		subscriptions.put("COMMAND:" + commandName, subscription);
 		bus.register(subscription);
 	}
 

@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import javafx.scene.text.Text;
 
-public record Event(String name, EventType type, Object... payload) {
+public record Event(String name, Object... payload) {
 
 	public static final String EVENT_SHOWN = "RCP_SHOWN";
 
@@ -43,23 +43,19 @@ public record Event(String name, EventType type, Object... payload) {
 	public static final String EVENT_ALERT = "alert";
 
 	public Event(String name) {
-		this(name, EventType.EVENT, (Object[]) null);
+		this(name, (Object[]) null);
 	}
 
 	public Event(String name, String payload) {
-		this(name, EventType.EVENT, (Object) payload);
+		this(name, (Object) payload);
 	}
 
 	public Event(String name, String text1, String text2) {
-		this(name, EventType.EVENT, text1, text2);
+		this(name, (Object) text1, (Object) text2);
 	}
 
 	public Event(String name, List<Text> text1, List<Text> text2) {
-		this(name, EventType.EVENT, text1, text2);
-	}
-
-	public Event(String name, Object... payload) {
-		this(name, EventType.EVENT, payload);
+		this(name, (Object) text1, (Object) text2);
 	}
 
 	@Override
@@ -71,7 +67,7 @@ public record Event(String name, EventType type, Object... payload) {
 		if (getClass() != obj.getClass())
 			return false;
 		var other = (Event) obj;
-		return Objects.equals(name, other.name) && Arrays.deepEquals(payload, other.payload) && type == other.type;
+		return Objects.equals(name, other.name) && Arrays.deepEquals(payload, other.payload);
 	}
 
 	@Override
@@ -79,13 +75,13 @@ public record Event(String name, EventType type, Object... payload) {
 		final var prime = 31;
 		var result = 1;
 		result = prime * result + Arrays.deepHashCode(payload);
-		result = prime * result + Objects.hash(name, type);
+		result = prime * result + Objects.hash(name);
 		return result;
 	}
 
 	@Override
 	public final String toString() {
-		return "CcEvent [name=" + name + ", type=" + type + ", payload=" + Arrays.toString(payload) + "]";
+		return "Event [name=" + name + ", payload=" + Arrays.toString(payload) + "]";
 	}
 
 }

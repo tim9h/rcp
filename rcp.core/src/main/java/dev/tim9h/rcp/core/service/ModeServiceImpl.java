@@ -1,5 +1,6 @@
 package dev.tim9h.rcp.core.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -250,7 +251,20 @@ public class ModeServiceImpl implements ModeService {
 	}
 
 	private CommandNode createModeCommand(Mode mode) {
-		var modeCommand = mode.getModeCommands().orElseGet(() -> new CommandNode(mode.getName()));
+		var modeCommand = mode.getModeCommands().map(built -> {
+			// CommandBuilder returns a blank root wrapping the actual mode node
+			if (built.getData().isBlank()) {
+				var node = built.get(mode.getName());
+				if (node != null) {
+					node.detach();
+					return node;
+				}
+				var wrapper = new CommandNode(mode.getName());
+				new ArrayList<>(built.getChildren()).forEach(wrapper::add);
+				return wrapper;
+			}
+			return built;
+		}).orElseGet(() -> new CommandNode(mode.getName()));
 		modeCommand.setCommand(_ -> activateMode(mode));
 		if (modeCommand.get("off") == null) {
 			modeCommand.add(new CommandNode("off", false, _ -> disableMode(mode)));

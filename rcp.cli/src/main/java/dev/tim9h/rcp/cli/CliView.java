@@ -25,7 +25,6 @@ import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.CcTextField;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
-import dev.tim9h.rcp.event.EventType;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandNode;
@@ -178,7 +177,7 @@ public class CliView implements Plugin {
 		if (query.startsWith(CcTextField.COMMAND_PREFIX)) {
 			var split = query.substring(1).trim().split(" ");
 			Object[] payload = Arrays.copyOfRange(split, 1, split.length);
-			eventManager.post(new Event(split[0], EventType.COMMAND, payload));
+			eventManager.post(new Event(split[0], payload));
 		} else {
 			openWebSearch(query);
 		}

@@ -11,13 +11,9 @@ public interface EventManager {
 
 	void post(String eventName);
 
-	void postCommand(String commandName, Object... payload);
-
 	void post(String eventName, String payload);
 
 	void listen(String eventName, Consumer<Object[]> action);
-
-	void listenCommand(String commandName, Consumer<Object[]> action);
 
 	void unsubscribe(String eventName);
 

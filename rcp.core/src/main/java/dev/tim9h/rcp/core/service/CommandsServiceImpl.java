@@ -110,7 +110,7 @@ public class CommandsServiceImpl implements CommandsService {
 		if (!listenedCommands.add(node.getData().toLowerCase())) {
 			return;
 		}
-		eventManager.listenCommand(node.getData(), payload -> execute(node, payload));
+		eventManager.listen(node.getData(), payload -> execute(node, payload));
 	}
 
 	private void execute(CommandNode node, Object[] payload) {
@@ -140,6 +140,9 @@ public class CommandsServiceImpl implements CommandsService {
 				}
 
 				eventManager.echo("Incomplete command '" + current.getData() + "'");
+				if (logger.isDebugEnabled()) {
+					logger.debug("Incomplete command '{}'", current.getData());
+				}
 				return;
 			}
 
@@ -168,11 +171,15 @@ public class CommandsServiceImpl implements CommandsService {
 					if (index < payload.length) {
 						eventManager
 								.echo("Unexpected argument '" + payload[index] + "' after '" + child.getData() + "'");
+						if (logger.isDebugEnabled()) {
+							logger.debug("Unexpected argument '{}' after '{}'", payload[index], child.getData());
+						}
 						return;
 					}
 					continue;
 				}
 
+				logger.debug(() -> "Command '" + child.getData() + "' has no command");
 				eventManager.echo("Command '" + child.getData() + "' has no command");
 				return;
 			}
@@ -184,7 +191,19 @@ public class CommandsServiceImpl implements CommandsService {
 				return;
 			}
 
+			// Commands and events share one bus: a leaf command without argument support
+			// may receive a payload that is not a CLI argument (e.g. a correlation id from
+			// postRequest or plain event data). Hand the raw payload to the
+			// command handler, which is responsible for interpreting or ignoring it.
+			if (current == node && current.isLeaf() && current.getCommand() != null) {
+				current.getCommand().accept(EventHelper.joinPayload(payload, index));
+				return;
+			}
+
 			eventManager.echo("Unexpected argument '" + value + "' for command '" + current.getData() + "'");
+			if (logger.isDebugEnabled()) {
+				logger.debug("Unexpected argument '{}' for command '{}'", value, current.getData());
+			}
 			return;
 		}
 	}
