@@ -13,6 +13,16 @@ RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the
 - `rcp.plugin.archetype` – Maven archetype for new plugins (not in `<modules>`; build separately).
 - Config: dependency/plugin versions are all in the root `pom.xml` properties/`dependencyManagement` – add new versions there. `.mvn/jvm.config` sets `--enable-native-access=ALL-UNNAMED`. No linter/formatter config; follow existing style (tabs, Log4j2 logging via `Logger`, Guice injection).
 
+## Architecture notes
+- **Plugins load only at startup** from `./plugins`; there is no dynamic loading/unloading at runtime.
+- **Communication** between modules and plugins usually happens via the `EventBus`.
+- **CLI**: the app has a command-line text field. Commands come from the core application and from plugins.
+  - Commands are structured as a tree (`CommandNode`) and usually have a handler that can use parameters. E.g. `settings` and `settings reload` are separate nodes with different handlers.
+  - Some commands accept dynamic parameters, e.g. `weather berlin` (`berlin` is a parameter of `weather`).
+  - **Modes** also come from core and plugins and can be activated/deactivated at runtime, e.g. `api` activates and `api off` deactivates the "api" mode. Modes can add their own commands, e.g. `api genapikey`.
+  - All commands are registered at startup for autocompletion in the CLI field via the event `EVENT_CLI_ADD_PROPOSALS`.
+  - **User feedback**: the cli plugin provides a response label, usually used through the EventBus `echo` method.
+
 ## Build / test (validated; Maven 4.0.0-rc-6, JDK Temurin 27)
 - Always use JDK 27 (`java -version`); older JDKs fail on `java.version=27`.
 - Build + test: `mvn -B verify` (CI command for PRs). Full build ≈ 5–10 s once deps are cached. `mvn -B test` also works.
