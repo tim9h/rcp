@@ -22,6 +22,7 @@ RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the
   - **Modes** also come from core and plugins and can be activated/deactivated at runtime, e.g. `api` activates and `api off` deactivates the "api" mode. Modes can add their own commands, e.g. `api genapikey`.
   - All commands are registered at startup for autocompletion in the CLI field via the event `EVENT_CLI_ADD_PROPOSALS`.
   - **User feedback**: the cli plugin provides a response label, usually used through the EventBus `echo` method.
+- **Settings**: persisted in `~/.rcprc`; `--setting key=value` CLI args are overwrites. All `Settings` getters implicitly check for an in-memory runtime value under `<key>.runtime` first and fall back to the overwrite/persisted value. Set one with `settings.persist("<key>.runtime", value)` (never written to `~/.rcprc`); remove it with `settings.persist("<key>.runtime", (Object) null)`. Example: on `GPU_HIGH_LOAD` (published by the sysmonitor plugin on threshold transitions, payload `true`/`false`), `UiApplication` sets `core.ui.animations.runtime=false` and clears it afterwards, so the user's `core.ui.animations` preference is kept.
 
 ## Build / test (validated; Maven 4.0.0-rc-6, JDK Temurin 27)
 - Always use JDK 27 (`java -version`); older JDKs fail on `java.version=27`.
