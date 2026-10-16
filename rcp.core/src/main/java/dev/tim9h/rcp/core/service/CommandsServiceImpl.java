@@ -1,7 +1,9 @@
 package dev.tim9h.rcp.core.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.logging.log4j.Logger;
@@ -42,6 +44,14 @@ public class CommandsServiceImpl implements CommandsService {
 	@Override
 	public void propagateCommands() {
 		eventManager.post(new Event(Event.EVENT_CLI_ADD_PROPOSALS, root.getChildren().toArray()));
+	}
+
+	@Override
+	public void propagateCommands(String... names) {
+		var nodes = Arrays.stream(names).map(root::get).filter(Objects::nonNull).toArray();
+		if (nodes.length > 0) {
+			eventManager.post(new Event(Event.EVENT_CLI_ADD_PROPOSALS, nodes));
+		}
 	}
 
 	@Override

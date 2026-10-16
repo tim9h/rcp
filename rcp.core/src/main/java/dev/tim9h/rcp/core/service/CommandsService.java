@@ -8,6 +8,8 @@ public interface CommandsService {
 
 	void propagateCommands();
 
+	void propagateCommands(String... names);
+
 	void add(CommandNode node);
 
 	void add(TreeNode<String> node);

@@ -80,8 +80,9 @@ public class ModeServiceImpl implements ModeService {
 	@Override
 	public void initDefaultModes() {
 		var modes = Arrays.asList(createAlertMode(), createDndMode(), createAfkMode());
-
 		modes.forEach(this::initMode);
+		// plugin commands were already propagated to the CLI, so send these separately
+		commandsService.propagateCommands(modes.stream().map(Mode::getName).toArray(String[]::new));
 	}
 
 	private Mode createAlertMode() {
@@ -98,7 +99,7 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
-				settings.persist(SettingsConsts.THEME + ".runtime", THEME);
+				settings.persistRuntime(SettingsConsts.THEME, THEME);
 				themeService.setTheme(THEME, false);
 				eventManager.echo("ALERT", "Alert mode activated");
 
