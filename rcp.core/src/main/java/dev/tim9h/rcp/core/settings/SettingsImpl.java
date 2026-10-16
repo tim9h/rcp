@@ -48,7 +48,11 @@ public class SettingsImpl implements Settings {
 
 	private CommandsService commandsService;
 
+	private static final String RUNTIME_SUFFIX = ".runtime";
+
 	private Map<String, Object> overwrites;
+
+	private final Map<String, Object> runtimeValues = new java.util.concurrent.ConcurrentHashMap<>();
 
 	@Inject
 	public SettingsImpl(Injector injector, EventManager eventManager, CommandsService commandsService) {
@@ -125,6 +129,10 @@ public class SettingsImpl implements Settings {
 	}
 
 	private String getProperty(String property) {
+		var runtimeValue = runtimeValues.get(property + RUNTIME_SUFFIX);
+		if (runtimeValue != null) {
+			return String.valueOf(runtimeValue);
+		}
 		if (overwrites.containsKey(property)) {
 			return (String) overwrites.get(property);
 		} else {
@@ -183,6 +191,15 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void persist(String property, Object value) {
+		if (property.endsWith(RUNTIME_SUFFIX)) {
+			// runtime values are kept in memory only; null removes the runtime value
+			if (value == null) {
+				runtimeValues.remove(property);
+			} else {
+				runtimeValues.put(property, value);
+			}
+			return;
+		}
 		if (overwrites.containsKey(property)) {
 			overwrites.put(property, value);
 		} else {
@@ -193,6 +210,10 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void persist(String property, Collection<String> value) {
+		if (value == null) {
+			persist(property, (Object) null);
+			return;
+		}
 		persist(property, value.stream().filter(StringUtils::isNotBlank).collect(Collectors.joining(",")));
 	}
 
