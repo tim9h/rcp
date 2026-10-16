@@ -42,6 +42,8 @@ public record Event(String name, Object... payload) {
 
 	public static final String EVENT_ALERT = "alert";
 
+	public static final String EVENT_GPU_HIGH_LOAD = "SYSMON_GPU_HIGH_LOAD";
+
 	public Event(String name) {
 		this(name, (Object[]) null);
 	}

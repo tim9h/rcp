@@ -476,6 +476,15 @@ public class UiApplication extends Application {
 			setExpanded(true, false);
 			stage.requestFocus();
 		});
+		eventManager.listen(Event.EVENT_GPU_HIGH_LOAD, payload -> {
+			if (Boolean.parseBoolean(StringUtils.join(payload))) {
+				logger.debug(() -> "High GPU load, disabling animations");
+				settings.persist(SettingsConsts.ANIMATIONS_ENABLED + ".runtime", Boolean.FALSE);
+			} else {
+				logger.debug(() -> "GPU load back to normal, restoring animation preference");
+				settings.persist(SettingsConsts.ANIMATIONS_ENABLED + ".runtime", (Object) null);
+			}
+		});
 		eventManager.listen(Event.EVENT_THEME_MODE_CHANGED, mode -> {
 			var s = StringUtils.join(mode);
 			if (blurEnabled) {
