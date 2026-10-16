@@ -31,6 +31,8 @@ import javafx.scene.media.MediaPlayer;
 @Singleton
 public class ModeServiceImpl implements ModeService {
 
+	private static final Set<String> EPHEMERAL_ONLY_MODES = Set.of("alert");
+
 	@InjectLogger
 	private Logger logger;
 
@@ -57,6 +59,7 @@ public class ModeServiceImpl implements ModeService {
 	public ModeServiceImpl(Injector injector) {
 		injector.injectMembers(this);
 		activeModes = new HashSet<>(settings.getStringSet(SettingsConsts.MODES));
+		activeModes.removeAll(EPHEMERAL_ONLY_MODES);
 		ephemeralModes = new HashSet<>();
 		listenToEvents();
 	}
@@ -95,6 +98,7 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onEnable() {
+				settings.persist(SettingsConsts.THEME + ".runtime", THEME);
 				themeService.setTheme(THEME, false);
 				eventManager.echo("ALERT", "Alert mode activated");
 
@@ -109,6 +113,7 @@ public class ModeServiceImpl implements ModeService {
 
 			@Override
 			public void onDisable() {
+				settings.clearRuntime(SettingsConsts.THEME);
 				var selectedTheme = settings.getString(SettingsConsts.THEME);
 				themeService.setTheme(selectedTheme, false);
 				eventManager.echo(StringUtils.EMPTY, "Alert mode deactivated");
@@ -204,7 +209,7 @@ public class ModeServiceImpl implements ModeService {
 	}
 
 	private boolean enableMode(String mode) {
-		return enableMode(mode, false);
+		return enableMode(mode, EPHEMERAL_ONLY_MODES.contains(mode));
 	}
 
 	private boolean enableMode(String mode, boolean ephermeral) {

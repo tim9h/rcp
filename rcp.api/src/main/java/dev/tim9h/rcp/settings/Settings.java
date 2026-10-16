@@ -40,6 +40,17 @@ public interface Settings {
 
 	public void persist(String property, Collection<String> value);
 
+	/**
+	 * Sets an in-memory value that takes precedence over the persisted value in all
+	 * getters. Never written to the settings file.
+	 */
+	public void persistRuntime(String property, Object value);
+
+	/**
+	 * Removes the in-memory value so getters return the persisted value again.
+	 */
+	public void clearRuntime(String property);
+
 	public void addOverwrites(List<String> settingsOverwrites);
 
 	public Map<String, Object> getOverwrites();

@@ -479,10 +479,10 @@ public class UiApplication extends Application {
 		eventManager.listen(Event.EVENT_GPU_HIGH_LOAD, payload -> {
 			if (Boolean.parseBoolean(StringUtils.join(payload))) {
 				logger.debug(() -> "High GPU load, disabling animations");
-				settings.persist(SettingsConsts.ANIMATIONS_ENABLED + ".runtime", Boolean.FALSE);
+				settings.persistRuntime(SettingsConsts.ANIMATIONS_ENABLED, Boolean.FALSE);
 			} else {
 				logger.debug(() -> "GPU load back to normal, restoring animation preference");
-				settings.persist(SettingsConsts.ANIMATIONS_ENABLED + ".runtime", (Object) null);
+				settings.clearRuntime(SettingsConsts.ANIMATIONS_ENABLED);
 			}
 		});
 		eventManager.listen(Event.EVENT_THEME_MODE_CHANGED, mode -> {
