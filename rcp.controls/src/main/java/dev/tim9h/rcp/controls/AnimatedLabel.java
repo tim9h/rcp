@@ -64,6 +64,7 @@ public class AnimatedLabel extends FlowPane {
 	@Inject
 	public AnimatedLabel(Settings settings, EventManager eventManager) {
 		this.settings = settings;
+		getStyleClass().add("animated-label");
 		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> clearSettingsCache());
 
 		fadeIn = new FadeTransition(getAnimationDuration(), this);
@@ -103,6 +104,19 @@ public class AnimatedLabel extends FlowPane {
 		// center the text
 		textFlow.setMinWidth(width);
 		setMinWidth(width);
+	}
+
+	/**
+	 * Enables or disables clipping to the width set by
+	 * {@link #setClipWidth(double)}. Disable it when the label should size itself
+	 * instead of using a fixed width.
+	 */
+	public void setClipEnabled(boolean enabled) {
+		setClip(enabled ? clip : null);
+	}
+
+	public void setTextAlignment(TextAlignment alignment) {
+		textFlow.setTextAlignment(alignment);
 	}
 
 	private Duration getAnimationDuration() {

@@ -28,6 +28,16 @@ $default-font-size: 14;
 		-fx-font-size: $default-font-size;
 		-fx-padding: 0 3px;
 	}
+
+	.animated-label .text {
+		-fx-font-size: $default-font-size;
+	}
+
+	.animated-label.link {
+		-fx-border-width: 0 0 0 2;
+		-fx-border-color: transparent;
+		-fx-padding: 0 1px;
+	}
 	
 	.hyperlink {
 		-fx-font-size: $default-font-size;

@@ -40,6 +40,34 @@
 			}
 		}
 		
+		// text nodes inside AnimatedLabel
+		.animated-label .text {
+			-fx-fill: $text-color;
+
+			&.accent-label {
+					-fx-fill: $accent-color;
+			}
+		}
+
+		// clickable AnimatedLabel (same behavior as .hyperlink)
+		.animated-label.link {
+			&:hover {
+				-fx-border-color: $accent-color;
+			}
+
+			&:pressed {
+				-fx-border-color: $accent-darker;
+
+				.text {
+					-fx-fill: $text-color-secondary;
+
+					&.accent-label {
+						-fx-fill: $accent-darker;
+					}
+				}
+			}
+		}
+
 		.hyperlink {
 			-fx-text-fill: $text-color;
 			
