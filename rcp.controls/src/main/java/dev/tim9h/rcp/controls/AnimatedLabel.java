@@ -13,6 +13,7 @@ import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
@@ -57,6 +58,11 @@ public class AnimatedLabel extends FlowPane {
 	private Rectangle clip;
 
 	private PauseTransition hideDelay;
+
+	private boolean animated = true;
+
+	private String targetText = StringUtils.EMPTY;
+
 
 	@InjectLogger
 	private Logger logger;
@@ -155,7 +161,25 @@ public class AnimatedLabel extends FlowPane {
 		return animationStyles;
 	}
 
+	/**
+	 * Enables or disables the text animations (fade, typing). While disabled,
+	 * {@link #showText(String)} replaces the text immediately. Disabling also
+	 * finishes a running animation.
+	 */
+	public void setAnimated(boolean animated) {
+		this.animated = animated;
+		if (!animated && timeline.getStatus() == Animation.Status.RUNNING) {
+			timeline.stop();
+			setText(targetText);
+		}
+		if (!animated) {
+			fadeIn.stop();
+			setOpacity(1);
+		}
+	}
+
 	public void showText(String text) {
+		targetText = text;
 		if (getText().equals(text)) {
 			return;
 		}
@@ -164,7 +188,7 @@ public class AnimatedLabel extends FlowPane {
 		hideDelay.stop();
 		fadeOut.stop();
 
-		if (!settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
+		if (!animated || !settings.getBoolean(SETTINGS_ANIMATIONS_ENABLED).booleanValue()) {
 			timeline.stop();
 			setOpacity(1);
 			setText(text);
