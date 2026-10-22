@@ -45,33 +45,36 @@ public class MathAndQueryInputConverter extends InputConverter {
 		}
 		try {
 			var result = evaluator.evaluate(input);
+			if (result.isNaN() || result.isInfinite()) {
+				return processNonMath(input);
+			}
 			return new InputResponse(Arrays.asList(new Text("Calculator")),
 					Arrays.asList(new Text(removeTailingZeroes(result.doubleValue()))),
 					new Text(formatNumber(result.doubleValue())));
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException _) {
 			return processNonMath(input);
 		}
 	}
 
 	private static String removeTailingZeroes(double d) {
 		if (d == (long) d) {
-			return String.format("%d", Long.valueOf((long) d));
+			return Long.toString((long) d);
 		}
-		return String.format("%s", Double.valueOf(d));
+		return Double.toString(d);
 	}
 
 	private String formatNumber(double d) {
 		if (d == (long) d) {
 			return formatter.format(d);
 		}
-		return String.format("%s", Double.valueOf(d));
+		return Double.toString(d);
 	}
 
 	private InputResponse processNonMath(String input) {
 		var answer = queryService.query(input);
-		var maxLength = settings.getCharWidth();
+		var maxLength = Math.max(4, settings.getCharWidth());
 		if (answer != null && StringUtils.isNotBlank(answer.getAbstractText())) {
-			var interpretation = WordUtils.capitalize(answer.getEntity());
+			var interpretation = StringUtils.defaultString(WordUtils.capitalize(answer.getEntity()));
 			return new InputResponse(Arrays.asList(interpretation), Arrays.asList(answer.getAbstractText()),
 					StringUtils.abbreviate(answer.getAbstractText(), maxLength));
 		} else {

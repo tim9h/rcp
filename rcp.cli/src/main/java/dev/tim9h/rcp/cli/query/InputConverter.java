@@ -1,6 +1,6 @@
 package dev.tim9h.rcp.cli.query;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +31,9 @@ public abstract class InputConverter extends DelayedRunner {
 	@Inject
 	private Settings settings;
 
-	private String formattedResponse;
+	private final AtomicLong generation = new AtomicLong();
+
+	private volatile String formattedResponse;
 
 	@Inject
 	protected InputConverter(Injector injector) {
@@ -49,25 +51,41 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
-		inputProperty.addListener((ChangeListener<String>) (_, oldValue, newValue) -> CompletableFuture
-				.runAsync(() -> runDelayed(() -> onInputChanged(interpretation, response, oldValue, newValue))));
+		inputProperty.addListener((ChangeListener<String>) (_, oldValue,
+				newValue) -> schedule(() -> onInputChanged(interpretation, response, oldValue, newValue)));
+	}
+
+	private void schedule(Runnable task) {
+		generation.incrementAndGet();
+		runDelayed(task);
+	}
+
+	/**
+	 * Cancels a pending conversion and invalidates in-flight ones, so stale results
+	 * are not shown.
+	 */
+	@Override
+	public synchronized void cancel() {
+		super.cancel();
+		generation.incrementAndGet();
 	}
 
 	private void onInputChanged(AnimatedLabel interpretation, AnimatedLabel response, String oldValue,
 			String newValue) {
+		var current = generation.get();
 		if (StringUtils.isNotBlank(newValue)) {
 			var process = process(newValue);
-			if (process != null) {
+			if (process != null && current == generation.get()) {
 				formattedResponse = process.response().stream().map(Text::getText)
 						.collect(Collectors.joining(StringUtils.EMPTY));
 				Platform.runLater(() -> {
-					if (process != null) {
+					if (current == generation.get()) {
 						interpretation.showText(process.interpretation());
 						response.showText(process.responseFormatted());
 					}
 				});
 			}
-		} else if (!oldValue.startsWith(CcTextField.COMMAND_PREFIX)) {
+		} else if (oldValue == null || !oldValue.startsWith(CcTextField.COMMAND_PREFIX)) {
 			Platform.runLater(() -> {
 				interpretation.hideText();
 				response.hideText();

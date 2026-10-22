@@ -1,44 +1,59 @@
 package dev.tim9h.rcp.controls.utils;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Debounces a task: every call to {@link #runDelayed(Runnable)} restarts the
+ * delay and replaces the pending task, so the task only runs once, after
+ * {@code maxDelay * 10} milliseconds without further calls. The task runs on a
+ * daemon thread owned by this instance that is released when idle.
+ */
 public class DelayedRunner {
 
-	private Timer timer;
+	private static final int TICK_MILLIS = 10;
 
-	private int delay;
+	private ScheduledThreadPoolExecutor executor;
 
-	private int maxDelay = 1;
+	private ScheduledFuture<?> pending;
 
-	private Runnable runnable;
+	private volatile int maxDelay = 1;
 
 	public DelayedRunner() {
 		//
-	}
-
-	public void setMaxDelay(int maxDelay) {
-		this.maxDelay = maxDelay;
 	}
 
 	public DelayedRunner(int delay) {
 		this.maxDelay = delay;
 	}
 
-	public void runDelayed(Runnable run) {
-		delay = maxDelay;
-		runnable = run;
-		if (timer == null) {
-			timer = new Timer("delayTimer");
-			timer.scheduleAtFixedRate(new TimerTask() {
-				@Override
-				public void run() {
-					delay--;
-					if (delay == 0) {
-						runnable.run();
-					}
-				}
-			}, 0, 10);
+	public void setMaxDelay(int maxDelay) {
+		this.maxDelay = maxDelay;
+	}
+
+	public synchronized void runDelayed(Runnable run) {
+		cancel();
+		if (executor == null) {
+			executor = new ScheduledThreadPoolExecutor(1, r -> {
+				var thread = new Thread(r, "delayTimer");
+				thread.setDaemon(true);
+				return thread;
+			});
+			executor.setKeepAliveTime(5, TimeUnit.SECONDS);
+			executor.allowCoreThreadTimeOut(true);
+			executor.setRemoveOnCancelPolicy(true);
+		}
+		pending = executor.schedule(run, (long) Math.max(1, maxDelay) * TICK_MILLIS, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * Cancels the pending task, if it has not started yet.
+	 */
+	public synchronized void cancel() {
+		if (pending != null) {
+			pending.cancel(false);
+			pending = null;
 		}
 	}
 
