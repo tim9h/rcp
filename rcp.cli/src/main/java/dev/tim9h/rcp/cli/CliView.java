@@ -1,8 +1,6 @@
 package dev.tim9h.rcp.cli;
 
 import java.awt.Desktop;
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -10,9 +8,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.IllegalFormatException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +35,8 @@ import dev.tim9h.rcp.spi.Position;
 import dev.tim9h.rcp.spi.TreeNode;
 import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -47,6 +50,12 @@ public class CliView implements Plugin {
 	static final String SETTING_SEARCH_URL = "cli.url.search";
 
 	static final String SETTING_SUGGEST_URL = "cli.url.suggest";
+
+	private static final ExecutorService BROWSER_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+		var thread = new Thread(r, "cli-browser");
+		thread.setDaemon(true);
+		return thread;
+	});
 
 	@InjectLogger
 	private Logger logger;
@@ -90,7 +99,7 @@ public class CliView implements Plugin {
 				}
 			});
 		});
-		em.listen(Event.EVENT_CLI_RESPONSE_COPY, _ -> copyResponseToClipboard());
+		em.listen(Event.EVENT_CLI_RESPONSE_COPY, _ -> Platform.runLater(this::copyResponseToClipboard));
 	}
 
 	private void copyResponseToClipboard() {
@@ -98,7 +107,9 @@ public class CliView implements Plugin {
 		if (StringUtils.isNotBlank(text)) {
 			lblInterpretation.setText("Copied");
 			logger.debug(() -> "Updating clipboard with content: " + text);
-			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+			var content = new ClipboardContent();
+			content.putString(text);
+			Clipboard.getSystemClipboard().setContent(content);
 		}
 	}
 
@@ -110,10 +121,10 @@ public class CliView implements Plugin {
 				lblResponse.showFadingText(decaytime, response);
 
 			} else if (args[0] instanceof List<?> details && args[1] instanceof List<?> response) {
-				var detailsText = details.stream().map(Text.class::cast).map(text -> text.textProperty().get())
-						.collect(Collectors.joining());
-				var responseText = response.stream().map(Text.class::cast).map(text -> text.textProperty().get())
-						.collect(Collectors.joining());
+				var detailsText = details.stream().filter(Text.class::isInstance).map(Text.class::cast)
+						.map(Text::getText).collect(Collectors.joining());
+				var responseText = response.stream().filter(Text.class::isInstance).map(Text.class::cast)
+						.map(Text::getText).collect(Collectors.joining());
 				var decaytime = AnimatedLabel.decaytime(detailsText + responseText);
 				lblInterpretation.showFadingText(decaytime, details.toArray(new Text[0]));
 				lblResponse.showFadingText(decaytime, response.toArray(new Text[0]));
@@ -163,6 +174,7 @@ public class CliView implements Plugin {
 
 	@Override
 	public void onHidden() {
+		ic.cancel();
 		lblInterpretation.setText(StringUtils.EMPTY);
 		lblResponse.setText(StringUtils.EMPTY);
 		tfiInput.setText(StringUtils.EMPTY);
@@ -175,7 +187,11 @@ public class CliView implements Plugin {
 
 	private void submitInput(String query) {
 		if (query.startsWith(CcTextField.COMMAND_PREFIX)) {
-			var split = query.substring(1).trim().split(" ");
+			var trimmed = query.substring(1).trim();
+			if (trimmed.isEmpty()) {
+				return;
+			}
+			var split = trimmed.split("\\s+");
 			Object[] payload = Arrays.copyOfRange(split, 1, split.length);
 			eventManager.post(new Event(split[0], payload));
 		} else {
@@ -184,17 +200,24 @@ public class CliView implements Plugin {
 	}
 
 	private void openWebSearch(String query) {
-		if (StringUtils.isNotBlank(query) && Desktop.isDesktopSupported()
-				&& Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+		if (StringUtils.isBlank(query)) {
+			return;
+		}
+		if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+			logger.warn(() -> "Opening the browser is not supported");
+			eventManager.post(Event.EVENT_ALERT);
+			return;
+		}
+		var searchUrl = settings.getString(SETTING_SEARCH_URL);
+		BROWSER_EXECUTOR.execute(() -> {
 			try {
-				var url = String.format(settings.getString(SETTING_SEARCH_URL),
-						URLEncoder.encode(query, StandardCharsets.UTF_8));
+				var url = String.format(searchUrl, URLEncoder.encode(query, StandardCharsets.UTF_8));
 				Desktop.getDesktop().browse(new URI(url));
-			} catch (IOException | URISyntaxException e) {
+			} catch (IOException | URISyntaxException | IllegalFormatException e) {
 				logger.warn(() -> "Unable to open browser", e);
 				eventManager.post(Event.EVENT_ALERT);
 			}
-		}
+		});
 	}
 
 	@Override
