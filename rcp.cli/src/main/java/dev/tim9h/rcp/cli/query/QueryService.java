@@ -82,8 +82,7 @@ public class QueryService {
 				}
 				return suggestions.stream().map(Suggestion::getPhrase).filter(Objects::nonNull).toList();
 			}
-		} catch (IOException | JsonIOException | JsonSyntaxException | URISyntaxException
-				| IllegalFormatException e) {
+		} catch (IOException | JsonIOException | JsonSyntaxException | URISyntaxException | IllegalFormatException e) {
 			logger.warn(() -> "Unable to get suggestions", e);
 			return Collections.emptyList();
 		} finally {

@@ -49,7 +49,7 @@ public class CliView implements Plugin {
 
 	static final String SETTING_SEARCH_URL = "cli.url.search";
 
-	static final String SETTING_SUGGEST_URL = "cli.url.suggest";
+	public static final String SETTING_SUGGEST_URL = "cli.url.suggest";
 
 	private static final ExecutorService BROWSER_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
 		var thread = new Thread(r, "cli-browser");

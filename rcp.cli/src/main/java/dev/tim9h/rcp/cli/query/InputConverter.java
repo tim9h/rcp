@@ -51,8 +51,8 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
-		inputProperty.addListener((ChangeListener<String>) (_, oldValue, newValue) -> schedule(
-				() -> onInputChanged(interpretation, response, oldValue, newValue)));
+		inputProperty.addListener((ChangeListener<String>) (_, oldValue,
+				newValue) -> schedule(() -> onInputChanged(interpretation, response, oldValue, newValue)));
 	}
 
 	private void schedule(Runnable task) {
@@ -61,11 +61,11 @@ public abstract class InputConverter extends DelayedRunner {
 	}
 
 	/**
-	 * Cancels a pending conversion and invalidates in-flight ones, so stale
-	 * results are not shown.
+	 * Cancels a pending conversion and invalidates in-flight ones, so stale results
+	 * are not shown.
 	 */
 	@Override
-	public void cancel() {
+	public synchronized void cancel() {
 		super.cancel();
 		generation.incrementAndGet();
 	}

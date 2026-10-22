@@ -51,7 +51,7 @@ public class MathAndQueryInputConverter extends InputConverter {
 			return new InputResponse(Arrays.asList(new Text("Calculator")),
 					Arrays.asList(new Text(removeTailingZeroes(result.doubleValue()))),
 					new Text(formatNumber(result.doubleValue())));
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException _) {
 			return processNonMath(input);
 		}
 	}
