@@ -43,4 +43,4 @@ Triggers on push/PR to `master` and `develop`. Ubuntu, JDK 27 temurin: PRs run `
 - Repo root files: `pom.xml`, `README.md`, `.mvn/`, `.github/`, module dirs. `target/` and Eclipse files (`.project`, `.classpath`, `.settings`) are gitignored/IDE-only.
 - Commit style: conventional commits, e.g. `refactor(command): ...`, `build(pom): ...`.
 - Public API changes in `rcp.api` affect all external plugin repos; keep them backward compatible where possible.
-- Skills: `.agents/skills/review-plugin-performance` reviews plugins for performance/memory issues (symlinked from `.github/skills/` for Copilot and `.claude/skills/` for Claude Code).
+- Skills: `.agents/skills/create-plugin` bootstraps a new plugin from the archetype; `.agents/skills/review-plugin-performance` reviews plugins for performance/memory issues (symlinked from `.github/skills/` for Copilot and `.claude/skills/` for Claude Code).
