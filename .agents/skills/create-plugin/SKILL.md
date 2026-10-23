@@ -9,7 +9,7 @@ Plugins live in **separate sibling repos** (`../rcp.<name>`), not in this repo. 
 
 ## Procedure
 1. Get the plugin name: lowercase, no spaces (`<name>`, e.g. `clock`) and a capitalized class prefix (`<Name>`, e.g. `Clock`). Ask if unclear.
-2. Look at an existing sibling plugin (e.g. `../rcp.clock`, `../rcp.weather`) if present and mirror its structure, `.gitignore` and conventions. Re-read `Plugin.java` and `rcp.api` for the current API; don't rely on stale snippets.
+2. Look at an existing plugin (e.g. `rcp.cli` in this repo, or `../rcp.clock`, `../rcp.weather`) if present and mirror its structure, `.gitignore` and conventions. Re-read `Plugin.java` and `rcp.api` for the current API; don't rely on stale snippets.
 3. Read the root `pom.xml` for the current `rcp.parent` version, and install the parent/API locally: `mvn -B install -DskipTests` in this repo.
 4. Create `../rcp.<name>/` with:
    - `pom.xml`: `artifactId` `rcp.<name>`, packaging `jar`, parent `dev.tim9h:rcp.parent:<version from root pom>`, dependencies `rcp.api`, `rcp.controls`, `log4j-api` (versions come from the parent's `dependencyManagement`; add any new versions to the root `pom.xml`, never inline). Optionally `maven-shade-plugin` if third-party libs are needed.
