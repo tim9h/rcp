@@ -34,3 +34,10 @@ javaw.exe -Dlogpath=... --enable-native-access=ALL-UNNAMED -jar rcp.core\target\
 ```
 
 Replace `...` with the desired log path and `....` with the generated project version.
+
+Global hotkeys use the Windows format `MODIFIER+KEY`, for example `ALT+SPACE`,
+`CTRL+ALT+R`, or `WIN+F1`. Supported modifiers are `CTRL`, `ALT`, `SHIFT`, and
+`WIN`; supported keys include letters, digits, `F1`–`F24`, and named keys such as
+`SPACE`, `ENTER`, `TAB`, `ESC`, `DELETE`, and arrow keys. This feature requires
+64-bit Windows. Existing hotkey preferences are not migrated; update
+`core.hotkey.showhide` in `~/.rcprc` to the new format if registration fails.
