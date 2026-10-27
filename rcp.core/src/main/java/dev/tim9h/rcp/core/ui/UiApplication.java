@@ -111,6 +111,8 @@ public class UiApplication extends Application {
 
 	private WindowsHotkeyService hotkeyService;
 
+	private long previousForegroundWindowHandle;
+
 	private static final double HIDDEN_ROOT_OPACITY = 0.01;
 
 	private static final int APPLICATION_CORNERS = 16;
@@ -321,9 +323,11 @@ public class UiApplication extends Application {
 		if (WindowsUtils.isWindows()) {
 			logger.debug(() -> "Unfocusing stage");
 			if (settings.getBoolean(SettingsConsts.RESTORE_PREVIOUS_FOCUS).booleanValue()) {
-				windowsUtils.focusPreviousWithTabSwitcher();
-			} else {
-				windowsUtils.setFocusToWindowsApp(settings.getString(SettingsConsts.FOCUS_APPLICATION));
+				var windowHandle = previousForegroundWindowHandle;
+				previousForegroundWindowHandle = 0;
+				if (windowHandle != 0 && !windowsUtils.restoreForegroundWindow(windowHandle)) {
+					logger.warn("Windows declined restoring the previously focused application");
+				}
 			}
 		} else {
 			logger.warn(() -> "Unable to unfocus stage: not on windows");
@@ -333,6 +337,9 @@ public class UiApplication extends Application {
 	private void setExpanded(boolean expanded, boolean fromHotkey) {
 		if (this.expanded == expanded) {
 			return;
+		}
+		if (expanded) {
+			previousForegroundWindowHandle = fromHotkey ? windowsUtils.getForegroundWindowHandle() : 0;
 		}
 		this.expanded = expanded;
 		if (expanded) {

@@ -4,8 +4,6 @@ public class SettingsConsts {
 
 	public static final String APPLICATION_TITLE = "core.ui.title";
 
-	public static final String FOCUS_APPLICATION = "focusApplication";
-
 	public static final String HOT_KEY = "core.hotkey.showhide";
 
 	public static final String RESTORE_PREVIOUS_FOCUS = "restorePreviousFocus";
@@ -15,7 +13,7 @@ public class SettingsConsts {
 	public static final String WIDTH = "core.ui.stage.width";
 
 	public static final String ANIMATIONS_ENABLED = "core.ui.animations";
-	
+
 	public static final String BOTTOM_SPACER = "core.ui.bottomspacer";
 
 	public static final String BLUR_ENABLED = "core.ui.stage.blur";
