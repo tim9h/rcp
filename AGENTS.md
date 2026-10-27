@@ -3,7 +3,7 @@
 Trust these instructions; only search if something here is missing or wrong.
 
 ## What this is
-RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the screen) with a plugin system. Plugins are JARs loaded from `./plugins` at startup. Plugins live in **separate sibling repos** (`rcp.clock`, `rcp.media`, `rcp.weather`, …); this repo is only the host + API. Windows is the only supported platform (uses JNA/jkeymaster native hooks). ~65 Java files, Maven multi-module, Java 27, JavaFX 28-ea, Guice (DI), Log4j2, Guava, commons-*. Root package `dev.tim9h.rcp`.
+RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the screen) with a plugin system. Plugins are JARs loaded from `./plugins` at startup. Plugins live in **separate sibling repos** (`rcp.clock`, `rcp.media`, `rcp.weather`, …); this repo is only the host + API. Windows is the only supported platform (uses JNA and Java FFM native hooks). ~65 Java files, Maven multi-module, Java 27, JavaFX 28-ea, Guice (DI), Log4j2, Guava, commons-*. Root package `dev.tim9h.rcp`.
 
 ## Modules (`pom.xml` `<modules>` order = build order)
 - `rcp.api` – public plugin API: `event`, `logging`, `service`, `settings`, `spi` (plugin SPI) under `src/main/java/dev/tim9h/rcp/`.

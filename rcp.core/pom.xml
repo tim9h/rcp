@@ -36,12 +36,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.github.tulskiy</groupId>
-			<artifactId>jkeymaster</artifactId>
-			<version>${jkeymaster.version}</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j2-impl</artifactId>
 		</dependency>
@@ -120,6 +114,9 @@
 				<artifactId>javafx-maven-plugin</artifactId>
 				<configuration>
 					<mainClass>dev.tim9h.rcp.core.UiApplication</mainClass>
+					<options>
+						<option>--enable-native-access=rcp.core</option>
+					</options>
 				</configuration>
 			</plugin>
 

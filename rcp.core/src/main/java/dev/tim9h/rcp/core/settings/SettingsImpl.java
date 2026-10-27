@@ -277,7 +277,7 @@ public class SettingsImpl implements Settings {
 		settingsMap.put(SettingsConsts.ANIMATIONS_ENABLED, "true");
 		settingsMap.put(SettingsConsts.BLUR_ENABLED, "true");
 		settingsMap.put(SettingsConsts.RESTORE_PREVIOUS_FOCUS, "true");
-		settingsMap.put(SettingsConsts.HOT_KEY, "alt SPACE");
+		settingsMap.put(SettingsConsts.HOT_KEY, "ALT+SPACE");
 		settingsMap.put(SettingsConsts.FOCUS_APPLICATION, "Vivaldi");
 		settingsMap.put(SettingsConsts.MONITOR, "0");
 		settingsMap.put(SettingsConsts.MODES, StringUtils.EMPTY);

@@ -1,9 +1,6 @@
 package dev.tim9h.rcp.core.ui;
 
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-
-import javax.swing.KeyStroke;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -11,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.tulskiy.keymaster.common.Provider;
 
 import dev.tim9h.javafxblur2.WindowsBackdrop;
 import dev.tim9h.rcp.core.plugin.PluginLoader;
@@ -22,6 +18,7 @@ import dev.tim9h.rcp.core.service.ThemeService;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.BasicModule;
 import dev.tim9h.rcp.core.util.TrayManager;
+import dev.tim9h.rcp.core.windows.WindowsHotkeyService;
 import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
@@ -112,7 +109,7 @@ public class UiApplication extends Application {
 
 	private static final double WINDOW_VERTICAL_PADDING = 13.0;
 
-	private Provider hotkeyProvider;
+	private WindowsHotkeyService hotkeyService;
 
 	private static final double HIDDEN_ROOT_OPACITY = 0.01;
 
@@ -465,9 +462,16 @@ public class UiApplication extends Application {
 	}
 
 	private void initGlobalHotkeys() {
-		hotkeyProvider = Provider.getCurrentProvider(false);
-		hotkeyProvider.register(KeyStroke.getKeyStroke(settings.getString(SettingsConsts.HOT_KEY)),
-				_ -> Platform.runLater(() -> setExpanded(!expanded, true)));
+		if (!WindowsUtils.isWindows()) {
+			return;
+		}
+		try {
+			hotkeyService = WindowsHotkeyService.start(settings.getString(SettingsConsts.HOT_KEY),
+					() -> Platform.runLater(() -> setExpanded(!expanded, true)));
+		} catch (RuntimeException e) {
+			logger.error(() -> "Unable to register global hotkey", e);
+			eventManager.post(Event.EVENT_ALERT);
+		}
 	}
 
 	private void subscribeToUiEvents() {
@@ -522,22 +526,15 @@ public class UiApplication extends Application {
 		}
 		nativeCornersEnabled = false;
 
-		CompletableFuture.runAsync(() -> {
-			if (hotkeyProvider != null) {
-				hotkeyProvider.reset();
-				hotkeyProvider.stop();
-			}
-		}).whenComplete((_, error) -> {
-			if (error != null) {
-				logger.error(() -> "Unable to clean up hotkey", error);
-			}
+		if (hotkeyService != null) {
 			try {
-				super.stop();
-			} catch (Exception e) {
-				logger.error(() -> "Unable to stop JavaFX application", e);
+				hotkeyService.close();
+			} catch (RuntimeException e) {
+				logger.error(() -> "Unable to clean up hotkey", e);
 			}
-			System.exit(0);
-		});
+		}
+		super.stop();
+		System.exit(0);
 	}
 
 	private void registerExceptionHandler() {
