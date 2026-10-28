@@ -45,30 +45,40 @@ jobs:
         if: github.event_name == 'push'
         run: mvn -B deploy
 
-      - name: Get Maven version
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        id: version
-        run: |
-          VERSION=$(mvn -B help:evaluate \
-            -Dexpression=project.version \
-            -q \
-            -DforceStdout)
+  windows-app-image:
+    needs: build
+    runs-on: windows-latest
 
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Maven version: $VERSION"
+    env:
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 27
+        uses: actions/setup-java@v6
+        with:
+          java-version: '27'
+          distribution: 'temurin'
+          cache: maven
+          mvn-server-credentials: |
+            gh-read-packages:PACKAGES_READ_USERNAME:PACKAGES_READ_TOKEN
+            github:GITHUB_ACTOR:GITHUB_TOKEN
+
+      - name: Build Windows app-image
+        run: mvn -B package
+
+      - name: Archive portable app-image
+        run: Compress-Archive -Path rcp.core/target/RCP -DestinationPath rcp.core/target/RCP-windows-x64.zip
 
       - name: Create GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        shell: pwsh
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          JAR="rcp.core/target/rcp.core-${VERSION}.jar"
-
-          test -f "$JAR" || {
-            echo "JAR not found: $JAR"
-            exit 1
-          }
-
-          gh release create "v${VERSION}" \
-            "$JAR" \
-            --title "v${VERSION}" \
+          $version = mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout
+          gh release create "v$version" `
+            "rcp.core/target/RCP-windows-x64.zip" `
+            --title "v$version" `
             --generate-notes
