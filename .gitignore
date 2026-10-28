@@ -4,7 +4,6 @@
 .project
 *.css
 *.css.map
-/plugins/
 */*.log
-ccicon.ico
 */dependency-reduced-pom.xml
+target

@@ -33,11 +33,11 @@ RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the
 - Always run `mvn -B verify` before finishing; do not run `deploy` (publishes to GitHub Packages).
 
 ## Run (manual, Windows GUI – not usable in headless agents)
-`javaw.exe -Dlogpath=<dir> --enable-native-access=ALL-UNNAMED -jar rcp.core\target\rcp.core-<version>.jar`
+Build the portable image on Windows with `mvn clean package`, then run `rcp.core\target\RCP\RCP.exe`. The launcher bundles its runtime and configures native access and `C:\temp\rcp.log`.
 CLI args: `--blacklist <plugin>...` | `--whitelist <plugin>...` (mutually exclusive), `--setting key=value...`. Settings persist in `~/.rcprc`.
 
 ## CI (`.github/workflows/maven.yml`)
-Triggers on push/PR to `master` and `develop`. Ubuntu, JDK 27 temurin: PRs run `mvn -B verify`; pushes run `mvn -B deploy` and, on `master`, create a GitHub release with `rcp.core/target/rcp.core-<version>.jar`. Dependabot is configured in `.github/dependabot.yml`. Code must therefore compile on Linux (don't break compilation with Windows-only imports outside Windows-specific packages such as `core/windows`).
+Triggers on push/PR to `master` and `develop`. Ubuntu, JDK 27 temurin runs verification/deployment; a Windows JDK 27 job builds the portable app-image and publishes its ZIP on `master`. Dependabot is configured in `.github/dependabot.yml`. Code must therefore compile on Linux (don't break compilation with Windows-only imports outside Windows-specific packages such as `core/windows`).
 
 ## Tips
 - Repo root files: `pom.xml`, `README.md`, `.mvn/`, `.github/`, module dirs. `target/` and Eclipse files (`.project`, `.classpath`, `.settings`) are gitignored/IDE-only.

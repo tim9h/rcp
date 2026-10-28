@@ -112,6 +112,14 @@ public class CoreService {
 	public void restartApplication() {
 		logger.debug(() -> "Restarting application");
 		try {
+			var command = ProcessHandle.current().info().command().orElse("");
+			if (new File(command).getName().equalsIgnoreCase("RCP.exe")) {
+				new ProcessBuilder(command).start();
+				eventManager.post(new Event(Event.EVENT_RESTARTING));
+				shutdownWithFeedback();
+				return;
+			}
+
 			var javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "javaw";
 			var sourcepath = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).toFile()
 					.toString();

@@ -6,8 +6,8 @@ The application can be extended with plugins. Plugins are JAR files that are dis
 
 ## Requirements
 
-- Java 27
-- Windows (currently the supported platform)
+- JDK 27 to build the app-image
+- 64-bit Windows (supported runtime platform)
 
 ## Command-line arguments
 
@@ -22,18 +22,32 @@ The application can be extended with plugins. Plugins are JAR files that are dis
 From the repository root:
 
 ```text
-mvn clean install
+mvn clean package
 ```
+
+On Windows, this creates the portable app-image at `rcp.core/target/RCP`. The image
+includes its Java runtime and launcher; no separate Java installation is required.
+Copy or extract the entire `RCP` directory to the desired location and run
+`RCP.exe`.
 
 ## Running
 
-After building, run the shaded core JAR with `javaw.exe`:
+The launcher sets the required native-access options and writes logs to
+`C:\temp\rcp.log` (creating `C:\temp` if needed). Plugin JARs are loaded at startup
+from the `plugins` directory beside `RCP.exe`; for example:
+
+For IDE launches, `-Dlogpath` overrides the log directory (for example,
+`-Dlogpath=D:\misc\dev\logs` writes to `D:\misc\dev\logs\rcp.log`).
 
 ```text
-javaw.exe -Dlogpath=... --enable-native-access=rcp.core --enable-native-access=com.sun.jna --enable-native-access=javafx.graphics --enable-native-access=ALL-UNNAMED --enable-native-access=dev.tim9h.javafxblur2 --enable-native-access=javafx.media -jar rcp.core\target\rcp.core-....jar
+RCP\
+  RCP.exe
+  plugins\
+    plugin.jar
 ```
 
-Replace `...` with the desired log path and `....` with the generated project version.
+The launcher accepts the application options described above, for example
+`RCP.exe --setting core.ui.animations=false`.
 
 Global hotkeys use the Windows format `MODIFIER+KEY`, for example `ALT+SPACE`,
 `CTRL+ALT+R`, or `WIN+F1`. Supported modifiers are `CTRL`, `ALT`, `SHIFT`, and

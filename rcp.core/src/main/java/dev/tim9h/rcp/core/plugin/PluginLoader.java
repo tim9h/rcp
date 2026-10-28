@@ -1,7 +1,6 @@
 package dev.tim9h.rcp.core.plugin;
 
 import java.awt.Desktop;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -123,10 +122,9 @@ public class PluginLoader {
 	}
 
 	public void openPluginsDirectory() {
-		var jarDirectory = getJarDirectory();
-		if (jarDirectory != null) {
+		var pluginDirectory = getPluginDirectory();
+		if (pluginDirectory != null) {
 			try {
-				var pluginDirectory = Path.of(jarDirectory + "/plugins");
 				Desktop.getDesktop().open(pluginDirectory.toFile());
 			} catch (IOException e) {
 				logger.warn(() -> "Unable to open plugins directory: " + e.getMessage(), e);
@@ -139,11 +137,26 @@ public class PluginLoader {
 		}
 	}
 
+	private Path getPluginDirectory() {
+		var jarDirectory = getJarDirectory();
+		if (jarDirectory == null) {
+			return null;
+		}
+
+		var appDirectory = Path.of(jarDirectory);
+		var imageDirectory = appDirectory.getParent();
+		if (imageDirectory != null && appDirectory.getFileName().toString().equalsIgnoreCase("app")
+				&& Files.exists(imageDirectory.resolve("RCP.exe"))) {
+			return imageDirectory.resolve("plugins");
+		}
+		return appDirectory.resolve("plugins");
+	}
+
 	private String getJarDirectory() {
 		try {
-			var sourcepath = getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
-			if (Strings.CS.endsWith(sourcepath, ".jar")) {
-				return new File(sourcepath).getParentFile().getPath();
+			var sourcePath = Path.of(getClass().getProtectionDomain().getCodeSource().getLocation().toURI());
+			if (Strings.CS.endsWith(sourcePath.toString(), ".jar")) {
+				return sourcePath.getParent().toString();
 			} else {
 				return null;
 			}
@@ -172,7 +185,7 @@ public class PluginLoader {
 	private ServiceLoader<Plugin> createServiceLoader() {
 		var jarDirectory = getJarDirectory();
 		if (jarDirectory != null) {
-			var pluginDirectory = Path.of(jarDirectory + "/plugins");
+			var pluginDirectory = getPluginDirectory();
 			logger.debug(() -> "Initializing service loader - jar mode");
 			if (Files.exists(pluginDirectory)) {
 				logger.debug(() -> "PLugins directory found: " + pluginDirectory);

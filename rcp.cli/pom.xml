@@ -96,9 +96,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<outputDirectory>../rcp.core/target/plugins</outputDirectory>
-				</configuration>
 			</plugin>
 
 			<plugin>
@@ -129,5 +126,81 @@
 		</plugins>
 
 	</build>
+
+	<profiles>
+		<profile>
+			<id>windows-app-image</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>3.1.0</version>
+						<executions>
+							<execution>
+								<id>create-windows-app-image</id>
+								<phase>package</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<property name="image.dir" location="${project.basedir}/../rcp.core/target/RCP" />
+										<property name="input.dir" location="${project.build.directory}/jpackage-input" />
+										<delete dir="${input.dir}" />
+										<mkdir dir="${input.dir}" />
+										<copy file="${project.basedir}/../rcp.core/target/rcp.core-${project.version}.jar"
+											todir="${input.dir}" />
+										<delete dir="${project.basedir}/../rcp.core/target/plugins" />
+										<delete dir="${image.dir}" />
+										<exec executable="${java.home}/bin/jpackage.exe" failonerror="true"
+											dir="${project.build.directory}">
+											<arg value="--type" />
+											<arg value="app-image" />
+											<arg value="--name" />
+											<arg value="RCP" />
+											<arg value="--icon" />
+											<arg value="${project.basedir}/../rcp.core/src/main/resources/icon.ico" />
+											<arg value="--input" />
+											<arg value="${input.dir}" />
+											<arg value="--dest" />
+											<arg value="${project.basedir}/../rcp.core/target" />
+											<arg value="--main-jar" />
+											<arg value="rcp.core-${project.version}.jar" />
+											<arg value="--main-class" />
+											<arg value="dev.tim9h.rcp.core.Main" />
+											<arg value="--java-options" />
+											<arg value="-Dlogpath=C:\temp" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=rcp.core" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=com.sun.jna" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=javafx.graphics" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=ALL-UNNAMED" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=dev.tim9h.javafxblur2" />
+											<arg value="--java-options" />
+											<arg value="--enable-native-access=javafx.media" />
+										</exec>
+										<mkdir dir="${image.dir}/plugins" />
+										<copy file="${project.build.directory}/${project.build.finalName}.jar"
+											todir="${image.dir}/plugins" />
+										<echo file="${image.dir}/plugins/README.txt">Place plugin JAR files in this directory.</echo>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
