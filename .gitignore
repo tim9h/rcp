@@ -4,6 +4,4 @@
 .project
 *.css
 *.css.map
-*/*.log
-*/dependency-reduced-pom.xml
-target
+target/
