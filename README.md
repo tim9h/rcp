@@ -30,7 +30,7 @@ mvn clean install
 After building, run the shaded core JAR with `javaw.exe`:
 
 ```text
-javaw.exe -Dlogpath=... --enable-native-access=ALL-UNNAMED -jar rcp.core\target\rcp.core-....jar
+javaw.exe -Dlogpath=... --enable-native-access=rcp.core --enable-native-access=com.sun.jna --enable-native-access=javafx.graphics --enable-native-access=ALL-UNNAMED --enable-native-access=dev.tim9h.javafxblur2 --enable-native-access=javafx.media -jar rcp.core\target\rcp.core-....jar
 ```
 
 Replace `...` with the desired log path and `....` with the generated project version.
