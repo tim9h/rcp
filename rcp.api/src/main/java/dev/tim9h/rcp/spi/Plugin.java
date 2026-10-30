@@ -15,7 +15,7 @@ public interface Plugin {
 	public String getName();
 
 	public default String getId() {
-		return getName().toLowerCase().replace("\\\\w", "");
+		return getName().toLowerCase().replaceAll("\\s+", "");
 	}
 
 	public default Optional<Node> getNode() throws IOException {
