@@ -156,6 +156,23 @@
 			-fx-border-color: $accent-darker;
 		}
 	}
+	
+	.toggle-button {
+		-fx-text-fill: $text-color-secondary;
+		
+		&:hover, &:focused {
+			-fx-text-fill: $text-color;
+			-fx-border-color: $accent-color;
+		}
+		
+		&:pressed {
+			-fx-border-color: $accent-darker;
+		}
+		
+		&:selected {
+			-fx-text-fill: $accent-color;
+		}
+	}
 
 	.traymenu {
 		-fx-background-color: $background-color-opaque !important; 

@@ -66,14 +66,19 @@ $default-font-size: 14;
 	}
 }
 
-.button {
+.centeredFlowPane {
+	-fx-alignment: center;
+	-fx-hgap: 10;
+}
+
+.button, .toggle-button {
 	-fx-background-color:transparent;
 	-fx-border-width: 2;
 	-fx-border-color: transparent;
 	-fx-font-family: unset;
+	-fx-border-radius: 100;
 	
 	&.icon-button {
-		-fx-border-radius: 100;
 		-fx-font-size: 10;
 	}
 	
