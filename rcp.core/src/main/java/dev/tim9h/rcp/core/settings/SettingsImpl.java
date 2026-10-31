@@ -171,16 +171,16 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public List<String> getStringList(String property) {
-		String value = getProperty(property);
+		var value = getProperty(property);
 		if (value != null) {
-			return Arrays.asList(value.split(","));
+			return Arrays.stream(value.split(",")).map(String::strip).toList();
 		}
 		return Collections.emptyList();
 	}
 
 	@Override
 	public Set<String> getStringSet(String property) {
-		String value = getProperty(property);
+		var value = getProperty(property);
 		if (StringUtils.isBlank(value)) {
 			return Collections.emptySet();
 		}
