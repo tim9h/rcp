@@ -107,8 +107,6 @@ public class UiApplication extends Application {
 
 	private static String[] argsGlobal;
 
-	private static final double WINDOW_VERTICAL_PADDING = 13.0;
-
 	private WindowsHotkeyService hotkeyService;
 
 	private long previousForegroundWindowHandle;
@@ -167,7 +165,9 @@ public class UiApplication extends Application {
 		cardContainer.applyCss();
 		cardContainer.layout();
 
-		maxHeight = Math.ceil(cardContainer.prefHeight(-1)) + WINDOW_VERTICAL_PADDING;
+		var availableWidth = cardContainer.getWidth();
+		var preferredHeight = cardContainer.prefHeight(availableWidth);
+		maxHeight = Math.ceil(preferredHeight);
 
 		initAnimation();
 
