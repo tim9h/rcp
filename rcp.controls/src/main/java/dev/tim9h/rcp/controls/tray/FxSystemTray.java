@@ -1,6 +1,7 @@
 package dev.tim9h.rcp.controls.tray;
 
 import java.awt.AWTException;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.MouseInfo;
 import java.awt.SystemTray;
@@ -23,6 +24,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -229,6 +231,10 @@ public class FxSystemTray {
 	}
 
 	private void showMenuAndSubmenus(double x, double y) {
+		var fxPosition = toFxScreenCoordinates(x, y);
+		x = fxPosition.getX();
+		y = fxPosition.getY();
+
 		// Move the owner stage to the mouse position and request focus
 		// so the popup can properly grab the OS focus context
 		hiddenOwnerStage.setX(x);
@@ -396,6 +402,22 @@ public class FxSystemTray {
 				}
 			}
 		}
+	}
+
+	private Point2D toFxScreenCoordinates(double x, double y) {
+		var awtDevices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+		var fxScreens = Screen.getScreens();
+		for (var index = 0; index < awtDevices.length && index < fxScreens.size(); index++) {
+			var awtBounds = awtDevices[index].getDefaultConfiguration().getBounds();
+			if (awtBounds.contains(x, y)) {
+				var fxBounds = fxScreens.get(index).getBounds();
+				var scaleX = fxBounds.getWidth() / awtBounds.getWidth();
+				var scaleY = fxBounds.getHeight() / awtBounds.getHeight();
+				return new Point2D(fxBounds.getMinX() + (x - awtBounds.getMinX()) * scaleX,
+						fxBounds.getMinY() + (y - awtBounds.getMinY()) * scaleY);
+			}
+		}
+		return new Point2D(x, y);
 	}
 
 	private void showSubmenuLeft(Popup submenuPopup, VBox submenuPane, Node parentNode, Popup menuPopup) {
