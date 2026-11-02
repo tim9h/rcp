@@ -1,4 +1,6 @@
 $default-font-size: 14;
+$small-font-size: 12;
+$tiny-font-size: 10;
 
 @font-face {
 	src: url('../font/Roboto-Regular.ttf');
@@ -28,7 +30,15 @@ $default-font-size: 14;
 		-fx-font-size: $default-font-size;
 		-fx-padding: 0 3px;
 	}
-
+	
+	.highlighted-label {
+		-fx-font-size: $default-font-size;
+	}
+	
+	.detail-label {
+		-fx-font-size: $small-font-size;
+	}
+	
 	.animated-label .text {
 		-fx-font-size: $default-font-size;
 	}
@@ -37,6 +47,10 @@ $default-font-size: 14;
 		-fx-border-width: 0 0 0 2;
 		-fx-border-color: transparent;
 		-fx-padding: 0 1px;
+		
+		.detail-label {
+			-fx-font-size: $small-font-size;
+		}
 	}
 	
 	.hyperlink {
@@ -77,6 +91,7 @@ $default-font-size: 14;
 	-fx-border-color: transparent;
 	-fx-font-family: unset;
 	-fx-border-radius: 100;
+	-fx-font-size: $default-font-size;
 	
 	&.icon-button {
 		-fx-font-size: 10;
@@ -101,6 +116,7 @@ $default-font-size: 14;
 		-fx-border-radius: 0 !important;
 		-fx-border-width: 0;
 		-fx-background-radius: 0;
+		-fx-font-size: $small-font-size;
 		
 		&:pressed {
 			-fx-scale-x: 1;
