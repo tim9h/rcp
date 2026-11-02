@@ -44,6 +44,8 @@ public record Event(String name, Object... payload) {
 
 	public static final String EVENT_GPU_HIGH_LOAD = "SYSMON_GPU_HIGH_LOAD";
 
+	public static final String EVENT_CALENDAR_NEXT_EVENT = "CLOCK_CALENDAR_NEXT_EVENT";
+
 	public Event(String name) {
 		this(name, (Object[]) null);
 	}
