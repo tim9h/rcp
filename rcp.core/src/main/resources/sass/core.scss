@@ -21,10 +21,15 @@ $tiny-font-size: 10;
 }
 
 .ccCard {
-	-fx-border-width: 2;
-	-fx-border-radius: 2;
+	-fx-border-width: 1;
+	-fx-border-radius: 3;
 	-fx-background-radius: 3px;
-	-fx-padding: 5px;
+	-fx-padding: 5px 5px 6px 5px;
+	
+	&.rounded {
+		-fx-border-radius: 100;
+		-fx-background-radius: 100;
+	}
 	
 	.label {
 		-fx-font-size: $default-font-size;
@@ -86,9 +91,8 @@ $tiny-font-size: 10;
 }
 
 .button, .toggle-button {
-	-fx-background-color:transparent;
+	-fx-background-radius: 100;
 	-fx-border-width: 2;
-	-fx-border-color: transparent;
 	-fx-font-family: unset;
 	-fx-border-radius: 100;
 	-fx-font-size: $default-font-size;

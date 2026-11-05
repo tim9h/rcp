@@ -144,8 +144,9 @@
 		}
 	}
 
-
 	.button {
+		-fx-background-color: $card-background-color;
+		-fx-border-color: transparent;
 		-fx-text-fill: $accent-color;
 		
 		&:hover, &:focused {
@@ -158,6 +159,8 @@
 	}
 	
 	.toggle-button {
+		-fx-background-color: $card-background-color;
+		-fx-border-color: transparent;
 		-fx-text-fill: $text-color-secondary;
 		
 		&:hover, &:focused {
