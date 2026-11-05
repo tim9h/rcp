@@ -30,6 +30,10 @@ public interface Plugin {
 		return Optional.empty();
 	}
 
+	public default List<Theme> getThemes() {
+		return Collections.emptyList();
+	}
+
 	public default Gravity getGravity() {
 		return new Gravity(Position.BOTTOM);
 	}

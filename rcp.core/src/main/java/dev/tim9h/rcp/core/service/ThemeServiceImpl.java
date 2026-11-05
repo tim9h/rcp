@@ -5,7 +5,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.jar.JarFile;
 
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +25,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
+import dev.tim9h.rcp.spi.Theme;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -46,6 +50,12 @@ public class ThemeServiceImpl implements ThemeService {
 
 	private Boolean darkTheme;
 
+	private final Map<String, Theme> themes = new LinkedHashMap<>();
+
+	private String activeThemeStylesheet;
+
+	private boolean themeCommandRegistered;
+
 	@Inject
 	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
 			TrayManager trayManager, CommandsService commandsService) {
@@ -61,7 +71,9 @@ public class ThemeServiceImpl implements ThemeService {
 		scene.getStylesheets().add(stylesheet);
 		trayManager.applyStyle(stylesheet);
 
+		registerThemes(getBuiltInThemes());
 		registerThemeCommand();
+		themeCommandRegistered = true;
 	}
 
 	public void registerThemeCommand() {
@@ -86,8 +98,9 @@ public class ThemeServiceImpl implements ThemeService {
 		if (theme == null || theme.isBlank()) {
 			return null;
 		}
-		var url = getClass().getResource(String.format("/css/theme_%s.css", theme.toLowerCase()));
-		if (url == null) {
+		var normalizedTheme = theme.toLowerCase(Locale.ROOT);
+		var selectedTheme = themes.get(normalizedTheme);
+		if (selectedTheme == null) {
 			return null;
 		} else {
 			if (persist) {
@@ -96,20 +109,22 @@ public class ThemeServiceImpl implements ThemeService {
 			if (modeService.isModeActive("alert") && persist) {
 				return theme;
 			}
-			if (!scene.getStylesheets().contains(url.toExternalForm())) {
+			var themeUrl = selectedTheme.stylesheet();
+			if (!scene.getStylesheets().contains(themeUrl)) {
 				logger.info(() -> "Setting theme to " + theme);
-				var themeUrl = url.toExternalForm();
+				if (activeThemeStylesheet != null) {
+					scene.getStylesheets().remove(activeThemeStylesheet);
+				}
 				scene.getStylesheets().add(themeUrl);
-				scene.getStylesheets().removeIf(style -> style.contains("/css/theme_") && !themeUrl.equals(style));
+				activeThemeStylesheet = themeUrl;
 				trayManager.applyTheme(themeUrl);
-				updateWindowsBackdropEffects(theme);
+				updateWindowsBackdropEffects(selectedTheme.dark());
 			}
 		}
 		return theme;
 	}
 
-	private void updateWindowsBackdropEffects(String theme) {
-		var darkThemeNew = isDarkTheme(theme);
+	private void updateWindowsBackdropEffects(boolean darkThemeNew) {
 		if (darkTheme == null) {
 			eventManager.post(Event.EVENT_THEME_MODE_CHANGED, darkThemeNew ? "dark" : "light");
 			darkTheme = darkThemeNew;
@@ -124,10 +139,28 @@ public class ThemeServiceImpl implements ThemeService {
 	}
 
 	private static boolean isDarkTheme(String theme) {
-		return switch (theme) {
-		case "Hoth", "Laurelin", "Telperion" -> false;
+		return switch (theme.toLowerCase(Locale.ROOT)) {
+		case "hoth", "laurelin", "telperion" -> false;
 		default -> true;
 		};
+	}
+
+	@Override
+	public void registerThemes(List<Theme> themesToRegister) {
+		var registeredNames = new ArrayList<String>();
+		for (var theme : themesToRegister) {
+			var name = theme.name().toLowerCase(Locale.ROOT);
+			if (themes.putIfAbsent(name, theme) != null) {
+				logger.warn(() -> "Ignoring duplicate theme '" + theme.name() + "'");
+				continue;
+			}
+			registeredNames.add(StringUtils.capitalize(theme.name()));
+		}
+		if (themeCommandRegistered && !registeredNames.isEmpty()) {
+			commandsService.add(
+					new CommandBuilder().command("theme").children(registeredNames.toArray(String[]::new)).getRoot());
+			commandsService.propagateCommands("theme");
+		}
 	}
 
 	private List<String> getFileNames(String directory) {
@@ -178,8 +211,7 @@ public class ThemeServiceImpl implements ThemeService {
 
 	@Override
 	public void createThemeMenu() {
-		var themes = getThemeNames();
-		var items = Arrays.stream(themes)
+		var items = Arrays.stream(getThemeNames())
 				.map(theme -> new MenuItemData(StringUtils.capitalize(theme), () -> Platform.runLater(() -> {
 					setTheme(theme, true);
 					eventManager.post(Event.EVENT_THEME_CHANGED, theme);
@@ -188,9 +220,16 @@ public class ThemeServiceImpl implements ThemeService {
 	}
 
 	private String[] getThemeNames() {
-		return getFileNames("css").stream().filter(file -> file.startsWith("theme_") && !file.endsWith(".map"))
-				.map(file -> file.replace("theme_", StringUtils.EMPTY).replace(".css", StringUtils.EMPTY))
-				.map(StringUtils::capitalize).toArray(String[]::new);
+		return themes.values().stream().map(Theme::name).map(StringUtils::capitalize).toArray(String[]::new);
+	}
+
+	private List<Theme> getBuiltInThemes() {
+		return getFileNames("css").stream().filter(file -> file.startsWith("theme_") && file.endsWith(".css"))
+				.map(file -> {
+					var name = file.substring("theme_".length(), file.length() - ".css".length());
+					var stylesheet = getClass().getResource("/css/" + file).toExternalForm();
+					return new Theme(name, stylesheet, isDarkTheme(name));
+				}).toList();
 	}
 
 }
