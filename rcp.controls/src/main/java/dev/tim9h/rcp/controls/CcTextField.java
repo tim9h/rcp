@@ -253,7 +253,17 @@ public class CcTextField extends TextField {
 	}
 
 	public void addCommand(CommandNode command) {
-		getCommands().add(command);
+		mergeCommand(getCommands(), command);
+	}
+
+	private void mergeCommand(CommandNode parent, CommandNode incoming) {
+		var target = parent.get(incoming.getData());
+		if (target == null) {
+			target = parent.add(incoming.getData());
+		}
+		for (var child : incoming.getChildren()) {
+			mergeCommand(target, child);
+		}
 	}
 
 	private void initHistory() {

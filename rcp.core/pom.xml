@@ -97,6 +97,9 @@
 					<version>1.83.0</version>
 					<inputFolder>${basedir}/src/main/resources/sass</inputFolder>
 					<outputFolder>${basedir}/src/main/resources/css</outputFolder>
+					<loadPaths>
+						<loadPath>${project.parent.basedir}/rcp.api/src/main/resources/sass</loadPath>
+					</loadPaths>
 				</configuration>
 				<executions>
 					<execution>

@@ -1,6 +1,7 @@
 package dev.tim9h.rcp.core.ui;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +28,7 @@ import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
+import dev.tim9h.rcp.spi.Theme;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -260,6 +262,16 @@ public class UiApplication extends Application {
 
 	public void initNodes(VBox vbox) {
 		var plugins = pluginLoader.loadPlugins();
+		var contributedThemes = new ArrayList<Theme>();
+		for (var plugin : plugins) {
+			try {
+				contributedThemes.addAll(plugin.getThemes());
+			} catch (Exception e) {
+				logger.error(() -> "Unable to load themes from plugin " + plugin.getName(), e);
+				eventManager.post(Event.EVENT_ALERT);
+			}
+		}
+		themeService.registerThemes(contributedThemes);
 		plugins.forEach(card -> initPluginUi(vbox, card));
 
 		// create spacer between middle and bottom cards
