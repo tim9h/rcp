@@ -7,6 +7,7 @@ import dev.tim9h.rcp.event.EventManager;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
@@ -22,6 +23,7 @@ public class IconButton extends StackPane {
 
 	public IconButton() {
 		button = new Button();
+		StackPane.setMargin(button, new Insets(0, 4, 0, 4));
 		button.getStyleClass().add("icon-button");
 		getChildren().add(button);
 		setAlignment(Pos.CENTER);
