@@ -10,7 +10,9 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Shape;
 
 public class IconButton extends StackPane {
 
@@ -35,6 +37,16 @@ public class IconButton extends StackPane {
 
 	public void setLabel(char label) {
 		button.setText(String.valueOf(label));
+	}
+
+	public void setGraphic(Node graphic) {
+		button.textProperty().unbind();
+		button.setText(null);
+		button.setGraphic(graphic);
+	}
+
+	public void bindGraphicFill(Shape graphic) {
+		graphic.fillProperty().bind(button.textFillProperty());
 	}
 
 	public void setOnAction(EventHandler<ActionEvent> value) {
