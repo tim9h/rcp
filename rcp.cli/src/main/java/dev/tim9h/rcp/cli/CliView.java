@@ -144,8 +144,11 @@ public class CliView implements Plugin {
 		colCenter.setPercentWidth(60);
 		inputGrid.getColumnConstraints().addAll(colSide, colCenter, colSide);
 		lblInterpretation.getStyleClass().add("interpretation-label");
-		calculateWidth();
+		lblInterpretation.setMinWidth(0);
+		lblInterpretation.setClipEnabled(false);
 		lblResponse.getStyleClass().add("response-label");
+		lblResponse.setMinWidth(0);
+		lblResponse.setClipEnabled(false);
 		tfiInput.setOnSubmit(value -> {
 			CliView.this.submitInput(value);
 			tfiInput.clear();
@@ -154,12 +157,6 @@ public class CliView implements Plugin {
 		var outerPane = new VBox(lblInterpretation, lblResponse, inputGrid);
 		outerPane.getStyleClass().add("plugin-cli");
 		return Optional.of(outerPane);
-	}
-
-	private void calculateWidth() {
-		var width = settings.getDouble("core.ui.stage.width").doubleValue() - 25;
-		lblInterpretation.setClipWidth(width);
-		lblResponse.setClipWidth(width);
 	}
 
 	@Override
@@ -218,11 +215,6 @@ public class CliView implements Plugin {
 				eventManager.post(Event.EVENT_ALERT);
 			}
 		});
-	}
-
-	@Override
-	public void onSettingsChanged() {
-		calculateWidth();
 	}
 
 	@Override
