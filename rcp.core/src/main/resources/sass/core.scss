@@ -101,19 +101,14 @@ $tiny-font-size: 10;
 		-fx-font-size: 10;
 	}
 	
-	&:pressed {
-        -fx-scale-x: 0.95;
-		-fx-scale-y: 0.95;
-	    -fx-scale-z: 0.95;
-	}
 }
 
 .traymenu {
 	-fx-opacity: 1.0;
 	-fx-padding: 0;
 	-fx-border-width: 1;
-	-fx-background-radius: 0;
-	-fx-border-radius: 0;
+	-fx-background-radius: 5;
+	-fx-border-radius: 3;
 	
 	>.button {
 		-fx-padding: 4 8 4 8;
@@ -122,16 +117,15 @@ $tiny-font-size: 10;
 		-fx-background-radius: 0;
 		-fx-font-size: $small-font-size;
 		
-		&:pressed {
-			-fx-scale-x: 1;
-			-fx-scale-y: 1;
-			-fx-scale-z: 1;
-		}
 	}
 	
 	.separator .line{
 		-fx-border-width: 1 0 0 0;
 	}
+}
+
+.traymenu-submenu {
+	-fx-padding: 0 1px 0 0;
 }
 
 .root.popup {

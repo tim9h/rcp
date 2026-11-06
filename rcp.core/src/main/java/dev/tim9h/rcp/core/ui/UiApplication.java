@@ -11,6 +11,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 
 import dev.tim9h.javafxblur2.WindowsBackdrop;
+import dev.tim9h.rcp.controls.ButtonAnimations;
 import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
@@ -320,6 +321,8 @@ public class UiApplication extends Application {
 		cardContainer.getStyleClass().add("card-container");
 		initNodes(cardContainer);
 		scene.setRoot(cardContainer);
+		ButtonAnimations.install(cardContainer,
+				() -> settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue());
 
 		// hide panel when pressing ESC
 		scene.addEventHandler(KeyEvent.KEY_RELEASED, event -> {

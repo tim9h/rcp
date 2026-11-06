@@ -186,6 +186,8 @@
 		}
 		
 		>.button {
+			-fx-background-color: transparent;
+
 			&:hover, &:focused {
 			    -fx-background-color: $card-background-color;
 			}

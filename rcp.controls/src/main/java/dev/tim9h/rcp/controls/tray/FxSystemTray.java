@@ -47,6 +47,8 @@ public class FxSystemTray {
 
 	private static final String CSS_CLASS_TRAYMENU = "traymenu";
 
+	private static final String CSS_CLASS_TRAYMENU_SUBMENU = "traymenu-submenu";
+
 	private static final Logger logger = LogManager.getLogger(FxSystemTray.class);
 
 	private Popup menuPopup;
@@ -289,6 +291,7 @@ public class FxSystemTray {
 				def.submenuPopup = new Popup();
 				def.submenuPane = new VBox();
 				def.submenuPane.getStyleClass().add(CSS_CLASS_TRAYMENU);
+				def.submenuPane.getStyleClass().add(CSS_CLASS_TRAYMENU_SUBMENU);
 				def.submenuPane.setPickOnBounds(true);
 				def.submenuPane.setFocusTraversable(true);
 
