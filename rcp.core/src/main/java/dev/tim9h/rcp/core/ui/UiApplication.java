@@ -531,7 +531,21 @@ public class UiApplication extends Application {
 			y += TOP_MARGIN;
 		}
 		stage.setY(y);
-		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
+		var width = settings.getDouble(SettingsConsts.WIDTH).doubleValue();
+		stage.setWidth(width);
+
+		var root = (Region) stage.getScene().getRoot();
+		root.applyCss();
+		root.layout();
+		maxHeight = Math.ceil(root.prefHeight(width));
+
+		if (expanded) {
+			if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+				animateHeight(maxHeight, null);
+			} else {
+				stage.setHeight(maxHeight);
+			}
+		}
 	}
 
 	@Override
