@@ -10,6 +10,7 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ButtonBase;
+import javafx.scene.control.Hyperlink;
 import javafx.util.Duration;
 
 /** Installs subtle hover and pressed animations on buttons in a scene graph. */
@@ -51,7 +52,7 @@ public final class ButtonAnimations {
 	}
 
 	private static void installButton(ButtonBase button, BooleanSupplier animationsEnabled) {
-		if (button.getProperties().containsKey(BUTTON_STATE_KEY)) {
+		if (button instanceof Hyperlink || button.getProperties().containsKey(BUTTON_STATE_KEY)) {
 			return;
 		}
 

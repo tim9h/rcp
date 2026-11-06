@@ -52,19 +52,23 @@
 		// clickable AnimatedLabel (same behavior as .hyperlink)
 		.animated-label.link {
 			&:hover {
-				-fx-border-color: $accent-color;
+				-fx-background-color: rgba($accent-color, 0.12);
+
+				.text {
+					-fx-fill: $accent-color;
+				}
 			}
 
 			&:pressed {
-				-fx-border-color: $accent-darker;
+				-fx-background-color: rgba($accent-color, 0.22);
 
 				.text {
-					-fx-fill: $text-color-secondary;
-
-					&.accent-label {
-						-fx-fill: $accent-darker;
-					}
+					-fx-fill: $accent-darker;
 				}
+			}
+
+			&:focused {
+				-fx-background-color: rgba($accent-color, 0.12);
 			}
 		}
 
@@ -72,18 +76,22 @@
 			-fx-text-fill: $text-color;
 			
 			&:hover {
-			    -fx-border-color: $accent-color; 
+				-fx-background-color: rgba($accent-color, 0.12);
+				-fx-text-fill: $accent-color;
 			}
 			
 			&:pressed {
-				-fx-text-fill: $text-color-secondary;
-				-fx-border-color: $accent-darker;
+				-fx-background-color: rgba($accent-color, 0.22);
+				-fx-text-fill: $accent-darker;
+			}
+			
+			&:focused {
+				-fx-background-color: rgba($accent-color, 0.12);
 			}
 			
 			&.accent-label {
 				&:pressed {
 					-fx-text-fill: $accent-darker !important;
-					-fx-border-color: $accent-darker;
 				}
 			}
 		}

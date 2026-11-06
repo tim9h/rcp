@@ -33,7 +33,10 @@ $tiny-font-size: 10;
 	
 	.label {
 		-fx-font-size: $default-font-size;
-		-fx-padding: 0 3px;
+		-fx-border-width: 1;
+		-fx-border-radius: 5;
+		-fx-border-color: transparent;
+		-fx-padding: 1px 4px;
 	}
 	
 	.highlighted-label {
@@ -49,9 +52,12 @@ $tiny-font-size: 10;
 	}
 
 	.animated-label.link {
-		-fx-border-width: 0 0 0 2;
+		-fx-background-color: transparent;
+		-fx-background-radius: 4;
+		-fx-border-width: 1;
+		-fx-border-radius: 5;
 		-fx-border-color: transparent;
-		-fx-padding: 0 1px;
+		-fx-padding: 1px 4px;
 		
 		.detail-label {
 			-fx-font-size: $small-font-size;
@@ -60,10 +66,13 @@ $tiny-font-size: 10;
 	
 	.hyperlink {
 		-fx-font-size: $default-font-size;
-		-fx-border-width: 0 0 0 2;
+		-fx-background-color: transparent;
+		-fx-background-radius: 4;
+		-fx-border-width: 1;
+		-fx-border-radius: 5;
 		-fx-border-color: transparent;
 		-fx-margin: 0;
-		-fx-padding: 0 1px;
+		-fx-padding: 1px 4px;
 		
 		&:hover {
 		    -fx-underline: false;
@@ -71,7 +80,6 @@ $tiny-font-size: 10;
 		}
 		
 		&:focused {
-			-fx-border-style: solid;
 			-fx-cursor: default;
 		}
 		
