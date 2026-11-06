@@ -3,7 +3,13 @@ $small-font-size: 12;
 $tiny-font-size: 10;
 
 @font-face {
+	font-family: "Roboto";
 	src: url('../font/Roboto-Regular.ttf');
+}
+
+@font-face {
+	font-family: "Roboto";
+	src: url('../font/Roboto-Bold.ttf');
 }
 
 @font-face {
@@ -13,7 +19,7 @@ $tiny-font-size: 10;
 .root {
 	-fx-opacity: 0.95;
 	-fx-padding: 10px;
-	-fx-font-family: Roboto Regular;
+	-fx-font-family: Roboto;
 }
 
 .card-container {
@@ -41,6 +47,7 @@ $tiny-font-size: 10;
 	
 	.highlighted-label {
 		-fx-font-size: $default-font-size;
+		-fx-font-weight: bold;
 	}
 	
 	.detail-label {
@@ -74,6 +81,10 @@ $tiny-font-size: 10;
 		-fx-margin: 0;
 		-fx-padding: 1px 4px;
 		
+		&.highlighted {
+			-fx-font-weight: bold;
+		}
+		
 		&:hover {
 		    -fx-underline: false;
 		    -fx-cursor: default;
@@ -106,9 +117,14 @@ $tiny-font-size: 10;
 	-fx-font-size: $default-font-size;
 	
 	&.icon-button {
-		-fx-font-size: 10;
+		-fx-font-size: 12;
 	}
-	
+}
+
+.toggle-button {
+	&:selected {
+		-fx-font-weight: bold;
+	}
 }
 
 .traymenu {
