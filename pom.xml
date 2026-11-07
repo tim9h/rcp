@@ -21,7 +21,7 @@
 		<apache.commons-io.version>2.22.0</apache.commons-io.version>
 		<apache.commons-cli.version>1.11.0</apache.commons-cli.version>
 		<javafx.version>28-ea+11</javafx.version>
-		<guava.version>33.7.2-jre</guava.version>
+		<guava.version>33.8.0-jre</guava.version>
 		<guice.version>7.0.0</guice.version>
 	</properties>
 
