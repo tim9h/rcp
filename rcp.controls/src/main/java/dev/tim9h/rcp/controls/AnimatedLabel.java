@@ -63,7 +63,6 @@ public class AnimatedLabel extends FlowPane {
 
 	private String targetText = StringUtils.EMPTY;
 
-
 	@InjectLogger
 	private Logger logger;
 
@@ -218,6 +217,16 @@ public class AnimatedLabel extends FlowPane {
 
 		if (animationLength == 0) {
 			setText(StringUtils.EMPTY);
+			return;
+		}
+		if (text.isBlank() || text.codePoints().allMatch(Character::isSpaceChar)) {
+			timeline.setCycleCount(1);
+			for (int i = 1; i <= visibleText.length(); i++) {
+				var remainingText = visibleText.substring(0, visibleText.length() - i);
+				timeline.getKeyFrames().add(new KeyFrame(getTypeInterval().multiply(i), _ -> setText(remainingText)));
+			}
+			timeline.setOnFinished(_ -> setText(StringUtils.EMPTY));
+			timeline.playFromStart();
 			return;
 		}
 

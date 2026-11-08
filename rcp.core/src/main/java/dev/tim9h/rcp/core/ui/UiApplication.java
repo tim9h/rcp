@@ -11,6 +11,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 
 import dev.tim9h.javafxblur2.WindowsBackdrop;
+import dev.tim9h.rcp.controls.ButtonAnimations;
 import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
@@ -320,6 +321,8 @@ public class UiApplication extends Application {
 		cardContainer.getStyleClass().add("card-container");
 		initNodes(cardContainer);
 		scene.setRoot(cardContainer);
+		ButtonAnimations.install(cardContainer,
+				() -> settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue());
 
 		// hide panel when pressing ESC
 		scene.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
@@ -528,7 +531,21 @@ public class UiApplication extends Application {
 			y += TOP_MARGIN;
 		}
 		stage.setY(y);
-		stage.setWidth(settings.getDouble(SettingsConsts.WIDTH).doubleValue());
+		var width = settings.getDouble(SettingsConsts.WIDTH).doubleValue();
+		stage.setWidth(width);
+
+		var root = (Region) stage.getScene().getRoot();
+		root.applyCss();
+		root.layout();
+		maxHeight = Math.ceil(root.prefHeight(width));
+
+		if (expanded) {
+			if (settings.getBoolean(SettingsConsts.ANIMATIONS_ENABLED).booleanValue()) {
+				animateHeight(maxHeight, null);
+			} else {
+				stage.setHeight(maxHeight);
+			}
+		}
 	}
 
 	@Override

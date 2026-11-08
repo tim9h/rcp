@@ -7,28 +7,12 @@ $default-font-size: 14;
 		-fx-font-size: $default-font-size;
 	}
 
-	.label {
-
-		&.response-label {
-			-fx-font-size: 18px;
-			-fx-font-weight: bold;
-			-fx-alignment: center;
-			-fx-max-width: 1000px;
-		}
-		
-		&.interpretation-label {
-			-fx-alignment: center;
-			-fx-opacity: 0.75;
-			-fx-max-width: 1000px;
-		}
-	}
-	
 	.text-field {
 		&.cli-input {
 			-fx-font-size: 15px;
 		}
 		&.highlight {
-			-fx-font-family: "Cascadia Code Regular";
+			-fx-font-family: "Roboto Mono Regular";
 		}
 	}
 	
