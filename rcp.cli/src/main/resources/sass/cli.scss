@@ -7,20 +7,6 @@ $default-font-size: 14;
 		-fx-font-size: $default-font-size;
 	}
 
-	.animated-label {
-
-		&.response-label {
-			-fx-alignment: center;
-			-fx-max-width: 1000px;
-		}
-		
-		&.interpretation-label {
-			-fx-alignment: center;
-			-fx-opacity: 0.75;
-			-fx-max-width: 1000px;
-		}
-	}
-	
 	.text-field {
 		&.cli-input {
 			-fx-font-size: 15px;

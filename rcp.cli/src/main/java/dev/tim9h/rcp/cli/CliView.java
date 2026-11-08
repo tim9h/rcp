@@ -41,6 +41,7 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.geometry.Pos;
 import javafx.scene.text.Text;
 
 public class CliView implements Plugin {
@@ -144,9 +145,13 @@ public class CliView implements Plugin {
 		colCenter.setPercentWidth(60);
 		inputGrid.getColumnConstraints().addAll(colSide, colCenter, colSide);
 		lblInterpretation.getStyleClass().add("interpretation-label");
+		lblInterpretation.setMaxWidth(Double.MAX_VALUE);
+		lblInterpretation.setAlignment(Pos.CENTER);
 		lblInterpretation.setMinWidth(0);
 		lblInterpretation.setClipEnabled(false);
 		lblResponse.getStyleClass().add("response-label");
+		lblResponse.setMaxWidth(Double.MAX_VALUE);
+		lblResponse.setAlignment(Pos.CENTER);
 		lblResponse.setMinWidth(0);
 		lblResponse.setClipEnabled(false);
 		tfiInput.setOnSubmit(value -> {
