@@ -16,7 +16,6 @@ import dev.tim9h.rcp.core.plugin.PluginLoader;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CoreService;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
-import dev.tim9h.rcp.core.service.ThemeService;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.core.util.BasicModule;
 import dev.tim9h.rcp.core.util.TrayManager;
@@ -25,6 +24,7 @@ import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ThemeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
@@ -269,7 +269,6 @@ public class UiApplication extends Application {
 				contributedThemes.addAll(plugin.getThemes());
 			} catch (Exception e) {
 				logger.error(() -> "Unable to load themes from plugin " + plugin.getName(), e);
-				eventManager.post(Event.EVENT_ALERT);
 			}
 		}
 		themeService.registerThemes(contributedThemes);
@@ -479,7 +478,6 @@ public class UiApplication extends Application {
 			logger.info(() -> "Plugin UI loaded: " + plugin.getName());
 		} catch (IOException e) {
 			logger.error(() -> "Unable to initialize plugin UI for " + plugin.getName(), e);
-			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 
@@ -492,7 +490,6 @@ public class UiApplication extends Application {
 					() -> Platform.runLater(() -> setExpanded(!expanded, true)));
 		} catch (RuntimeException e) {
 			logger.error(() -> "Unable to register global hotkey", e);
-			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 
@@ -574,10 +571,8 @@ public class UiApplication extends Application {
 	}
 
 	private void registerExceptionHandler() {
-		Thread.currentThread().setUncaughtExceptionHandler((_, exception) -> {
-			logger.error(() -> "Unhandled JavaFX exception", exception);
-			eventManager.post(Event.EVENT_ALERT);
-		});
+		Thread.currentThread().setUncaughtExceptionHandler(
+				(_, exception) -> logger.error(() -> "Unhandled JavaFX exception", exception));
 	}
 
 }

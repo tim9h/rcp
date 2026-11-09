@@ -34,6 +34,7 @@ import dev.tim9h.rcp.spi.Plugin;
 import dev.tim9h.rcp.spi.Position;
 import dev.tim9h.rcp.spi.TreeNode;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -41,7 +42,6 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.geometry.Pos;
 import javafx.scene.text.Text;
 
 public class CliView implements Plugin {
@@ -207,7 +207,6 @@ public class CliView implements Plugin {
 		}
 		if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
 			logger.warn(() -> "Opening the browser is not supported");
-			eventManager.post(Event.EVENT_ALERT);
 			return;
 		}
 		var searchUrl = settings.getString(SETTING_SEARCH_URL);
@@ -217,7 +216,6 @@ public class CliView implements Plugin {
 				Desktop.getDesktop().browse(new URI(url));
 			} catch (IOException | URISyntaxException | IllegalFormatException e) {
 				logger.warn(() -> "Unable to open browser", e);
-				eventManager.post(Event.EVENT_ALERT);
 			}
 		});
 	}

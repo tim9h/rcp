@@ -1,15 +1,16 @@
 package dev.tim9h.rcp.core.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
-import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
@@ -20,18 +21,14 @@ import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ModeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.CommandNode;
 import dev.tim9h.rcp.spi.Mode;
-import javafx.application.Platform;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 
 @Singleton
 public class ModeServiceImpl implements ModeService {
-
-	private static final Set<String> EPHEMERAL_ONLY_MODES = Set.of("alert");
 
 	@InjectLogger
 	private Logger logger;
@@ -39,12 +36,11 @@ public class ModeServiceImpl implements ModeService {
 	@Inject
 	private EventManager eventManager;
 
-	@Inject
-	private ThemeService themeService;
+	private final Set<String> activeModes;
 
-	private Set<String> activeModes;
+	private final Set<String> ephemeralModes;
 
-	private Set<String> ephemeralModes;
+	private final Map<String, Mode> registeredModes = new HashMap<>();
 
 	@Inject
 	private Settings settings;
@@ -59,7 +55,6 @@ public class ModeServiceImpl implements ModeService {
 	public ModeServiceImpl(Injector injector) {
 		injector.injectMembers(this);
 		activeModes = new HashSet<>(settings.getStringSet(SettingsConsts.MODES));
-		activeModes.removeAll(EPHEMERAL_ONLY_MODES);
 		ephemeralModes = new HashSet<>();
 		listenToEvents();
 	}
@@ -68,10 +63,11 @@ public class ModeServiceImpl implements ModeService {
 		//@formatter:off
 		commandsService.add(new CommandBuilder()
 			.command("modes", _ -> {
-				if (activeModes.isEmpty() && ephemeralModes.isEmpty()) {
+				var modes = getActiveModes();
+				if (modes.isEmpty()) {
 					eventManager.echo("No modes active");
 				} else {
-					eventManager.echo("Active modes", StringUtils.join(Iterables.concat(activeModes, ephemeralModes), ", "));
+					eventManager.echo("Active modes", StringUtils.join(modes, ", "));
 				}
 			}).getRoot());
 		//@formatter:on
@@ -79,49 +75,10 @@ public class ModeServiceImpl implements ModeService {
 
 	@Override
 	public void initDefaultModes() {
-		var modes = Arrays.asList(createAlertMode(), createDndMode(), createAfkMode());
+		var modes = List.of(createDndMode(), createAfkMode());
 		modes.forEach(this::initMode);
 		// plugin commands were already propagated to the CLI, so send these separately
 		commandsService.propagateCommands(modes.stream().map(Mode::getName).toArray(String[]::new));
-	}
-
-	private Mode createAlertMode() {
-		return new Mode() {
-
-			private MediaPlayer alert;
-
-			private static final String THEME = "lethan";
-
-			@Override
-			public String getName() {
-				return "alert";
-			}
-
-			@Override
-			public void onEnable() {
-				settings.persistRuntime(SettingsConsts.THEME, THEME);
-				themeService.setTheme(THEME, false);
-				eventManager.echo("ALERT", "Alert mode activated");
-
-				if (alert == null) {
-					var source = getClass().getResource("/media/imperial_alert.mp3").toExternalForm();
-					alert = new MediaPlayer(new Media(source));
-					alert.setCycleCount(MediaPlayer.INDEFINITE);
-					alert.setVolume(0.2);
-				}
-				Platform.runLater(alert::play);
-			}
-
-			@Override
-			public void onDisable() {
-				settings.clearRuntime(SettingsConsts.THEME);
-				var selectedTheme = settings.getString(SettingsConsts.THEME);
-				themeService.setTheme(selectedTheme, false);
-				eventManager.echo(StringUtils.EMPTY, "Alert mode deactivated");
-				Platform.runLater(alert::stop);
-			}
-		};
-
 	}
 
 	private Mode createDndMode() {
@@ -155,21 +112,26 @@ public class ModeServiceImpl implements ModeService {
 			}
 
 			@Override
+			public boolean isEphemeral() {
+				return true;
+			}
+
+			@Override
 			public void onInit() {
 				windowsUtils.registerIdleStateListener(new IdleChangeListener() {
 
 					@Override
 					public void onUknown() {
 						logger.warn(() -> "Unkown idle state");
-						disableMode("idle");
-						disableMode("afk");
+						disableMode("idle", true);
+						disableMode("afk", true);
 					}
 
 					@Override
 					public void onOnline() {
-						disableMode("idle");
+						disableMode("idle", true);
 						if (isModeActive("afk")) {
-							disableMode("afk");
+							disableMode("afk", true);
 							eventManager.echo("Welcome back");
 						}
 					}
@@ -181,7 +143,7 @@ public class ModeServiceImpl implements ModeService {
 
 					@Override
 					public void onAway() {
-						disableMode("idle");
+						disableMode("idle", true);
 						enableMode("afk", true);
 						eventManager.echo("See you later");
 					}
@@ -200,60 +162,75 @@ public class ModeServiceImpl implements ModeService {
 		};
 	}
 
-	public Set<String> getModes() {
-		return activeModes;
-	}
-
-	@Override
-	public void setModes(Collection<String> modes) {
-		activeModes.addAll(modes);
-	}
-
-	private boolean enableMode(String mode) {
-		return enableMode(mode, EPHEMERAL_ONLY_MODES.contains(mode));
-	}
-
-	private boolean enableMode(String mode, boolean ephermeral) {
-		if (!isModeActive(mode) && !"".equals(mode)) {
-			if (!"idle".equals(mode)) {
-				logger.info(() -> String.format("Mode %s enabled", mode));
-			}
-			if (!ephermeral) {
-				activeModes.add(mode);
-				settings.persist(SettingsConsts.MODES, activeModes);
-			} else {
-				ephemeralModes.add(mode);
-			}
-			eventManager.post(new Event("MODE_" + mode.toUpperCase(), "on"));
-			return true;
-		}
-		return false;
-	}
-
-	public boolean disableMode(String mode) {
-		if (isModeActive(mode)) {
-			if (activeModes.remove(mode)) {
-				settings.persist(SettingsConsts.MODES, activeModes);
-			} else {
-				ephemeralModes.remove(mode);
-			}
-			if (!"idle".equals(mode)) {
-				logger.info(() -> String.format("Mode %s disabled", mode));
-			}
-			eventManager.post(new Event("MODE_" + mode.toUpperCase(), "off"));
-			return true;
-		}
-		return false;
-	}
-
 	@Override
 	public void initMode(Mode mode) {
-		if (isModeActive(mode.getName())) {
+		var name = mode.getName();
+		registeredModes.put(name, mode);
+		if (mode.isEphemeral()) {
+			if (activeModes.remove(name)) {
+				persistActiveModes();
+			}
+		} else if (activeModes.contains(name)) {
 			mode.onEnable();
-			eventManager.post(new Event(mode.getName()));
+			eventManager.post(new Event(name));
 		}
 		commandsService.add(createModeCommand(mode));
 		mode.onInit();
+	}
+
+	@Override
+	public boolean enableMode(String mode, boolean ephemeral) {
+		if (StringUtils.isBlank(mode) || isModeActive(mode)) {
+			return false;
+		}
+
+		if (!"idle".equals(mode)) {
+			logger.info(() -> String.format("Mode %s enabled", mode));
+		}
+		if (ephemeral) {
+			ephemeralModes.add(mode);
+		} else {
+			activeModes.add(mode);
+			persistActiveModes();
+		}
+		eventManager.post(new Event(modeEventName(mode), "on"));
+		return true;
+	}
+
+	@Override
+	public boolean disableMode(String mode, boolean ephemeral) {
+		if (StringUtils.isBlank(mode)) {
+			return false;
+		}
+
+		var removed = ephemeral ? ephemeralModes.remove(mode) : activeModes.remove(mode);
+		if (!removed) {
+			return false;
+		}
+		if (!ephemeral) {
+			persistActiveModes();
+		}
+		if (!"idle".equals(mode)) {
+			logger.info(() -> String.format("Mode %s disabled", mode));
+		}
+		eventManager.post(new Event(modeEventName(mode), "off"));
+		return true;
+	}
+
+	private void disableMode(Mode mode) {
+		if (disableMode(mode.getName(), mode.isEphemeral())) {
+			mode.onDisable();
+		} else {
+			eventManager.echo("Not in " + mode.getName() + " mode");
+		}
+	}
+
+	private void persistActiveModes() {
+		settings.persist(SettingsConsts.MODES, activeModes);
+	}
+
+	private static String modeEventName(String mode) {
+		return "MODE_" + mode.toUpperCase(Locale.ROOT);
 	}
 
 	private CommandNode createModeCommand(Mode mode) {
@@ -280,6 +257,10 @@ public class ModeServiceImpl implements ModeService {
 	}
 
 	private void prepareModeCommands(Mode mode, CommandNode node) {
+		var argumentCommand = node.getArgumentCommand();
+		if (argumentCommand != null) {
+			node.setArgumentCommand(arg -> executeModeCommand(mode, () -> argumentCommand.accept(arg)));
+		}
 		for (var child : node.getChildren()) {
 			if ("off".equalsIgnoreCase(child.getData())) {
 				continue;
@@ -306,30 +287,29 @@ public class ModeServiceImpl implements ModeService {
 
 	private void executeModeCommand(Mode mode, Runnable command) {
 		if (!mode.requiresInitialization()) {
-			enableMode(mode.getName());
+			enableMode(mode.getName(), mode.isEphemeral());
 		}
 		command.run();
 	}
 
 	private void activateMode(Mode mode) {
-		if (enableMode(mode.getName())) {
+		if (enableMode(mode.getName(), mode.isEphemeral())) {
 			mode.onEnable();
 		} else {
 			eventManager.echo(String.format("Already in %s mode", mode.getName()));
 		}
 	}
 
-	private void disableMode(Mode mode) {
-		if (disableMode(mode.getName())) {
-			mode.onDisable();
-		} else {
-			eventManager.echo(String.format("Not in %s mode", mode.getName()));
-		}
-	}
-
 	@Override
 	public boolean isModeActive(String name) {
 		return activeModes.contains(name) || ephemeralModes.contains(name);
+	}
+
+	@Override
+	public Set<String> getActiveModes() {
+		var modes = new HashSet<>(activeModes);
+		modes.addAll(ephemeralModes);
+		return modes;
 	}
 
 }
