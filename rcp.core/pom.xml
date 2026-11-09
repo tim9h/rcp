@@ -44,7 +44,7 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-jul</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -85,7 +85,7 @@
 
 		<plugins>
 
-		<plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 			</plugin>
@@ -136,13 +136,12 @@
 								<exclude>META-INF/*.MF</exclude>
 								<exclude>META-INF/LICENSE.txt</exclude>
 								<exclude>META-INF/DEPENDENCIES</exclude>
-								<exclude>META-INF/NOTICE</exclude>
 								<exclude>META-INF/LICENSE</exclude>
 								<exclude>META-INF/AL2.0</exclude>
 								<exclude>META-INF/LGPL2.1</exclude>
+								<exclude>META-INF/versions/**/module-info.class</exclude>
 								<exclude>META-INF/substrate/config/*.json</exclude>
-								<exclude>
-									META-INF/substrate/config/resourcebundles</exclude>
+								<exclude>META-INF/substrate/config/resourcebundles</exclude>
 							</excludes>
 						</filter>
 					</filters>
@@ -158,6 +157,14 @@
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>dev.tim9h.rcp.core.Main</mainClass>
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+									<resource>META-INF/NOTICE.txt</resource>
+								</transformer>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+									<resource>META-INF/NOTICE</resource>
 								</transformer>
 							</transformers>
 						</configuration>
