@@ -45,7 +45,11 @@
 			-fx-fill: $text-color;
 
 			&.accent-label {
-					-fx-fill: $accent-color;
+				-fx-fill: $accent-color;
+			}
+			
+			&.secondary {
+				-fx-fill: $text-color-secondary;
 			}
 		}
 
