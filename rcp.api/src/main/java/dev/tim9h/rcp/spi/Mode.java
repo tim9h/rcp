@@ -22,4 +22,8 @@ public interface Mode {
 		return Optional.empty();
 	}
 
+	public default boolean isEphemeral() {
+		return false;
+	}
+
 }

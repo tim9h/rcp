@@ -25,12 +25,11 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.service.CommandsService;
-import dev.tim9h.rcp.core.service.ModeService;
 import dev.tim9h.rcp.core.util.PluginNodeSorter;
 import dev.tim9h.rcp.core.util.TrayManager;
-import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ModeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Plugin;
@@ -162,7 +161,6 @@ public class PluginLoader {
 			}
 		} catch (URISyntaxException e) {
 			logger.error(() -> "Unable to detect source location", e);
-			eventManager.post(Event.EVENT_ALERT);
 			return null;
 		}
 	}
@@ -197,7 +195,6 @@ public class PluginLoader {
 					return ServiceLoader.load(Plugin.class, ucl);
 				} catch (IOException e) {
 					logger.error(() -> "Unable to load plugin jars", e);
-					eventManager.post(Event.EVENT_ALERT);
 				}
 			} else {
 				logger.debug(() -> "Plugins directory not found: " + pluginDirectory.toFile().getAbsolutePath());
@@ -254,7 +251,6 @@ public class PluginLoader {
 			settings.addSettings(plugin.getSettingsContributions());
 		} catch (Exception e) {
 			logger.error(() -> "Unable to initialize plugin " + plugin.getName(), e);
-			eventManager.post(Event.EVENT_ALERT);
 		}
 	}
 

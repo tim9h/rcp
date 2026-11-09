@@ -1,4 +1,4 @@
-package dev.tim9h.rcp.core.service;
+package dev.tim9h.rcp.service;
 
 import java.util.List;
 

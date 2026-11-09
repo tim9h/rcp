@@ -8,14 +8,14 @@ import dev.tim9h.rcp.core.logging.Log4jTypeListener;
 import dev.tim9h.rcp.core.service.CommandsService;
 import dev.tim9h.rcp.core.service.CommandsServiceImpl;
 import dev.tim9h.rcp.core.service.CryptoServiceImpl;
-import dev.tim9h.rcp.core.service.ModeService;
 import dev.tim9h.rcp.core.service.ModeServiceImpl;
-import dev.tim9h.rcp.core.service.ThemeService;
 import dev.tim9h.rcp.core.service.ThemeServiceImpl;
 import dev.tim9h.rcp.core.settings.SettingsImpl;
 import dev.tim9h.rcp.core.ui.InjectableScene;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.service.CryptoService;
+import dev.tim9h.rcp.service.ModeService;
+import dev.tim9h.rcp.service.ThemeService;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.scene.Scene;
 

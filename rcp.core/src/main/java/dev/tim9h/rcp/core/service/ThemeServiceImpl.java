@@ -23,6 +23,7 @@ import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ThemeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
 import dev.tim9h.rcp.spi.Theme;
@@ -42,8 +43,6 @@ public class ThemeServiceImpl implements ThemeService {
 
 	private EventManager eventManager;
 
-	private ModeService modeService;
-
 	private TrayManager trayManager;
 
 	private CommandsService commandsService;
@@ -57,12 +56,11 @@ public class ThemeServiceImpl implements ThemeService {
 	private boolean themeCommandRegistered;
 
 	@Inject
-	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, ModeService modeService,
-			TrayManager trayManager, CommandsService commandsService) {
+	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, TrayManager trayManager,
+			CommandsService commandsService) {
 		this.scene = scene;
 		this.settings = settings;
 		this.eventManager = eventManager;
-		this.modeService = modeService;
 		this.trayManager = trayManager;
 		this.commandsService = commandsService;
 
@@ -84,8 +82,6 @@ public class ThemeServiceImpl implements ThemeService {
 			var newTheme = setTheme(theme, true);
 			if (newTheme == null) {
 				eventManager.echo("Theme not found", StringUtils.capitalize(theme));
-			} else if ("alert".equals(newTheme)) {
-				return;
 			} else {
 				eventManager.echo("Activating theme", StringUtils.capitalize(newTheme));
 				trayManager.setSelection("Theme", theme);
@@ -105,9 +101,6 @@ public class ThemeServiceImpl implements ThemeService {
 		} else {
 			if (persist) {
 				settings.persist(SettingsConsts.THEME, theme);
-			}
-			if (modeService.isModeActive("alert") && persist) {
-				return theme;
 			}
 			var themeUrl = selectedTheme.stylesheet();
 			if (!scene.getStylesheets().contains(themeUrl)) {
@@ -183,7 +176,6 @@ public class ThemeServiceImpl implements ThemeService {
 				}
 			} catch (URISyntaxException e) {
 				logger.error(() -> "Unable to getFilenames for directory " + directory + " in IDE mode", e);
-				eventManager.post(Event.EVENT_ALERT);
 			}
 		}
 		return filenames;
@@ -204,7 +196,6 @@ public class ThemeServiceImpl implements ThemeService {
 			}
 		} catch (IOException e) {
 			logger.error(() -> "Unable to get file names for directory " + directory + " in Jar mode", e);
-			eventManager.post(Event.EVENT_ALERT);
 		}
 		return filenames;
 	}

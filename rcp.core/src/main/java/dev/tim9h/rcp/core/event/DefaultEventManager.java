@@ -203,7 +203,6 @@ public class DefaultEventManager implements EventManager {
 			Thread.currentThread().interrupt();
 			responseHandlers.remove(correlationId);
 			logger.error(() -> "Interrupted while waiting for response with correlation ID: " + correlationId, e);
-			post(Event.EVENT_ALERT);
 			return new Object[0];
 		}
 	}

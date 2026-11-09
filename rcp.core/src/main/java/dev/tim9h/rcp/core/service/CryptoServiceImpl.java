@@ -9,11 +9,8 @@ import java.util.Random;
 
 import org.apache.logging.log4j.Logger;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import dev.tim9h.rcp.event.Event;
-import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.service.CryptoService;
 
@@ -24,9 +21,6 @@ public class CryptoServiceImpl implements CryptoService {
 	private Logger logger;
 
 	private Random random;
-
-	@Inject
-	private EventManager eventManager;
 
 	@Override
 	public String gernateApiKey() {
@@ -49,7 +43,6 @@ public class CryptoServiceImpl implements CryptoService {
 			return Base64.getEncoder().encodeToString(encodedHash);
 		} catch (NoSuchAlgorithmException e) {
 			logger.error(() -> "Unable to hash: SHA-256 algorithm not found", e);
-			eventManager.post(Event.EVENT_ALERT);
 		}
 		return null;
 	}

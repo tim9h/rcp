@@ -12,11 +12,11 @@ import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.controls.tray.FxSystemTray;
 import dev.tim9h.rcp.controls.tray.MenuItemData;
-import dev.tim9h.rcp.core.service.ModeService;
 import dev.tim9h.rcp.core.settings.SettingsConsts;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ModeService;
 import dev.tim9h.rcp.settings.Settings;
 
 @Singleton
