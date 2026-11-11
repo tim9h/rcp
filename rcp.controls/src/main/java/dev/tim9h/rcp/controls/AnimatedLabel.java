@@ -63,6 +63,8 @@ public class AnimatedLabel extends FlowPane {
 
 	private String targetText = StringUtils.EMPTY;
 
+	private Runnable textShownCallback;
+
 	@InjectLogger
 	private Logger logger;
 
@@ -170,6 +172,7 @@ public class AnimatedLabel extends FlowPane {
 		if (!animated && timeline.getStatus() == Animation.Status.RUNNING) {
 			timeline.stop();
 			setText(targetText);
+			finishTextUpdate();
 		}
 		if (!animated) {
 			fadeIn.stop();
@@ -178,8 +181,22 @@ public class AnimatedLabel extends FlowPane {
 	}
 
 	public void showText(String text) {
+		showText(text, null);
+	}
+
+	/**
+	 * Shows text and invokes {@code onFinished} when that text is fully displayed.
+	 * The callback follows the latest animated target if an animation is replaced.
+	 */
+	public void showText(String text, Runnable onFinished) {
 		targetText = text;
+		if (onFinished != null) {
+			textShownCallback = onFinished;
+		}
 		if (getText().equals(text)) {
+			timeline.stop();
+			setText(text);
+			finishTextUpdate();
 			return;
 		}
 
@@ -191,6 +208,7 @@ public class AnimatedLabel extends FlowPane {
 			timeline.stop();
 			setOpacity(1);
 			setText(text);
+			finishTextUpdate();
 			return;
 		}
 
@@ -205,6 +223,15 @@ public class AnimatedLabel extends FlowPane {
 		} else {
 			timeline.stop();
 			setText(text);
+			finishTextUpdate();
+		}
+	}
+
+	private void finishTextUpdate() {
+		var callback = textShownCallback;
+		textShownCallback = null;
+		if (callback != null) {
+			callback.run();
 		}
 	}
 
@@ -217,6 +244,7 @@ public class AnimatedLabel extends FlowPane {
 
 		if (animationLength == 0) {
 			setText(StringUtils.EMPTY);
+			finishTextUpdate();
 			return;
 		}
 		if (text.isBlank() || text.codePoints().allMatch(Character::isSpaceChar)) {
@@ -225,7 +253,10 @@ public class AnimatedLabel extends FlowPane {
 				var remainingText = visibleText.substring(0, visibleText.length() - i);
 				timeline.getKeyFrames().add(new KeyFrame(getTypeInterval().multiply(i), _ -> setText(remainingText)));
 			}
-			timeline.setOnFinished(_ -> setText(StringUtils.EMPTY));
+			timeline.setOnFinished(_ -> {
+				setText(StringUtils.EMPTY);
+				finishTextUpdate();
+			});
 			timeline.playFromStart();
 			return;
 		}
@@ -252,7 +283,10 @@ public class AnimatedLabel extends FlowPane {
 		}));
 
 		timeline.setCycleCount(animationLength);
-		timeline.setOnFinished(_ -> setText(text));
+		timeline.setOnFinished(_ -> {
+			setText(text);
+			finishTextUpdate();
+		});
 		timeline.playFromStart();
 	}
 
@@ -327,6 +361,7 @@ public class AnimatedLabel extends FlowPane {
 			return;
 		}
 
+		textShownCallback = null;
 		timeline.stop();
 		fadeIn.stop();
 
