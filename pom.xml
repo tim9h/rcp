@@ -17,7 +17,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<log4j.version>2.26.1</log4j.version>
-		<apache.commons.version>3.21.0</apache.commons.version>
+		<apache.commons.version>3.22.0</apache.commons.version>
 		<apache.commons-io.version>2.22.0</apache.commons-io.version>
 		<apache.commons-cli.version>1.11.0</apache.commons-cli.version>
 		<javafx.version>28-ea+11</javafx.version>
