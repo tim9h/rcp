@@ -64,11 +64,7 @@ public class CcTextField extends TextField {
 		initCommandMode();
 		disableTabNavigation();
 		initHistory();
-		eventManager.listen("clear", _ -> {
-			while (!inputHistory.isEmpty()) {
-				inputHistory.pop();
-			}
-		});
+		eventManager.listen("clear", _ -> inputHistory.clear());
 	}
 
 	private void initCommandMode() {
