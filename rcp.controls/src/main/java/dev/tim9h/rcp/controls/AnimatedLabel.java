@@ -39,7 +39,7 @@ public class AnimatedLabel extends FlowPane {
 
 	private static final String ANIMATION_FADE = "fade";
 
-	private Settings settings;
+	private final Settings settings;
 
 	private Duration fadeDuration;
 
@@ -47,17 +47,17 @@ public class AnimatedLabel extends FlowPane {
 
 	private List<String> animationStyles;
 
-	private FadeTransition fadeIn;
+	private final FadeTransition fadeIn;
 
-	private FadeTransition fadeOut;
+	private final FadeTransition fadeOut;
 
-	private Timeline timeline;
+	private final Timeline timeline;
 
-	private TextFlow textFlow;
+	private final TextFlow textFlow;
 
-	private Rectangle clip;
+	private final Rectangle clip;
 
-	private PauseTransition hideDelay;
+	private final PauseTransition hideDelay;
 
 	private boolean animated = true;
 
