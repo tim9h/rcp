@@ -8,6 +8,7 @@ module rcp.api {
 
 	requires transitive javafx.controls;
 	requires transitive javafx.graphics;
+	requires com.google.guice;
 	requires org.apache.logging.log4j;
 	requires org.apache.commons.lang3;
 }
