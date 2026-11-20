@@ -79,7 +79,7 @@ public class CcTextField extends TextField {
 
 	private void saveSelection() {
 		selectionProperty()
-				.addListener((_, _, newval) -> selection = newval.getStart() != newval.getEnd() ? newval : null);
+				.addListener((_, _, newval) -> selection = newval.getStart() == newval.getEnd() ? null : newval);
 	}
 
 	private void handleKeyTyped(KeyEvent event) {
