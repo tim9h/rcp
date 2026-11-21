@@ -6,3 +6,4 @@
 *.css.map
 target/
 .settings
+*.launch
