@@ -67,30 +67,38 @@ public class CoreService {
 
 		var optionBlacklist = new Option("b", "blacklist", true, "Do not activate specific plugins");
 		optionBlacklist.setArgs(Option.UNLIMITED_VALUES);
+		optionBlacklist.setOptionalArg(true);
 		options.addOption(optionBlacklist);
 
 		var optionWhitelist = new Option("w", "whitelist", true, "Only activate specific plugins");
 		optionWhitelist.setArgs(Option.UNLIMITED_VALUES);
+		optionWhitelist.setOptionalArg(true);
 		options.addOption(optionWhitelist);
 
 		var optionSetting = new Option("s", "setting", true, "Overwrite persisted setting");
 		optionSetting.setArgs(Option.UNLIMITED_VALUES);
+		optionSetting.setOptionalArg(true);
 		options.addOption(optionSetting);
 
 		var parser = new DefaultParser();
 		var parse = parser.parse(options, args);
+		var blacklistValues = parse.getOptionValues(optionBlacklist);
+		var whitelistValues = parse.getOptionValues(optionWhitelist);
+		var settingValues = parse.getOptionValues(optionSetting);
+		var hasBlacklist = blacklistValues != null && blacklistValues.length > 0;
+		var hasWhitelist = whitelistValues != null && whitelistValues.length > 0;
 
-		if (parse.hasOption(optionBlacklist) && parse.hasOption(optionWhitelist)) {
+		if (hasBlacklist && hasWhitelist) {
 			throw new ParseException("Invalid combination of options: whitelist and blacklist");
-		} else if (parse.hasOption(optionBlacklist)) {
-			var blacklist = Arrays.stream(parse.getOptionValues(optionBlacklist)).map(String::toLowerCase).toList();
+		} else if (hasBlacklist) {
+			var blacklist = Arrays.stream(blacklistValues).map(String::toLowerCase).toList();
 			pluginLoader.setPluginBlacklist(blacklist);
-		} else if (parse.hasOption(optionWhitelist)) {
-			var whitelist = Arrays.stream(parse.getOptionValues(optionWhitelist)).map(String::toLowerCase).toList();
+		} else if (hasWhitelist) {
+			var whitelist = Arrays.stream(whitelistValues).map(String::toLowerCase).toList();
 			pluginLoader.setPluginWhitelist(whitelist);
 		}
-		if (parse.hasOption(optionSetting)) {
-			settings.addOverwrites(Arrays.asList(parse.getOptionValues(optionSetting)));
+		if (settingValues != null && settingValues.length > 0) {
+			settings.addOverwrites(Arrays.asList(settingValues));
 		}
 	}
 
