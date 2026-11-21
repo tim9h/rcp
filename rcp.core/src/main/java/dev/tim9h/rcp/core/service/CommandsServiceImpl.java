@@ -31,7 +31,7 @@ public class CommandsServiceImpl implements CommandsService {
 	@Inject
 	private EventManager eventManager;
 
-	private CommandNode root = new CommandNode();
+	private final CommandNode root = new CommandNode();
 
 	private final Set<String> listenedCommands = new HashSet<>();
 

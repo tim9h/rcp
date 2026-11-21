@@ -68,11 +68,6 @@ public interface Plugin {
 		return Optional.empty();
 	}
 
-	@Deprecated
-	public default Optional<TreeNode<String>> getModelessCommands() {
-		return Optional.empty();
-	}
-
 	public default Optional<CommandNode> getCommands() {
 		return Optional.empty();
 	}
