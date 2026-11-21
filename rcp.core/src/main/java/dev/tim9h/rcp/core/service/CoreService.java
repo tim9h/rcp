@@ -39,15 +39,15 @@ public class CoreService {
 	@InjectLogger
 	private Logger logger;
 
-	private Settings settings;
+	private final Settings settings;
 
-	private PluginLoader pluginLoader;
+	private final PluginLoader pluginLoader;
 
-	private TrayManager tray;
+	private final TrayManager tray;
 
-	private EventManager eventManager;
+	private final EventManager eventManager;
 
-	private CommandsService commandsService;
+	private final CommandsService commandsService;
 
 	private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
@@ -141,7 +141,7 @@ public class CoreService {
 		if (!shuttingDown.compareAndSet(false, true)) {
 			return;
 		}
-		eventManager.echo("kthxbye.");
+		eventManager.post(new Event(Event.EVENT_CLOSING));
 		var delay = new PauseTransition(Duration.seconds(1));
 		delay.setOnFinished(_ -> cleanUp().whenComplete((_, error) -> {
 			if (error != null) {
@@ -156,8 +156,6 @@ public class CoreService {
 		return CompletableFuture.runAsync(() -> {
 			try {
 				logger.debug(() -> "Starting shutdown cleanup");
-				eventManager.post(new Event(Event.EVENT_CLOSING));
-				logger.debug(() -> "Shutting down plugins");
 				pluginLoader.getPlugins().forEach(plugin -> {
 					try {
 						plugin.onShutdown();
