@@ -40,17 +40,17 @@ public class PluginLoader {
 	@InjectLogger
 	private Logger logger;
 
-	private Injector injector;
+	private final Injector injector;
 
-	private EventManager eventManager;
+	private final EventManager eventManager;
 
-	private Settings settings;
+	private final Settings settings;
 
-	private CommandsService commandsService;
+	private final CommandsService commandsService;
 
-	private ModeService modeService;
+	private final ModeService modeService;
 
-	private TrayManager tray;
+	private final TrayManager tray;
 
 	private List<String> pluginBlacklist;
 
@@ -236,13 +236,11 @@ public class PluginLoader {
 		};
 	}
 
-	@SuppressWarnings("deprecation")
 	public void initPlugin(Plugin plugin) {
 		try {
 			plugin.init();
 			plugin.initBus(eventManager);
 			plugin.getModes().ifPresent(modes -> modes.forEach(modeService::initMode));
-			plugin.getModelessCommands().ifPresent(commandsService::add);
 			plugin.getCommands().ifPresent(commandsService::add);
 			plugin.getMenuItems().ifPresent(menuItems -> {
 				Collections.reverse(menuItems);
