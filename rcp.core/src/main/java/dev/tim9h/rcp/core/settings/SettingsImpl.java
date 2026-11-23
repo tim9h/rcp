@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -27,7 +30,6 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.core.service.CommandsService;
-import dev.tim9h.rcp.core.windows.WindowsUtils;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
@@ -41,9 +43,11 @@ public class SettingsImpl implements Settings {
 	@InjectLogger
 	private Logger logger;
 
-	private Properties properties;
+	private volatile Properties properties;
 
 	private Path propertiesPath;
+
+	private volatile Thread settingsWatcher;
 
 	private final EventManager eventManager;
 
@@ -69,7 +73,7 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void loadProperties() {
-		properties = new Properties();
+		var loadedProperties = new Properties();
 		propertiesPath = RcpDirectories.getApplicationDirectory().resolve("application.properties");
 		logger.debug(() -> "Loading properties from " + propertiesPath);
 
@@ -83,10 +87,11 @@ public class SettingsImpl implements Settings {
 		}
 
 		try (var inputStream = Files.newInputStream(propertiesPath)) {
-			properties.load(inputStream);
+			loadedProperties.load(inputStream);
 		} catch (IOException e) {
 			logger.error(() -> "Unable to load properties: " + e.getMessage());
 		}
+		properties = loadedProperties;
 	}
 
 	@Override
@@ -243,27 +248,63 @@ public class SettingsImpl implements Settings {
 
 	@Override
 	public void openSettingsFile() {
-		if (WindowsUtils.isWindows()) {
-			CompletableFuture.runAsync(() -> {
-				try {
-					new ProcessBuilder("cmd", "/c", "start", "/wait", "notepad", getSettingsFile().getAbsolutePath())
-							.start().waitFor();
-					loadProperties();
-					eventManager.post(new Event(Event.EVENT_SETTINGS_CHANGED));
-				} catch (InterruptedException | IOException e) {
-					logger.warn(() -> "Unable to open settings file", e);
-					Thread.currentThread().interrupt();
-				}
-			});
-		} else {
-			try {
-				Desktop.getDesktop().edit(getSettingsFile());
-			} catch (IOException e) {
-				logger.warn(() -> "Unable to open settings file (non windows)", e);
-				Thread.currentThread().interrupt();
-			}
-			// Reloading of properties not yet implemented
+		try {
+			startSettingsWatcher();
+			Desktop.getDesktop().open(getSettingsFile());
+		} catch (IOException | UnsupportedOperationException e) {
+			logger.warn(() -> "Unable to open settings file with the default editor", e);
 		}
+	}
+
+	private synchronized void startSettingsWatcher() throws IOException {
+		if (settingsWatcher != null && settingsWatcher.isAlive()) {
+			return;
+		}
+
+		var watcher = propertiesPath.getFileSystem().newWatchService();
+		propertiesPath.getParent().register(watcher, StandardWatchEventKinds.ENTRY_CREATE,
+				StandardWatchEventKinds.ENTRY_MODIFY);
+		var thread = new Thread(() -> watchSettingsFile(watcher), "rcp-settings-watcher");
+		thread.setDaemon(true);
+		settingsWatcher = thread;
+		thread.start();
+	}
+
+	private void watchSettingsFile(WatchService watcher) {
+		var settingsFileName = propertiesPath.getFileName();
+		try (watcher) {
+			while (!Thread.currentThread().isInterrupted()) {
+				var key = watcher.take();
+				var changed = isSettingsFileChanged(key, settingsFileName);
+				key.reset();
+				if (!changed) {
+					continue;
+				}
+
+				// Coalesce multiple writes, including editors that save via a temporary file
+				// and rename.
+				while (true) {
+					var pendingKey = watcher.poll(500, TimeUnit.MILLISECONDS);
+					if (pendingKey == null) {
+						break;
+					}
+					isSettingsFileChanged(pendingKey, settingsFileName);
+					pendingKey.reset();
+				}
+
+				loadProperties();
+				eventManager.post(new Event(Event.EVENT_SETTINGS_CHANGED));
+			}
+		} catch (InterruptedException _) {
+			Thread.currentThread().interrupt();
+		} catch (IOException e) {
+			logger.warn(() -> "Unable to watch settings file", e);
+		}
+	}
+
+	private boolean isSettingsFileChanged(WatchKey key, Path settingsFileName) {
+		return key.pollEvents().stream().anyMatch(
+				event -> event.kind() == StandardWatchEventKinds.OVERFLOW || settingsFileName.equals(event.context()));
 	}
 
 	private void initDefaultSettings() {
