@@ -34,11 +34,12 @@ Copy or extract the entire `RCP` directory to the desired location and run
 ## Running
 
 The launcher sets the required native-access options and writes logs to
-`C:\temp\rcp.log` (creating `C:\temp` if needed). Plugin JARs are loaded at startup
-from the `plugins` directory beside `RCP.exe`; for example:
+`%APPDATA%\rcp\rcp.log` on Windows (creating the directory if needed). This is the
+same per-user application directory used for settings and plugin data. Plugin JARs
+are loaded at startup from the `plugins` directory beside `RCP.exe`; for example:
 
 For IDE launches, `-Dlogpath` overrides the log directory (for example,
-`-Dlogpath=D:\misc\dev\logs` writes to `D:\misc\dev\logs\rcp.log`).
+`-Dlogpath=C:\temp\logs` writes to `C:\temp\logs\rcp.log`).
 
 ```text
 RCP\

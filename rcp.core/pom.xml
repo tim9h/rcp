@@ -116,7 +116,7 @@
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>dev.tim9h.rcp.core.UiApplication</mainClass>
+					<mainClass>dev.tim9h.rcp.core.Main</mainClass>
 					<options>
 						<option>--enable-native-access=rcp.core</option>
 					</options>

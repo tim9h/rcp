@@ -37,7 +37,7 @@ RCP: a JavaFX "start-menu-like" desktop launcher (expands from top-middle of the
 - Always run `mvn -B verify` before finishing; do not run `deploy` (publishes to GitHub Packages).
 
 ## Run (manual, Windows GUI – not usable in headless agents)
-Build the portable image on Windows with `mvn clean package`, then run `rcp.core\target\RCP\RCP.exe`. The launcher bundles its runtime and configures native access and `C:\temp\rcp.log`.
+Build the portable image on Windows with `mvn clean package`, then run `rcp.core\target\RCP\RCP.exe`. The launcher bundles its runtime, configures native access, and writes `rcp.log` in the per-user RCP application directory (for example `%APPDATA%\rcp` on Windows). `-Dlogpath` overrides the log directory.
 CLI args: `--blacklist <plugin>...` | `--whitelist <plugin>...` (mutually exclusive), `--setting key=value...`. Settings persist in the per-user configuration directory.
 
 ## CI (`.github/workflows/maven.yml`)
