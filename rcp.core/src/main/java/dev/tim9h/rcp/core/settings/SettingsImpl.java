@@ -33,6 +33,7 @@ import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
+import dev.tim9h.rcp.util.RcpDirectories;
 
 @Singleton
 public class SettingsImpl implements Settings {
@@ -44,11 +45,11 @@ public class SettingsImpl implements Settings {
 
 	private Path propertiesPath;
 
-	private EventManager eventManager;
+	private final EventManager eventManager;
 
-	private CommandsService commandsService;
+	private final CommandsService commandsService;
 
-	private Map<String, Object> overwrites;
+	private final Map<String, Object> overwrites;
 
 	private final Map<String, Object> runtimeValues = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -69,15 +70,16 @@ public class SettingsImpl implements Settings {
 	@Override
 	public void loadProperties() {
 		properties = new Properties();
-		propertiesPath = Path.of(System.getProperty("user.home") + "/.rcprc");
+		propertiesPath = RcpDirectories.getApplicationDirectory().resolve("application.properties");
 		logger.debug(() -> "Loading properties from " + propertiesPath);
 
-		if (!Files.exists(propertiesPath)) {
-			try {
+		try {
+			Files.createDirectories(propertiesPath.getParent());
+			if (!Files.exists(propertiesPath)) {
 				Files.createFile(propertiesPath);
-			} catch (IOException e) {
-				logger.error(() -> "Unable to create properties file: " + e.getMessage());
 			}
+		} catch (IOException e) {
+			logger.error(() -> "Unable to prepare properties file: " + e.getMessage());
 		}
 
 		try (var inputStream = Files.newInputStream(propertiesPath)) {
