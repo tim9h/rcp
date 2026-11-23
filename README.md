@@ -15,7 +15,8 @@ The application can be extended with plugins. Plugins are JAR files that are dis
 - `--whitelist <plugin>...`: load only the listed plugins.
 - `--setting <key=value>...`: overwrite persisted settings for the current run.
 
-`--blacklist` and `--whitelist` cannot be used together. Application settings are persisted in `~/.rcprc`.
+`--blacklist` and `--whitelist` cannot be used together. Application settings are persisted in
+`%APPDATA%\rcp\application.properties` on Windows.
 
 ## Building
 
@@ -54,4 +55,4 @@ Global hotkeys use the Windows format `MODIFIER+KEY`, for example `ALT+SPACE`,
 `WIN`; supported keys include letters, digits, `F1`–`F24`, and named keys such as
 `SPACE`, `ENTER`, `TAB`, `ESC`, `DELETE`, and arrow keys. This feature requires
 64-bit Windows. Existing hotkey preferences are not migrated; update
-`core.hotkey.showhide` in `~/.rcprc` to the new format if registration fails.
+`core.hotkey.showhide` in `%APPDATA%\rcp\application.properties` to the new format if registration fails.

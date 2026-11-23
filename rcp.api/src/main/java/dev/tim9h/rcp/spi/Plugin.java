@@ -1,6 +1,8 @@
 package dev.tim9h.rcp.spi;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +10,7 @@ import java.util.Optional;
 
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
+import dev.tim9h.rcp.util.RcpDirectories;
 import javafx.scene.Node;
 
 public interface Plugin {
@@ -16,6 +19,15 @@ public interface Plugin {
 
 	public default String getId() {
 		return getName().toLowerCase().replaceAll("\\s+", "");
+	}
+
+	/**
+	 * Returns this plugin's persistent data directory, creating it on first use.
+	 *
+	 * @throws IOException if the directory cannot be created
+	 */
+	public default Path getDataDirectory() throws IOException {
+		return Files.createDirectories(RcpDirectories.getPluginDataDirectory(getId()));
 	}
 
 	public default Optional<Node> getNode() throws IOException {
