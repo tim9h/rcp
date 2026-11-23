@@ -188,8 +188,6 @@
 											<arg value="--main-class" />
 											<arg value="dev.tim9h.rcp.core.Main" />
 											<arg value="--java-options" />
-											<arg value="-Dlogpath=C:\temp" />
-											<arg value="--java-options" />
 											<arg value="--enable-native-access=rcp.core" />
 											<arg value="--java-options" />
 											<arg value="--enable-native-access=com.sun.jna" />
