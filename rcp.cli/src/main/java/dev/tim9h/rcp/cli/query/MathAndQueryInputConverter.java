@@ -9,16 +9,16 @@ import org.apache.commons.text.WordUtils;
 
 import com.fathzer.soft.javaluator.DoubleEvaluator;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
 import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.CcTextField;
+import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.scene.text.Text;
 
 public class MathAndQueryInputConverter extends InputConverter {
 
-	private DoubleEvaluator evaluator;
+	private final DoubleEvaluator evaluator;
 
 	@Inject
 	private QueryService queryService;
@@ -26,11 +26,11 @@ public class MathAndQueryInputConverter extends InputConverter {
 	@Inject
 	private Settings settings;
 
-	private DecimalFormat formatter;
+	private final DecimalFormat formatter;
 
 	@Inject
-	public MathAndQueryInputConverter(Injector injector) {
-		super(injector);
+	public MathAndQueryInputConverter(Settings settings, EventManager eventManager) {
+		super(settings, eventManager);
 		evaluator = new DoubleEvaluator();
 		formatter = (DecimalFormat) NumberFormat.getInstance();
 		var symbols = formatter.getDecimalFormatSymbols();

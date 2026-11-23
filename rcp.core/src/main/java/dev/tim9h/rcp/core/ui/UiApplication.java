@@ -135,12 +135,15 @@ public class UiApplication extends Application {
 	@Override
 	public void start(Stage hiddenStage) throws Exception {
 		try {
-			Guice.createInjector(new BasicModule()).injectMembers(this);
-		} catch (Exception e) {
-			LogManager.getLogger(UiApplication.class).error(() -> "Unable to inject members", e);
-			Platform.exit();
-			return;
+			startApplication(hiddenStage);
+		} catch (Exception | Error e) {
+			LogManager.getLogger(UiApplication.class).error("Application startup failed", e);
+			throw e;
 		}
+	}
+
+	private void startApplication(Stage hiddenStage) throws Exception {
+		Guice.createInjector(new BasicModule()).injectMembers(this);
 
 		registerExceptionHandler();
 

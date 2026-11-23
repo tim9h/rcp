@@ -7,15 +7,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
 import dev.tim9h.rcp.cli.CliView;
 import dev.tim9h.rcp.cli.query.bean.InputResponse;
 import dev.tim9h.rcp.controls.AnimatedLabel;
 import dev.tim9h.rcp.controls.CcTextField;
 import dev.tim9h.rcp.controls.utils.DelayedRunner;
-import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
+import dev.tim9h.rcp.settings.Setting;
 import dev.tim9h.rcp.settings.Settings;
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
@@ -25,29 +24,13 @@ import javafx.scene.text.Text;
 @ImplementedBy(MathAndQueryInputConverter.class)
 public abstract class InputConverter extends DelayedRunner {
 
-	@Inject
-	private EventManager eventManager;
-
-	@Inject
-	private Settings settings;
-
 	private final AtomicLong generation = new AtomicLong();
 
 	private volatile String formattedResponse;
 
 	@Inject
-	protected InputConverter(Injector injector) {
-		injector.injectMembers(this);
-		initSettings();
-		initBus();
-	}
-
-	private void initBus() {
-		eventManager.listen(Event.EVENT_SETTINGS_CHANGED, _ -> initSettings());
-	}
-
-	private void initSettings() {
-		setMaxDelay(settings.getInt(CliView.SETTING_QUERYDELAY).intValue());
+	protected InputConverter(Settings settings, EventManager eventManager) {
+		setMaxDelay(new Setting<>(settings, eventManager, CliView.SETTING_QUERYDELAY, 0).get());
 	}
 
 	public void bind(StringProperty inputProperty, AnimatedLabel interpretation, AnimatedLabel response) {
