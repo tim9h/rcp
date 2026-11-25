@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
+import java.util.function.Consumer;
 import java.util.jar.JarFile;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,9 +25,11 @@ import dev.tim9h.rcp.core.util.TrayManager;
 import dev.tim9h.rcp.event.Event;
 import dev.tim9h.rcp.event.EventManager;
 import dev.tim9h.rcp.logging.InjectLogger;
+import dev.tim9h.rcp.service.ModeService;
 import dev.tim9h.rcp.service.ThemeService;
 import dev.tim9h.rcp.settings.Settings;
 import dev.tim9h.rcp.spi.CommandBuilder;
+import dev.tim9h.rcp.spi.Mode;
 import dev.tim9h.rcp.spi.Theme;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -37,15 +41,15 @@ public class ThemeServiceImpl implements ThemeService {
 	@InjectLogger
 	private Logger logger;
 
-	private Scene scene;
+	private final Scene scene;
 
-	private Settings settings;
+	private final Settings settings;
 
-	private EventManager eventManager;
+	private final EventManager eventManager;
 
-	private TrayManager trayManager;
+	private final TrayManager trayManager;
 
-	private CommandsService commandsService;
+	private final CommandsService commandsService;
 
 	private Boolean darkTheme;
 
@@ -53,11 +57,11 @@ public class ThemeServiceImpl implements ThemeService {
 
 	private String activeThemeStylesheet;
 
-	private boolean themeCommandRegistered;
+	private final boolean themeCommandRegistered;
 
 	@Inject
 	public ThemeServiceImpl(Scene scene, Settings settings, EventManager eventManager, TrayManager trayManager,
-			CommandsService commandsService) {
+			CommandsService commandsService, ModeService modeService) {
 		this.scene = scene;
 		this.settings = settings;
 		this.eventManager = eventManager;
@@ -72,6 +76,8 @@ public class ThemeServiceImpl implements ThemeService {
 		registerThemes(getBuiltInThemes());
 		registerThemeCommand();
 		themeCommandRegistered = true;
+
+		createShuffleMode(modeService);
 	}
 
 	public void registerThemeCommand() {
@@ -221,6 +227,36 @@ public class ThemeServiceImpl implements ThemeService {
 					var stylesheet = getClass().getResource("/css/" + file).toExternalForm();
 					return new Theme(name, stylesheet, isDarkTheme(name));
 				}).toList();
+	}
+
+	private void createShuffleMode(ModeService modeService) {
+		modeService.initMode(new Mode() {
+
+			private final Random random = new Random();
+			private final Consumer<Object[]> themeChanger = _ -> {
+				var themeNames = getThemeNames();
+				if (themeNames.length > 0) {
+					setTheme(themeNames[random.nextInt(themeNames.length)], false);
+				}
+			};
+
+			@Override
+			public void onEnable() {
+				eventManager.listen(Event.EVENT_HIDDEN, themeChanger);
+			}
+
+			@Override
+			public void onDisable() {
+				eventManager.unsubscribe(Event.EVENT_HIDDEN, themeChanger);
+				setTheme(settings.getString(SettingsConsts.THEME), true);
+			}
+
+			@Override
+			public String getName() {
+				return "party";
+			}
+		});
+
 	}
 
 }

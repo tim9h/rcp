@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.inject.Singleton;
 
 import dev.tim9h.rcp.event.Event;
@@ -30,9 +31,9 @@ public class DefaultEventManager implements EventManager {
 	@InjectLogger
 	private Logger logger;
 
-	private EventBus bus;
+	private final EventBus bus;
 
-	private Multimap<String, Object> subscriptions;
+	private final Multimap<String, Object> subscriptions;
 
 	// For request/response correlation
 	private final ConcurrentHashMap<String, ResponseHandler> responseHandlers = new ConcurrentHashMap<>();
@@ -64,6 +65,26 @@ public class DefaultEventManager implements EventManager {
 		}
 	}
 
+	private static final class Subscription implements EventListener {
+
+		private final String eventName;
+
+		private final Consumer<Object[]> action;
+
+		private Subscription(String eventName, Consumer<Object[]> action) {
+			this.eventName = eventName;
+			this.action = action;
+		}
+
+		@Override
+		@Subscribe
+		public void eventReceived(Event event) {
+			if (Strings.CI.equals(event.name(), eventName)) {
+				action.accept(event.payload());
+			}
+		}
+	}
+
 	public DefaultEventManager() {
 		bus = new EventBus("rcp");
 		subscriptions = HashMultimap.create();
@@ -87,11 +108,7 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void listen(String eventName, Consumer<Object[]> action) {
-		var subscription = (EventListener) event -> {
-			if (Strings.CI.equals(event.name(), eventName)) {
-				action.accept(event.payload());
-			}
-		};
+		var subscription = new Subscription(eventName, action);
 		subscriptions.put(eventName, subscription);
 		bus.register(subscription);
 	}
@@ -237,10 +254,16 @@ public class DefaultEventManager implements EventManager {
 
 	@Override
 	public void unsubscribe(String eventName, Object subscriber) {
-		if (subscriber != null && subscriptions.containsEntry(eventName, subscriber)) {
-			bus.unregister(subscriber);
-			subscriptions.remove(eventName, subscriber);
-			logger.debug(() -> "Unsubscribed from event " + eventName);
+		if (subscriber != null) {
+			var subscription = subscriptions.get(eventName).stream()
+					.filter(registered -> registered == subscriber
+							|| registered instanceof Subscription wrapped && wrapped.action == subscriber)
+					.findFirst().orElse(null);
+			if (subscription != null) {
+				bus.unregister(subscription);
+				subscriptions.remove(eventName, subscription);
+				logger.debug(() -> "Unsubscribed from event " + eventName);
+			}
 		}
 	}
 
