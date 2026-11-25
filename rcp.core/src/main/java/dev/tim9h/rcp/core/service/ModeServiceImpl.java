@@ -56,10 +56,10 @@ public class ModeServiceImpl implements ModeService {
 		injector.injectMembers(this);
 		activeModes = new HashSet<>(settings.getStringSet(SettingsConsts.MODES));
 		ephemeralModes = new HashSet<>();
-		listenToEvents();
+		createModeCommands();
 	}
 
-	private void listenToEvents() {
+	private void createModeCommands() {
 		//@formatter:off
 		commandsService.add(new CommandBuilder()
 			.command("modes", _ -> {
@@ -69,7 +69,16 @@ public class ModeServiceImpl implements ModeService {
 				} else {
 					eventManager.echo("Active modes", StringUtils.join(modes, ", "));
 				}
-			}).getRoot());
+			}).child("available", _ -> {
+				var inactiveModes = new HashSet<>(registeredModes.keySet());
+				getActiveModes().forEach(inactiveModes::remove);
+				if (inactiveModes.isEmpty()) {
+					eventManager.echo("No modes available");
+				} else {
+					eventManager.echo("Available modes", StringUtils.join(inactiveModes, ", "));
+				}
+			})
+			.getRoot());
 		//@formatter:on
 	}
 
