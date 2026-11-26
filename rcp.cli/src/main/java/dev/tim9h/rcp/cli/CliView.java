@@ -155,7 +155,7 @@ public class CliView implements Plugin {
 		lblResponse.setMinWidth(0);
 		lblResponse.setClipEnabled(false);
 		tfiInput.setOnSubmit(value -> {
-			CliView.this.submitInput(value);
+			this.submitInput(value);
 			tfiInput.clear();
 			tfiInput.requestFocus();
 		});
