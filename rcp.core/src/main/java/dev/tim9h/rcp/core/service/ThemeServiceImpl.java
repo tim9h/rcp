@@ -243,17 +243,19 @@ public class ThemeServiceImpl implements ThemeService {
 			@Override
 			public void onEnable() {
 				eventManager.listen(Event.EVENT_HIDDEN, themeChanger);
+				eventManager.echo("Shuffling themes");
 			}
 
 			@Override
 			public void onDisable() {
 				eventManager.unsubscribe(Event.EVENT_HIDDEN, themeChanger);
 				setTheme(settings.getString(SettingsConsts.THEME), true);
+				eventManager.echo("Stopped shuffling themes");
 			}
 
 			@Override
 			public String getName() {
-				return "party";
+				return "themeshuffle";
 			}
 		});
 
