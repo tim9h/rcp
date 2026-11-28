@@ -1,0 +1,27 @@
+$accent-color: rgb(47, 129, 247);
+$accent-darker: rgb(31, 111, 235);
+$text-color: rgb(230, 237, 243);
+$text-color-secondary: rgb(125, 133, 144);
+$text-color-input: rgb(230, 237, 243);
+$text-background-input: rgb(13, 17, 23);
+$background-color: rgba(13, 17, 23, 0.5);
+$background-color-opaque: rgb(13, 17, 23);
+$border-color: rgb(48, 54, 61);
+$card-border-color: rgba(48, 54, 61, 0.5);
+$card-background-color: rgba(22, 27, 34, 0.8);
+
+@use 'theme_colors' as *;
+
+@include apply-theme(
+	$accent-color,
+	$accent-darker,
+	$text-color,
+	$text-color-secondary,
+	$text-color-input,
+	$text-background-input,
+	$background-color,
+	$background-color-opaque,
+	$border-color,
+	$card-border-color,
+	$card-background-color
+);
